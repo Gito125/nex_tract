@@ -2,6 +2,7 @@ import json
 import subprocess
 import threading
 import time
+from typing import Any, cast
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -38,12 +39,13 @@ def test_create_download_job_completes_successfully() -> None:
         )
 
         assert response.status_code == 200
-        job_id = response.json()["id"]
+        job_id = cast(str, response.json()["id"])
         job = _wait_for_status(job_id, "completed")
 
     assert job["selectedQuality"] == "720p"
     assert job["progress"] == 100
     assert job["outputPath"] == str(output_path)
+    assert popen.call_args is not None
     assert "shell" not in popen.call_args.kwargs
 
 
@@ -121,7 +123,8 @@ def test_failed_download_updates_status_with_friendly_error() -> None:
         )
 
         assert response.status_code == 200
-        job = _wait_for_status(response.json()["id"], "failed")
+        job_id = cast(str, response.json()["id"])
+        job = _wait_for_status(job_id, "failed")
 
     assert job["errorMessage"] == "Selected quality is not available for this media."
 
@@ -150,7 +153,7 @@ def test_cancel_active_download_marks_job_cancelled() -> None:
             },
         )
         assert response.status_code == 200
-        job_id = response.json()["id"]
+        job_id = cast(str, response.json()["id"])
         _wait_for_status(job_id, "downloading")
 
         cancel_response = client.post(f"/api/downloads/{job_id}/cancel")
@@ -173,14 +176,16 @@ def test_retry_failed_download_returns_job_to_pending() -> None:
     assert body["completedAt"] is None
 
 
-def _wait_for_status(job_id: str, status: str, timeout: float = 2.0) -> dict:
+def _wait_for_status(
+    job_id: str, status: str, timeout: float = 2.0
+) -> dict[str, Any]:
     deadline = time.monotonic() + timeout
-    last_body: dict | None = None
+    last_body: dict[str, Any] | None = None
 
     while time.monotonic() < deadline:
         response = client.get(f"/api/downloads/{job_id}")
         assert response.status_code == 200
-        last_body = response.json()
+        last_body = cast(dict[str, Any], response.json())
         if last_body["status"] == status:
             return last_body
         time.sleep(0.02)
@@ -207,7 +212,7 @@ def _create_failed_job() -> str:
         return job.id
 
 
-def _completed_process(payload: dict) -> subprocess.CompletedProcess[str]:
+def _completed_process(payload: dict[str, Any]) -> subprocess.CompletedProcess[str]:
     return subprocess.CompletedProcess(
         args=["yt-dlp"],
         returncode=0,
@@ -216,7 +221,7 @@ def _completed_process(payload: dict) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _video_metadata() -> dict:
+def _video_metadata() -> dict[str, Any]:
     return {
         "title": "Example Video",
         "thumbnail": "https://img.youtube.com/example.jpg",

@@ -15,6 +15,7 @@ from app.schemas.download import (
     AudioFormat,
     DownloadCreateRequest,
     DownloadJobResponse,
+    DownloadStatusValue,
     QualityValue,
 )
 from app.services.analyze_service import analyze_url
@@ -185,6 +186,10 @@ def build_ytdlp_args(job: DownloadJob) -> list[str]:
 
 
 def job_to_response(job: DownloadJob) -> DownloadJobResponse:
+    audio_format = cast(AudioFormat | None, job.audio_format)
+    selected_quality = cast(QualityValue, job.selected_quality)
+    status = cast(DownloadStatusValue, job.status)
+
     return DownloadJobResponse(
         id=job.id,
         url=job.url,
@@ -193,9 +198,9 @@ def job_to_response(job: DownloadJob) -> DownloadJobResponse:
         title=job.title,
         thumbnail=job.thumbnail,
         duration=job.duration,
-        selectedQuality=cast(QualityValue, job.selected_quality),
-        audioFormat=job.audio_format,
-        status=job.status,
+        selectedQuality=selected_quality,
+        audioFormat=audio_format,
+        status=status,
         progress=job.progress,
         outputPath=job.output_path,
         fileSize=job.file_size,

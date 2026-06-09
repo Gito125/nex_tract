@@ -8,7 +8,7 @@ import {
   FileAudio,
   SlidersHorizontal,
 } from "lucide-react";
-import type { AnalyzeResponse, QualityValue } from "@/lib/types";
+import type { AnalyzeResponse, QualityValue, RawFormat } from "@/lib/types";
 
 const Youtube = ({ size, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -40,6 +40,8 @@ export function MediaPreviewCard({
   preview: AnalyzeResponse;
   selectedQuality: QualityValue | null;
 }) {
+  const selectedSize = estimateSelectedSize(preview.rawFormats, selectedQuality);
+
   return (
     <section
       className="mx-auto flex w-full max-w-5xl flex-col gap-5 animate-fade-up"
@@ -189,6 +191,12 @@ export function MediaPreviewCard({
                   );
                 })}
               </div>
+              <p className="mt-3 text-sm font-medium" style={{ color: "var(--foreground-muted)" }}>
+                Estimated size:{" "}
+                <span style={{ color: "var(--foreground)" }}>
+                  {selectedSize ? formatBytes(selectedSize) : "Unavailable"}
+                </span>
+              </p>
             </div>
 
             {/* Spacer */}
@@ -253,4 +261,111 @@ function formatDuration(totalSeconds: number): string {
     return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function estimateSelectedSize(
+  formats: RawFormat[],
+  selectedQuality: QualityValue | null,
+): number | null {
+  if (!selectedQuality) return null;
+
+  if (selectedQuality === "best") {
+    return bestVideoSize(formats);
+  }
+
+  if (selectedQuality.startsWith("audio_")) {
+    return audioSize(formats, selectedQuality);
+  }
+
+  const height = Number.parseInt(selectedQuality, 10);
+  return videoSizeForHeight(formats, height);
+}
+
+function bestVideoSize(formats: RawFormat[]): number | null {
+  const videoFormats = formats
+    .filter((format) => hasVideo(format))
+    .sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
+
+  for (const format of videoFormats) {
+    const size = combinedVideoAudioSize(format, formats);
+    if (size) return size;
+  }
+
+  return null;
+}
+
+function videoSizeForHeight(formats: RawFormat[], height: number): number | null {
+  const matchingFormats = formats
+    .filter((format) => hasVideo(format) && format.height === height)
+    .sort((a, b) => (b.filesize ?? 0) - (a.filesize ?? 0));
+
+  for (const format of matchingFormats) {
+    const size = combinedVideoAudioSize(format, formats);
+    if (size) return size;
+  }
+
+  return null;
+}
+
+function combinedVideoAudioSize(
+  videoFormat: RawFormat,
+  formats: RawFormat[],
+): number | null {
+  const videoSize = videoFormat.filesize;
+  if (!videoSize) return null;
+
+  if (hasAudio(videoFormat)) return videoSize;
+
+  const audioSize = bestAudioSize(formats);
+  return audioSize ? videoSize + audioSize : videoSize;
+}
+
+function audioSize(
+  formats: RawFormat[],
+  selectedQuality: QualityValue,
+): number | null {
+  const preferredExt = selectedQuality.replace("audio_", "");
+  const preferredFormats = formats.filter(
+    (format) => hasAudio(format) && !hasVideo(format) && format.ext === preferredExt,
+  );
+
+  return largestKnownSize(preferredFormats) ?? bestAudioSize(formats);
+}
+
+function bestAudioSize(formats: RawFormat[]): number | null {
+  return largestKnownSize(
+    formats.filter((format) => hasAudio(format) && !hasVideo(format)),
+  );
+}
+
+function largestKnownSize(formats: RawFormat[]): number | null {
+  const sizes = formats
+    .map((format) => format.filesize)
+    .filter((size): size is number => typeof size === "number" && size > 0);
+
+  return sizes.length > 0 ? Math.max(...sizes) : null;
+}
+
+function hasVideo(format: RawFormat): boolean {
+  return Boolean(format.vcodec && format.vcodec !== "none");
+}
+
+function hasAudio(format: RawFormat): boolean {
+  return Boolean(format.acodec && format.acodec !== "none");
+}
+
+function formatBytes(bytes: number): string {
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  const maximumFractionDigits = value >= 10 || unitIndex === 0 ? 0 : 1;
+  return `${value.toLocaleString(undefined, {
+    maximumFractionDigits,
+  })} ${units[unitIndex]}`;
 }
