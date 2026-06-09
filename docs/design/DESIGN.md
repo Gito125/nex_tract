@@ -118,12 +118,16 @@ spacing:
 
 The design system is built on the principle of **Functional Serenity**. It positions the utility as a high-end personal archive tool rather than a transient downloader. The brand personality is professional, disciplined, and transparent, evoking a sense of digital craftsmanship.
 
+For meaningful UI work, use the `impeccable` and `frontend-design` skills when available. They should be applied to make the interface feel deliberate, polished, responsive, and production-grade without drifting away from Nextract's calm local-first product identity.
+
 ### Design Style: Corporate Modern / Minimalist
 The aesthetic leverages a structured, card-based layout with a focus on deep, sophisticated tones and expansive whitespace. It avoids the cluttered "sketchy" tropes of web-based converters by utilizing:
 - **Spacious Breathability:** Generous margins and internal padding to reduce cognitive load.
 - **Subtle Layering:** Using tonal changes rather than heavy shadows to denote hierarchy.
 - **Technical Precision:** Clean iconography and data-dense but readable tables for download history and settings.
 - **Trust-First UI:** Clear labeling, ethical disclaimers, and visible progress indicators that make the underlying technical processes feel safe and controlled.
+
+Avoid generic AI UI tells: gradient-filled text, decorative glow, nested cards, noisy palettes, fake glass, and motion that does not clarify state or flow.
 
 ## Colors
 
@@ -146,6 +150,8 @@ The color palette is designed to transition seamlessly between a focused, produc
 ## Typography
 
 The typography system uses **Inter** exclusively to emphasize the app's utility and "software-first" nature.
+
+Inter is a deliberate product-font choice for Nextract and is an explicit exception to general design-skill guidance that discourages default or common fonts.
 
 ### Hierarchy Rules
 - **Display & Headlines:** Use tighter letter spacing and heavier weights to create a sense of authority and modernity.
@@ -211,3 +217,7 @@ The shape language is "Soft-Modern," utilizing significant rounding to feel appr
 ### Status Badges
 - Small, uppercase labels with a subtle background tint (e.g., Success is light green background with dark green text).
 - Placement: Top right of media cards or within history tables.
+
+## Stitch Reference
+
+Use [STITCH-UI-REFERENCE.md](STITCH-UI-REFERENCE.md) and the screenshots in [stitch/](stitch/) as visual reference for screen composition. The Stitch HTML is not source code and should not be copied into the app.

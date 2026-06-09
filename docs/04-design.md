@@ -6,6 +6,8 @@ This document summarizes the full design system in [docs/design/DESIGN.md](desig
 
 Nextract should feel like a polished local-first productivity tool, not a disposable downloader site. The design direction is **Functional Serenity**: calm, structured, trustworthy, and technically precise.
 
+For meaningful UI work, use the `impeccable` and `frontend-design` skills when available. They should strengthen the visual point of view, interaction quality, responsive behavior, and final polish while preserving this product direction.
+
 ## Visual Style
 
 - Corporate modern and minimalist.
@@ -13,6 +15,7 @@ Nextract should feel like a polished local-first productivity tool, not a dispos
 - Card-based surfaces for previews, queue items, history, and settings.
 - Subtle tonal layering instead of heavy shadows.
 - Transparent progress and status indicators so downloads feel controlled.
+- Avoid generic AI UI tells: gradient text, decorative glow, nested cards, noisy palettes, and meaningless motion.
 
 See [Brand & Style](design/DESIGN.md#brand--style) for the full positioning notes.
 
@@ -33,6 +36,8 @@ Exact token values are defined in [docs/design/DESIGN.md](design/DESIGN.md#color
 ## Typography
 
 Use Inter as the product font. Headings should feel confident and restrained. Body copy should prioritize scannability. Metadata such as file size, duration, speed, ETA, and percentages should use clear label styling, with monospaced numerals where useful to avoid jitter.
+
+Inter is an intentional Nextract product decision. It is an explicit exception to general design-skill advice against default font choices.
 
 See [Typography](design/DESIGN.md#typography) for the full scale.
 
@@ -62,6 +67,8 @@ The MVP interface should prioritize:
 - Settings sections.
 
 Detailed component behavior is in [Components](design/DESIGN.md#components).
+
+Use the Stitch-derived visual reference in [docs/design/STITCH-UI-REFERENCE.md](design/STITCH-UI-REFERENCE.md) for screen composition patterns.
 
 ## App Structure Alignment
 
