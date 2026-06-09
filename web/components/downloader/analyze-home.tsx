@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -19,6 +19,7 @@ import {
   analyzeUrl,
   cancelDownload,
   createDownload,
+  getDownloadEventsUrl,
   listDownloads,
   retryDownload,
 } from "@/lib/api";
@@ -26,6 +27,8 @@ import type {
   AnalyzeResponse,
   AudioFormat,
   DownloadCreateRequest,
+  DownloadJob,
+  DownloadQueueResponse,
   QualityValue,
 } from "@/lib/types";
 
@@ -51,6 +54,42 @@ export function AnalyzeHome() {
     queryFn: listDownloads,
     refetchInterval: 2_000,
   });
+
+  const activeJobIds = (downloadsQuery.data?.jobs ?? [])
+    .filter((job) => job.status === "pending" || job.status === "downloading")
+    .map((job) => job.id)
+    .join("|");
+
+  useEffect(() => {
+    if (!activeJobIds) return;
+
+    const sources = activeJobIds.split("|").map((jobId) => {
+      const source = new EventSource(getDownloadEventsUrl(jobId));
+
+      source.onmessage = (event) => {
+        try {
+          const job = JSON.parse(event.data) as DownloadJob;
+          queryClient.setQueryData<DownloadQueueResponse>(
+            ["downloads"],
+            (current) => upsertDownloadJob(current, job),
+          );
+        } catch {
+          queryClient.invalidateQueries({ queryKey: ["downloads"] });
+        }
+      };
+
+      source.onerror = () => {
+        source.close();
+        queryClient.invalidateQueries({ queryKey: ["downloads"] });
+      };
+
+      return source;
+    });
+
+    return () => {
+      sources.forEach((source) => source.close());
+    };
+  }, [activeJobIds, queryClient]);
 
   const createDownloadMutation = useMutation({
     mutationFn: createDownload,
@@ -352,6 +391,22 @@ function audioFormatForQuality(quality: QualityValue): AudioFormat | null {
   if (quality === "audio_mp3") return "mp3";
   if (quality === "audio_opus") return "opus";
   return null;
+}
+
+function upsertDownloadJob(
+  current: DownloadQueueResponse | undefined,
+  job: DownloadJob,
+): DownloadQueueResponse {
+  if (!current) return { jobs: [job] };
+
+  const existingIndex = current.jobs.findIndex((item) => item.id === job.id);
+  if (existingIndex === -1) {
+    return { jobs: [job, ...current.jobs] };
+  }
+
+  return {
+    jobs: current.jobs.map((item, index) => (index === existingIndex ? job : item)),
+  };
 }
 
 function CapabilityChip({

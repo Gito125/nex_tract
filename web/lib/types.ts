@@ -62,6 +62,15 @@ export type DownloadStatus =
   | "failed"
   | "cancelled";
 
+export type ProgressStatus =
+  | "queued"
+  | "downloading"
+  | "merging"
+  | "postprocessing"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
 export type DownloadType = "video" | "audio";
 export type AudioFormat = "m4a" | "mp3" | "opus";
 
@@ -84,6 +93,9 @@ export type DownloadJob = {
   audioFormat: AudioFormat | null;
   status: DownloadStatus;
   progress: number;
+  speed: string | null;
+  eta: string | null;
+  progressStatus: ProgressStatus;
   outputPath: string | null;
   fileSize: number | null;
   errorMessage: string | null;

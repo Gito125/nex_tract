@@ -16,8 +16,8 @@ Update it as you build.
 ## Current Focus
 
 ```txt
-Current Phase: Phase 3 — Single Video Download
-Current Goal: Add download job creation, safe yt-dlp download execution, and queue status UI for one YouTube video.
+Current Phase: Phase 4 — Progress Tracking
+Current Goal: Show real-time download progress, speed, ETA, and merging/post-processing states in the queue UI.
 ```
 
 ---
@@ -197,23 +197,23 @@ Show real-time download progress.
 
 ## Backend
 
-- [ ] Parse yt-dlp progress output.
-- [ ] Store job progress.
-- [ ] Track percentage.
-- [ ] Track speed where available.
-- [ ] Track ETA where available.
-- [ ] Add progress endpoint.
-- [ ] Add WebSocket or Server-Sent Events.
+- [x] Parse yt-dlp progress output.
+- [x] Store job progress.
+- [x] Track percentage.
+- [x] Track speed where available.
+- [x] Track ETA where available.
+- [x] Add progress endpoint.
+- [x] Add WebSocket or Server-Sent Events.
 
 ## Frontend
 
-- [ ] Build progress card.
-- [ ] Show progress bar.
-- [ ] Show percentage.
-- [ ] Show speed.
-- [ ] Show ETA.
-- [ ] Show merging status.
-- [ ] Show completed state.
+- [x] Build progress card.
+- [x] Show progress bar.
+- [x] Show percentage.
+- [x] Show speed.
+- [x] Show ETA.
+- [x] Show merging status.
+- [x] Show completed state.
 
 ## Exit Criteria
 

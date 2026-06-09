@@ -44,6 +44,7 @@ def test_create_download_job_completes_successfully() -> None:
 
     assert job["selectedQuality"] == "720p"
     assert job["progress"] == 100
+    assert job["progressStatus"] == "completed"
     assert job["outputPath"] == str(output_path)
     assert popen.call_args is not None
     assert "shell" not in popen.call_args.kwargs
@@ -95,7 +96,50 @@ def test_build_ytdlp_args_uses_argument_array() -> None:
     assert args[0] == "yt-dlp"
     assert "--extract-audio" in args
     assert "--audio-format" in args
+    assert "--newline" in args
     assert any("Bad File Name-%(id)s.%(ext)s" in item for item in args)
+
+
+def test_download_progress_output_updates_metrics() -> None:
+    release = threading.Event()
+    fake_process = FakeProcess(
+        stdout="[download]  52.4% of 20.00MiB at 1.20MiB/s ETA 00:08\n",
+        returncode=None,
+        release=release,
+    )
+
+    with (
+        patch(
+            "app.platforms.youtube.subprocess.run",
+            return_value=_completed_process(_video_metadata()),
+        ),
+        patch(
+            "app.services.download_service.subprocess.Popen",
+            return_value=fake_process,
+        ),
+    ):
+        response = client.post(
+            "/api/downloads",
+            json={
+                "url": "https://www.youtube.com/watch?v=abc123",
+                "quality": "best",
+                "downloadType": "video",
+                "audioFormat": None,
+            },
+        )
+        assert response.status_code == 200
+        job_id = cast(str, response.json()["id"])
+        job = _wait_for_progress(job_id, 52)
+
+        cancel_response = client.post(f"/api/downloads/{job_id}/cancel")
+
+    assert job["status"] == "downloading"
+    assert job["progress"] == 52
+    assert job["speed"] == "1.20MiB/s"
+    assert job["eta"] == "00:08"
+    assert job["progressStatus"] == "downloading"
+    assert cancel_response.status_code == 200
+    release.set()
 
 
 def test_failed_download_updates_status_with_friendly_error() -> None:
@@ -191,6 +235,23 @@ def _wait_for_status(
         time.sleep(0.02)
 
     raise AssertionError(f"Job did not reach {status}. Last body: {last_body}")
+
+
+def _wait_for_progress(
+    job_id: str, progress: int, timeout: float = 2.0
+) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout
+    last_body: dict[str, Any] | None = None
+
+    while time.monotonic() < deadline:
+        response = client.get(f"/api/downloads/{job_id}")
+        assert response.status_code == 200
+        last_body = cast(dict[str, Any], response.json())
+        if last_body["progress"] >= progress:
+            return last_body
+        time.sleep(0.02)
+
+    raise AssertionError(f"Job did not reach {progress}%. Last body: {last_body}")
 
 
 def _create_failed_job() -> str:

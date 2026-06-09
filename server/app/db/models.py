@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import ClassVar
 from uuid import uuid4
 
 from sqlmodel import Field, SQLModel
@@ -18,7 +19,7 @@ class DownloadStatus(StrEnum):
 
 
 class DownloadJob(SQLModel, table=True):
-    __tablename__ = "downloads"
+    __tablename__: ClassVar[str] = "downloads"
 
     id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
     url: str
@@ -31,6 +32,9 @@ class DownloadJob(SQLModel, table=True):
     audio_format: str | None = None
     status: str = Field(default=DownloadStatus.PENDING.value, index=True)
     progress: int = 0
+    speed: str | None = None
+    eta: str | None = None
+    progress_status: str = Field(default="queued")
     output_path: str | None = None
     file_size: int | None = None
     error_message: str | None = None

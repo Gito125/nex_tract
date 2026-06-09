@@ -1,10 +1,12 @@
+import asyncio
+import json
 import logging
 import subprocess
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import cast
+from typing import Any, AsyncIterator, Iterator, cast
 
 from sqlmodel import Session, col, select
 
@@ -16,12 +18,14 @@ from app.schemas.download import (
     DownloadCreateRequest,
     DownloadJobResponse,
     DownloadStatusValue,
+    ProgressStatusValue,
     QualityValue,
 )
 from app.services.analyze_service import analyze_url
 from app.services.exceptions import AnalyzeError, DownloadError
 from app.utils.filename import sanitize_filename
 from app.utils.platform_detector import PlatformValidationError, detect_platform
+from app.utils.progress_parser import ProgressUpdate, parse_ytdlp_progress_line
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +109,29 @@ def get_download_job(job_id: str, session: Session) -> DownloadJobResponse:
     return job_to_response(_get_job_or_raise(job_id, session))
 
 
+async def stream_download_job_events(job_id: str) -> AsyncIterator[str]:
+    last_payload: dict[str, Any] | None = None
+
+    while True:
+        with Session(engine) as session:
+            job = session.get(DownloadJob, job_id)
+            if not job:
+                break
+
+            response = job_to_response(job)
+            payload = response.model_dump(mode="json", by_alias=True)
+            is_terminal = job.status in TERMINAL_STATUSES
+
+        if payload != last_payload:
+            yield f"data: {json.dumps(payload)}\n\n"
+            last_payload = payload
+
+        if is_terminal:
+            break
+
+        await asyncio.sleep(0.5)
+
+
 def cancel_download_job(job_id: str, session: Session) -> DownloadJobResponse:
     job = _get_job_or_raise(job_id, session)
 
@@ -113,6 +140,9 @@ def cancel_download_job(job_id: str, session: Session) -> DownloadJobResponse:
 
     now = _utc_now()
     job.status = DownloadStatus.CANCELLED.value
+    job.progress_status = "cancelled"
+    job.speed = None
+    job.eta = None
     job.updated_at = now
     job.completed_at = now
     session.add(job)
@@ -140,6 +170,9 @@ def retry_download_job(job_id: str, session: Session) -> DownloadJobResponse:
 
     job.status = DownloadStatus.PENDING.value
     job.progress = 0
+    job.speed = None
+    job.eta = None
+    job.progress_status = "queued"
     job.error_message = None
     job.output_path = None
     job.file_size = None
@@ -166,6 +199,7 @@ def build_ytdlp_args(job: DownloadJob) -> list[str]:
         "yt-dlp",
         "--no-playlist",
         "--no-warnings",
+        "--newline",
         "--paths",
         str(download_root),
         "--output",
@@ -189,6 +223,7 @@ def job_to_response(job: DownloadJob) -> DownloadJobResponse:
     audio_format = cast(AudioFormat | None, job.audio_format)
     selected_quality = cast(QualityValue, job.selected_quality)
     status = cast(DownloadStatusValue, job.status)
+    progress_status = cast(ProgressStatusValue, job.progress_status)
 
     return DownloadJobResponse(
         id=job.id,
@@ -202,6 +237,9 @@ def job_to_response(job: DownloadJob) -> DownloadJobResponse:
         audioFormat=audio_format,
         status=status,
         progress=job.progress,
+        speed=job.speed,
+        eta=job.eta,
+        progressStatus=progress_status,
         outputPath=job.output_path,
         fileSize=job.file_size,
         errorMessage=job.error_message,
@@ -225,8 +263,9 @@ def _run_download_job(job_id: str) -> None:
         process = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
+            bufsize=1,
         )
     except FileNotFoundError:
         _mark_failed(job_id, "yt-dlp is not installed or is not available.")
@@ -247,12 +286,13 @@ def _run_download_job(job_id: str) -> None:
             return
 
         job.status = DownloadStatus.DOWNLOADING.value
+        job.progress_status = "downloading"
         job.updated_at = _utc_now()
         session.add(job)
         session.commit()
 
     logger.info("Started download job %s", job_id)
-    stdout, stderr = process.communicate()
+    output = _collect_process_output(process, job_id)
 
     with _process_lock:
         _active_processes.pop(job_id, None)
@@ -266,9 +306,12 @@ def _run_download_job(job_id: str) -> None:
             return
 
         if process.returncode == 0:
-            output_path = _safe_output_path(stdout)
+            output_path = _safe_output_path(output)
             job.status = DownloadStatus.COMPLETED.value
             job.progress = 100
+            job.speed = None
+            job.eta = None
+            job.progress_status = "completed"
             job.output_path = output_path
             job.file_size = _file_size(output_path)
             job.error_message = None
@@ -276,14 +319,78 @@ def _run_download_job(job_id: str) -> None:
             logger.info("Completed download job %s", job_id)
         else:
             job.status = DownloadStatus.FAILED.value
-            job.error_message = _friendly_ytdlp_error(stderr)
+            job.progress_status = "failed"
+            job.error_message = _friendly_ytdlp_error(output)
             job.completed_at = _utc_now()
             logger.warning("Failed download job %s", job_id)
 
         job.updated_at = _utc_now()
         session.add(job)
         session.commit()
-        logger.warning("Failed download job %s", job_id)
+
+
+def _collect_process_output(process: subprocess.Popen[str], job_id: str) -> str:
+    lines: list[str] = []
+
+    for line in _iter_process_lines(process):
+        lines.append(line)
+        update = parse_ytdlp_progress_line(line)
+        if update:
+            _apply_progress_update(job_id, update)
+
+    extra_output = _wait_for_process(process)
+    if extra_output:
+        lines.extend(extra_output.splitlines())
+
+    return "\n".join(lines)
+
+
+def _iter_process_lines(process: subprocess.Popen[str]) -> Iterator[str]:
+    stream = process.stdout
+    if not stream:
+        return
+
+    if isinstance(stream, str):
+        for line in stream.splitlines():
+            yield line.strip()
+        return
+
+    for line in stream:
+        yield line.strip()
+
+
+def _wait_for_process(process: subprocess.Popen[str]) -> str:
+    wait = getattr(process, "wait", None)
+    if callable(wait):
+        wait()
+        return ""
+
+    communicate = getattr(process, "communicate", None)
+    if callable(communicate):
+        stdout, stderr = communicate()
+        return "\n".join(part for part in [stdout, stderr] if part)
+
+    return ""
+
+
+def _apply_progress_update(job_id: str, update: ProgressUpdate) -> None:
+    with Session(engine) as session:
+        job = session.get(DownloadJob, job_id)
+        if not job or job.status in TERMINAL_STATUSES:
+            return
+
+        if update.progress is not None:
+            job.progress = max(job.progress, update.progress)
+        if update.speed is not None:
+            job.speed = update.speed
+        if update.eta is not None:
+            job.eta = update.eta
+        if update.status is not None:
+            job.progress_status = update.status
+
+        job.updated_at = _utc_now()
+        session.add(job)
+        session.commit()
 
 
 def _validate_download_shape(request: DownloadCreateRequest) -> None:
@@ -315,6 +422,9 @@ def _mark_failed(job_id: str, message: str) -> None:
         if not job or job.status == DownloadStatus.CANCELLED.value:
             return
         job.status = DownloadStatus.FAILED.value
+        job.progress_status = "failed"
+        job.speed = None
+        job.eta = None
         job.error_message = message
         job.completed_at = _utc_now()
         job.updated_at = _utc_now()

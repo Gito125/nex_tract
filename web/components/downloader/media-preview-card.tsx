@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   CirclePlay,
   Clock,
+  Disc3,
   Download,
   FileAudio,
   SlidersHorizontal,
@@ -41,6 +42,7 @@ export function MediaPreviewCard({
   selectedQuality: QualityValue | null;
 }) {
   const selectedSize = estimateSelectedSize(preview.rawFormats, selectedQuality);
+  const isAudioSelection = selectedQuality?.startsWith("audio_") ?? false;
 
   return (
     <section
@@ -87,40 +89,19 @@ export function MediaPreviewCard({
           {/* Thumbnail pane */}
           <div
             className="relative flex items-center justify-center p-4"
-            style={{ background: "#000", minHeight: "260px" }}
+            style={{
+              background: isAudioSelection
+                ? "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))"
+                : "#000",
+              minHeight: "260px",
+            }}
           >
-            <div
-              className="relative w-full overflow-hidden rounded-xl"
-              style={{ aspectRatio: "16/9" }}
-              role="img"
-              aria-label={`${preview.title} thumbnail`}
-            >
-              {preview.thumbnail ? (
-                <img
-                  src={preview.thumbnail}
-                  alt={preview.title}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div
-                  className="flex h-full w-full items-center justify-center"
-                  style={{ background: "var(--surface-strong)" }}
-                >
-                  <CirclePlay size={52} style={{ color: "var(--foreground-subtle)" }} aria-hidden="true" />
-                </div>
-              )}
-
-              {/* Duration badge */}
-              {preview.duration ? (
-                <span
-                  className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold"
-                  style={{ background: "rgba(0,0,0,0.85)", color: "#fff", backdropFilter: "blur(8px)" }}
-                >
-                  <Clock size={11} aria-hidden="true" />
-                  {formatDuration(preview.duration)}
-                </span>
-              ) : null}
-            </div>
+            <PreviewArtwork
+              duration={preview.duration}
+              isAudio={isAudioSelection}
+              thumbnail={preview.thumbnail}
+              title={preview.title}
+            />
           </div>
 
           {/* Details pane */}
@@ -249,6 +230,93 @@ export function MediaPreviewCard({
         Analysis complete · File size and quality may vary based on source availability.
       </p>
     </section>
+  );
+}
+
+function PreviewArtwork({
+  duration,
+  isAudio,
+  thumbnail,
+  title,
+}: {
+  duration: number | null;
+  isAudio: boolean;
+  thumbnail: string | null;
+  title: string;
+}) {
+  if (isAudio) {
+    return (
+      <div
+        className="relative w-full overflow-hidden rounded-xl"
+        style={{
+          aspectRatio: "16/9",
+          border: "1px solid var(--border-strong)",
+        }}
+        role="img"
+        aria-label={`${title} audio artwork`}
+      >
+        {thumbnail ? (
+          <img
+            src={thumbnail}
+            alt=""
+            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-lg"
+          />
+        ) : null}
+        <div className="absolute inset-0 flex items-center justify-center p-8">
+          <div
+            className="relative flex aspect-square h-full max-h-64 items-center justify-center overflow-hidden rounded-2xl"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border-strong)",
+              boxShadow: "0 18px 50px rgba(0,0,0,0.42)",
+            }}
+          >
+            {thumbnail ? (
+              <img src={thumbnail} alt={title} className="h-full w-full object-cover" />
+            ) : (
+              <Disc3 size={64} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
+            )}
+            <span
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
+              style={{ background: "rgba(0,0,0,0.72)", color: "#fff" }}
+            >
+              <FileAudio size={13} aria-hidden="true" />
+              Audio
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-xl"
+      style={{ aspectRatio: "16/9" }}
+      role="img"
+      aria-label={`${title} thumbnail`}
+    >
+      {thumbnail ? (
+        <img src={thumbnail} alt={title} className="h-full w-full object-cover" />
+      ) : (
+        <div
+          className="flex h-full w-full items-center justify-center"
+          style={{ background: "var(--surface-strong)" }}
+        >
+          <CirclePlay size={52} style={{ color: "var(--foreground-subtle)" }} aria-hidden="true" />
+        </div>
+      )}
+
+      {duration ? (
+        <span
+          className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold"
+          style={{ background: "rgba(0,0,0,0.85)", color: "#fff", backdropFilter: "blur(8px)" }}
+        >
+          <Clock size={11} aria-hidden="true" />
+          {formatDuration(duration)}
+        </span>
+      ) : null}
+    </div>
   );
 }
 

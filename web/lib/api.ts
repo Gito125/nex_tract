@@ -73,6 +73,10 @@ export function retryDownload(jobId: string): Promise<DownloadJob> {
   });
 }
 
+export function getDownloadEventsUrl(jobId: string): string {
+  return `${API_BASE_URL}/api/downloads/${jobId}/events`;
+}
+
 async function readErrorMessage(response: Response): Promise<string> {
   try {
     const payload = (await response.json()) as { detail?: unknown };

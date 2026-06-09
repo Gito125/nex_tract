@@ -22,6 +22,15 @@ DownloadStatusValue = Literal[
     "failed",
     "cancelled",
 ]
+ProgressStatusValue = Literal[
+    "queued",
+    "downloading",
+    "merging",
+    "postprocessing",
+    "completed",
+    "failed",
+    "cancelled",
+]
 
 
 class DownloadCreateRequest(BaseModel):
@@ -47,6 +56,9 @@ class DownloadJobResponse(BaseModel):
     audio_format: AudioFormat | None = Field(default=None, alias="audioFormat")
     status: DownloadStatusValue
     progress: int
+    speed: str | None = None
+    eta: str | None = None
+    progress_status: ProgressStatusValue = Field(alias="progressStatus")
     output_path: str | None = Field(default=None, alias="outputPath")
     file_size: int | None = Field(default=None, alias="fileSize")
     error_message: str | None = Field(default=None, alias="errorMessage")

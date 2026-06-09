@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.db.database import get_session
@@ -13,6 +14,7 @@ from app.services.download_service import (
     get_download_job,
     list_download_jobs,
     retry_download_job,
+    stream_download_job_events,
 )
 from app.services.exceptions import DownloadError
 
@@ -46,6 +48,23 @@ async def get_download(
         return get_download_job(job_id, session)
     except DownloadError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.get("/downloads/{job_id}/events")
+async def stream_download_events(
+    job_id: str,
+    session: Session = Depends(get_session),
+) -> StreamingResponse:
+    try:
+        get_download_job(job_id, session)
+    except DownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+    return StreamingResponse(
+        stream_download_job_events(job_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache"},
+    )
 
 
 @router.post("/downloads/{job_id}/cancel", response_model=DownloadJobResponse)
