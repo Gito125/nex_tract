@@ -6,6 +6,7 @@ import {
   Archive,
   CheckCircle2,
   ExternalLink,
+  Filter,
   FolderOpen,
   LoaderCircle,
   RotateCcw,
@@ -36,7 +37,7 @@ export function HistoryPage() {
       query: query.trim() || undefined,
       status: status === "all" ? undefined : status,
       from: from ? `${from}T00:00:00Z` : undefined,
-      to: to ? `${to}T23:59:59Z` : undefined,
+      to:   to   ? `${to}T23:59:59Z`   : undefined,
       limit: 50,
       offset: 0,
     }),
@@ -56,15 +57,8 @@ export function HistoryPage() {
     },
   });
 
-  const openFileMutation = useMutation({
-    mutationFn: openHistoryFile,
-    onSuccess: (response) => setActionMessage(response.message),
-  });
-
-  const openFolderMutation = useMutation({
-    mutationFn: openHistoryFolder,
-    onSuccess: (response) => setActionMessage(response.message),
-  });
+  const openFileMutation   = useMutation({ mutationFn: openHistoryFile,   onSuccess: (r) => setActionMessage(r.message) });
+  const openFolderMutation = useMutation({ mutationFn: openHistoryFolder, onSuccess: (r) => setActionMessage(r.message) });
 
   const actionError =
     redownloadMutation.error?.message ??
@@ -73,103 +67,202 @@ export function HistoryPage() {
     null;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-8 lg:px-12 lg:py-10">
-      <header className="mb-7 flex flex-col gap-3">
-        <span
-          className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest"
-          style={{
-            background: "var(--primary-soft)",
-            border: "1px solid var(--border-primary)",
-            color: "var(--primary-strong)",
-          }}
-        >
-          <Archive size={13} aria-hidden="true" />
-          Vault
-        </span>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+    <div
+      style={{
+        maxWidth: "1100px",
+        margin: "0 auto",
+        padding: "32px 24px 64px",
+      }}
+    >
+      {/* Header */}
+      <header style={{ marginBottom: "28px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "4px 12px",
+              borderRadius: "9999px",
+              background: "var(--primary-soft)",
+              border: "1px solid var(--border-primary)",
+              color: "var(--primary-strong)",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            <Archive size={11} aria-hidden="true" />
+            Vault
+          </span>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "12px" }}>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "clamp(26px, 4vw, 36px)",
+                fontWeight: 800,
+                letterSpacing: "-0.04em",
+                color: "var(--foreground)",
+                lineHeight: 1.1,
+                marginBottom: "6px",
+              }}
+            >
               Download History
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: "var(--foreground-muted)" }}>
-              Completed and failed downloads are saved here with their original quality, path, and status.
+            <p style={{ fontSize: "14px", color: "var(--foreground-muted)", maxWidth: "480px", lineHeight: 1.5 }}>
+              Completed and failed downloads, with their quality, path, and status.
             </p>
           </div>
-          <p className="text-sm font-semibold tabular-nums" style={{ color: "var(--foreground-soft)" }}>
-            {historyQuery.data?.total ?? 0} saved items
+          <p
+            style={{
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "var(--foreground-soft)",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {historyQuery.data?.total ?? 0} items
           </p>
         </div>
       </header>
 
-      <section
-        className="mb-5 grid gap-3 rounded-2xl p-4 lg:grid-cols-[1fr_180px_150px_150px]"
+      {/* Filters */}
+      <div
         style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto auto auto",
+          gap: "10px",
+          padding: "14px",
+          borderRadius: "14px",
           background: "var(--surface)",
           border: "1px solid var(--border)",
           boxShadow: "var(--shadow-soft)",
+          marginBottom: "20px",
         }}
+        className="lg:grid-cols-[1fr_180px_150px_150px] grid-cols-1"
         aria-label="History filters"
       >
-        <label className="relative block">
+        {/* Search */}
+        <label style={{ position: "relative", display: "block" }}>
           <span className="sr-only">Search history</span>
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-            size={16}
-            style={{ color: "var(--foreground-soft)" }}
+            size={15}
+            style={{
+              position: "absolute",
+              left: "12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--foreground-soft)",
+              pointerEvents: "none",
+            }}
           />
           <input
-            className="h-11 w-full rounded-lg border bg-transparent pl-10 pr-3 text-sm"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search title or URL"
-            style={{ borderColor: "var(--border-strong)", color: "var(--foreground)" }}
             value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search title or URL…"
+            style={{
+              width: "100%",
+              height: "40px",
+              paddingLeft: "36px",
+              paddingRight: "12px",
+              borderRadius: "8px",
+              border: "1px solid var(--border-strong)",
+              background: "var(--surface-raised)",
+              color: "var(--foreground)",
+              fontSize: "13px",
+              fontFamily: "var(--font-body)",
+              outline: "none",
+            }}
+            onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--primary)"; }}
+            onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--border-strong)"; }}
           />
         </label>
 
+        {/* Status */}
         <select
           aria-label="Status filter"
-          className="h-11 rounded-lg border bg-transparent px-3 text-sm font-semibold"
-          onChange={(event) => setStatus(event.target.value as StatusFilter)}
-          style={{ borderColor: "var(--border-strong)", color: "var(--foreground)" }}
           value={status}
+          onChange={(e) => setStatus(e.target.value as StatusFilter)}
+          style={{
+            height: "40px",
+            padding: "0 12px",
+            borderRadius: "8px",
+            border: "1px solid var(--border-strong)",
+            background: "var(--surface-raised)",
+            color: "var(--foreground)",
+            fontSize: "13px",
+            fontWeight: 600,
+            fontFamily: "var(--font-body)",
+            cursor: "pointer",
+            outline: "none",
+            minWidth: "130px",
+          }}
         >
           <option value="all">All statuses</option>
           <option value="completed">Completed</option>
           <option value="failed">Failed</option>
         </select>
 
+        {/* From date */}
         <input
           aria-label="From date"
-          className="h-11 rounded-lg border bg-transparent px-3 text-sm"
-          onChange={(event) => setFrom(event.target.value)}
-          style={{ borderColor: "var(--border-strong)", color: "var(--foreground)" }}
           type="date"
           value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          style={{
+            height: "40px",
+            padding: "0 12px",
+            borderRadius: "8px",
+            border: "1px solid var(--border-strong)",
+            background: "var(--surface-raised)",
+            color: "var(--foreground)",
+            fontSize: "13px",
+            fontFamily: "var(--font-body)",
+            outline: "none",
+            minWidth: "0",
+          }}
         />
 
+        {/* To date */}
         <input
           aria-label="To date"
-          className="h-11 rounded-lg border bg-transparent px-3 text-sm"
-          onChange={(event) => setTo(event.target.value)}
-          style={{ borderColor: "var(--border-strong)", color: "var(--foreground)" }}
           type="date"
           value={to}
+          onChange={(e) => setTo(e.target.value)}
+          style={{
+            height: "40px",
+            padding: "0 12px",
+            borderRadius: "8px",
+            border: "1px solid var(--border-strong)",
+            background: "var(--surface-raised)",
+            color: "var(--foreground)",
+            fontSize: "13px",
+            fontFamily: "var(--font-body)",
+            outline: "none",
+            minWidth: "0",
+          }}
         />
-      </section>
+      </div>
 
-      {actionMessage ? <Notice tone="success" message={actionMessage} /> : null}
-      {actionError ? <Notice tone="error" message={actionError} /> : null}
+      {/* Notices */}
+      {actionMessage && <Notice tone="success" message={actionMessage} onDismiss={() => setActionMessage(null)} />}
+      {actionError   && <Notice tone="error"   message={actionError} />}
 
+      {/* Results */}
       <section aria-label="History results">
         {historyQuery.isLoading ? (
-          <StateBlock icon={LoaderCircle} label="Loading history" spinning />
+          <EmptyState icon={LoaderCircle} label="Loading your vault…" spinning />
         ) : historyQuery.error ? (
-          <StateBlock icon={XCircle} label={historyQuery.error.message} />
+          <EmptyState icon={XCircle} label={historyQuery.error.message} />
         ) : historyQuery.data?.items.length === 0 ? (
-          <StateBlock icon={Archive} label="No history matches these filters." />
+          <EmptyState icon={Archive} label="Nothing matches these filters." />
         ) : (
-          <div className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {historyQuery.data?.items.map((item) => (
               <HistoryCard
                 item={item}
@@ -186,6 +279,7 @@ export function HistoryPage() {
   );
 }
 
+/* ── History card ──────────────────────────────────────────────── */
 function HistoryCard({
   item,
   onOpenFile,
@@ -197,111 +291,188 @@ function HistoryCard({
   onOpenFolder: (id: string) => void;
   onRedownload: (id: string) => void;
 }) {
+  const isCompleted = item.status === "completed";
+
   return (
     <article
-      className="grid gap-4 rounded-2xl p-4 md:grid-cols-[112px_1fr_auto]"
       style={{
+        display: "grid",
+        gridTemplateColumns: "100px 1fr auto",
+        gap: "16px",
+        padding: "16px",
+        borderRadius: "16px",
         background: "var(--surface)",
-        border: "1px solid var(--border)",
+        border: isCompleted
+          ? "1px solid var(--border)"
+          : "1px solid oklch(66% 0.22 22 / 0.2)",
         boxShadow: "var(--shadow-soft)",
+        transition: "border 0.2s",
+        alignItems: "start",
       }}
+      className="sm:grid-cols-[100px_1fr_auto]"
     >
+      {/* Thumbnail */}
       <div
-        className="aspect-video overflow-hidden rounded-xl md:aspect-square"
-        style={{ background: "var(--surface-raised)", border: "1px solid var(--border)" }}
+        style={{
+          aspectRatio: "16/9",
+          borderRadius: "8px",
+          overflow: "hidden",
+          background: "var(--surface-raised)",
+          border: "1px solid var(--border)",
+          flexShrink: 0,
+        }}
       >
         {item.thumbnail ? (
-          <img alt="" className="h-full w-full object-cover" src={item.thumbnail} />
+          <img
+            alt=""
+            src={item.thumbnail}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Archive size={30} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: "100%",
+            }}
+          >
+            <Archive size={24} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
           </div>
         )}
       </div>
 
-      <div className="min-w-0">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
+      {/* Info */}
+      <div style={{ minWidth: 0 }}>
+        {/* Badges */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
           <StatusBadge status={item.status} />
-          <MetadataPill value={formatQuality(item.selectedQuality)} />
-          <MetadataPill value="YouTube" />
-          {item.fileSize ? <MetadataPill value={formatBytes(item.fileSize)} /> : null}
+          <Pill value={formatQuality(item.selectedQuality)} />
+          <Pill value="YouTube" />
+          {item.fileSize ? <Pill value={formatBytes(item.fileSize)} /> : null}
         </div>
-        <h2 className="line-clamp-2 text-base font-bold leading-snug sm:text-lg">
+
+        {/* Title */}
+        <h2
+          style={{
+            fontSize: "14px",
+            fontWeight: 700,
+            lineHeight: 1.4,
+            color: "var(--foreground)",
+            marginBottom: "4px",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
           {item.title}
         </h2>
-        <p className="mt-2 truncate text-xs" style={{ color: "var(--foreground-soft)" }} title={item.url}>
+
+        {/* URL */}
+        <p
+          style={{
+            fontSize: "11px",
+            color: "var(--foreground-subtle)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            marginBottom: "2px",
+          }}
+          title={item.url}
+        >
           {item.url}
         </p>
-        {item.outputPath ? (
+
+        {/* Path */}
+        {item.outputPath && (
           <p
-            className="mt-2 truncate text-xs"
-            style={{ color: "var(--foreground-muted)" }}
+            style={{
+              fontSize: "11px",
+              color: "var(--foreground-muted)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
             title={item.outputPath}
           >
             {item.outputPath}
           </p>
-        ) : null}
-        {item.errorMessage ? (
-          <p className="mt-2 text-sm font-medium" style={{ color: "var(--error)" }}>
+        )}
+
+        {/* Error */}
+        {item.errorMessage && (
+          <p style={{ fontSize: "12px", color: "var(--error)", fontWeight: 500, marginTop: "4px" }}>
             {item.errorMessage}
           </p>
-        ) : null}
-        <p className="mt-3 text-xs font-semibold" style={{ color: "var(--foreground-soft)" }}>
+        )}
+
+        {/* Date */}
+        <p
+          style={{
+            fontSize: "11px",
+            fontWeight: 600,
+            color: "var(--foreground-soft)",
+            marginTop: "8px",
+          }}
+        >
           {formatDate(item.completedAt)}
         </p>
       </div>
 
-      <div className="flex flex-wrap items-start gap-2 md:justify-end">
-        <ActionButton
-          disabled={!item.outputPath}
-          icon={ExternalLink}
-          label="Open file"
-          onClick={() => onOpenFile(item.id)}
-        />
-        <ActionButton
-          disabled={!item.outputPath}
-          icon={FolderOpen}
-          label="Open folder"
-          onClick={() => onOpenFolder(item.id)}
-        />
-        <ActionButton
-          icon={RotateCcw}
-          label="Re-download"
-          onClick={() => onRedownload(item.id)}
-          primary
-        />
+      {/* Actions */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <ActionBtn disabled={!item.outputPath} icon={ExternalLink} label="Open file"   onClick={() => onOpenFile(item.id)} />
+        <ActionBtn disabled={!item.outputPath} icon={FolderOpen}   label="Open folder" onClick={() => onOpenFolder(item.id)} />
+        <ActionBtn icon={RotateCcw} label="Re-download" onClick={() => onRedownload(item.id)} primary />
       </div>
     </article>
   );
 }
 
+/* ── Status badge ──────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: HistoryStatus }) {
-  const isCompleted = status === "completed";
-  const Icon = isCompleted ? CheckCircle2 : XCircle;
-
+  const ok = status === "completed";
+  const Icon = ok ? CheckCircle2 : XCircle;
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold capitalize"
       style={{
-        background: isCompleted ? "var(--success-soft)" : "var(--error-soft)",
-        border: `1px solid ${isCompleted ? "var(--success)" : "var(--error)"}`,
-        color: isCompleted ? "var(--success)" : "var(--error)",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "5px",
+        padding: "4px 10px",
+        borderRadius: "9999px",
+        fontSize: "11px",
+        fontWeight: 700,
+        textTransform: "capitalize",
+        background:  ok ? "var(--success-soft)" : "var(--error-soft)",
+        border: `1px solid ${ok ? "oklch(64% 0.17 155 / 0.4)" : "oklch(66% 0.22 22 / 0.4)"}`,
+        color: ok ? "var(--success)" : "var(--error)",
       }}
     >
-      <Icon size={13} aria-hidden="true" />
+      <Icon size={11} aria-hidden="true" />
       {status}
     </span>
   );
 }
 
-function MetadataPill({ value }: { value: string }) {
+/* ── Small pill ────────────────────────────────────────────────── */
+function Pill({ value }: { value: string }) {
   return (
     <span
-      className="rounded-md px-2 py-1 text-xs font-bold uppercase tracking-wider"
       style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "3px 9px",
+        borderRadius: "9999px",
+        fontSize: "11px",
+        fontWeight: 600,
+        letterSpacing: "0.03em",
         background: "var(--surface-raised)",
-        border: "1px solid var(--border)",
+        border: "1px solid var(--border-strong)",
         color: "var(--foreground-soft)",
+        textTransform: "uppercase",
       }}
     >
       {value}
@@ -309,7 +480,8 @@ function MetadataPill({ value }: { value: string }) {
   );
 }
 
-function ActionButton({
+/* ── Action button ─────────────────────────────────────────────── */
+function ActionBtn({
   disabled,
   icon: Icon,
   label,
@@ -317,90 +489,144 @@ function ActionButton({
   primary,
 }: {
   disabled?: boolean;
-  icon: typeof ExternalLink;
+  icon: React.ElementType;
   label: string;
   onClick: () => void;
   primary?: boolean;
 }) {
   return (
     <button
-      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-bold transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+      type="button"
       disabled={disabled}
       onClick={onClick}
       style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "5px",
+        padding: "6px 12px",
+        borderRadius: "8px",
+        border: primary ? "none" : "1px solid var(--border-strong)",
         background: primary ? "var(--primary)" : "var(--surface-raised)",
-        border: primary ? "1px solid var(--primary)" : "1px solid var(--border-strong)",
         color: primary ? "#fff" : "var(--foreground-muted)",
+        fontSize: "12px",
+        fontWeight: 700,
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.45 : 1,
+        fontFamily: "var(--font-body)",
+        boxShadow: primary ? "0 2px 8px var(--primary-glow)" : "none",
+        transition: "all 0.15s",
+        whiteSpace: "nowrap",
       }}
-      type="button"
+      onMouseEnter={(e) => {
+        if (!disabled && !primary) {
+          (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled && !primary) {
+          (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-raised)";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
+        }
+      }}
     >
-      <Icon size={14} aria-hidden="true" />
+      <Icon size={13} aria-hidden="true" />
       {label}
     </button>
   );
 }
 
-function Notice({ message, tone }: { message: string; tone: "success" | "error" }) {
+/* ── Notice ────────────────────────────────────────────────────── */
+function Notice({
+  message,
+  tone,
+  onDismiss,
+}: {
+  message: string;
+  tone: "success" | "error";
+  onDismiss?: () => void;
+}) {
   return (
-    <p
-      className="mb-3 rounded-lg px-3 py-2 text-sm font-semibold"
+    <div
       role={tone === "error" ? "alert" : "status"}
       style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "10px",
+        padding: "10px 14px",
+        borderRadius: "10px",
+        marginBottom: "14px",
         background: tone === "success" ? "var(--success-soft)" : "var(--error-soft)",
-        border: `1px solid ${tone === "success" ? "var(--success)" : "var(--error)"}`,
+        border: `1px solid ${tone === "success" ? "oklch(64% 0.17 155 / 0.4)" : "oklch(66% 0.22 22 / 0.4)"}`,
         color: tone === "success" ? "var(--success)" : "var(--error)",
+        fontSize: "13px",
+        fontWeight: 600,
       }}
     >
-      {message}
-    </p>
+      <span>{message}</span>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: "16px", lineHeight: 1 }}
+          aria-label="Dismiss"
+        >
+          ×
+        </button>
+      )}
+    </div>
   );
 }
 
-function StateBlock({
+/* ── Empty state ───────────────────────────────────────────────── */
+function EmptyState({
   icon: Icon,
   label,
   spinning,
 }: {
-  icon: typeof Archive;
+  icon: React.ElementType;
   label: string;
   spinning?: boolean;
 }) {
   return (
     <div
-      className="flex min-h-64 flex-col items-center justify-center rounded-2xl px-6 text-center"
       style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "260px",
+        borderRadius: "16px",
         background: "var(--surface)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-soft)",
+        border: "1.5px dashed var(--border-strong)",
         color: "var(--foreground-muted)",
+        gap: "10px",
+        textAlign: "center",
+        padding: "40px",
       }}
     >
-      <Icon className={spinning ? "animate-spin" : undefined} size={28} aria-hidden="true" />
-      <p className="mt-3 text-sm font-semibold">{label}</p>
+      <Icon
+        size={28}
+        aria-hidden="true"
+        style={{ animation: spinning ? "spin 0.8s linear infinite" : "none" }}
+      />
+      <p style={{ fontSize: "13px", fontWeight: 600 }}>{label}</p>
     </div>
   );
 }
 
-function formatQuality(value: string) {
-  return value.replaceAll("_", " ");
-}
+/* ── Helpers ────────────────────────────────────────────────────── */
+function formatQuality(v: string) { return v.replaceAll("_", " "); }
 
 function formatBytes(bytes: number) {
   const units = ["B", "KB", "MB", "GB"];
-  let size = bytes;
-  let unitIndex = 0;
-
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex += 1;
-  }
-
-  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+  let s = bytes, i = 0;
+  while (s >= 1024 && i < units.length - 1) { s /= 1024; i++; }
+  return `${s.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }

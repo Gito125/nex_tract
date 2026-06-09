@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { Clipboard, Link2, LoaderCircle, X, Zap } from "lucide-react";
+import { Clipboard, Link2, LoaderCircle, Search, X } from "lucide-react";
 
 export function UrlInputCard({
   error,
@@ -27,148 +27,192 @@ export function UrlInputCard({
 
   async function handleUtilityClick() {
     if (isLoading) return;
-
     if (hasUrl) {
       onUrlChange("");
       inputRef.current?.focus();
       return;
     }
-
     try {
-      const clipboardText = await navigator.clipboard.readText();
-      if (clipboardText) {
-        onUrlChange(clipboardText);
-      }
+      const text = await navigator.clipboard.readText();
+      if (text) onUrlChange(text);
     } catch {
-      // Clipboard access can be blocked by browser permissions.
+      // permission denied
     } finally {
       inputRef.current?.focus();
     }
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div style={{ width: "100%" }}>
+      {/* Input wrapper */}
       <form
         onSubmit={handleSubmit}
-        className="relative rounded-2xl transition-all duration-300"
         style={{
+          borderRadius: "14px",
+          overflow: "hidden",
           background: "var(--surface)",
           border: focused
-            ? "1px solid var(--primary)"
-            : "1px solid var(--border-strong)",
+            ? "1.5px solid var(--primary)"
+            : error
+            ? "1.5px solid var(--error)"
+            : "1.5px solid var(--border-strong)",
           boxShadow: focused
             ? "0 0 0 4px var(--primary-glow), var(--shadow-lift)"
+            : error
+            ? "0 0 0 3px oklch(52% 0.22 22 / 0.10)"
             : "var(--shadow-soft)",
+          transition: "all 0.2s var(--ease-out)",
         }}
       >
-        <div className="flex items-center gap-0">
-          {/* Input area */}
-          <label htmlFor="media-url" className="sr-only">
-            Paste YouTube URL
-          </label>
-          <div className="flex flex-1 items-center gap-3 px-5 py-4">
-            <Link2
-              size={18}
-              aria-hidden="true"
-              style={{
-                color: focused ? "var(--primary-strong)" : "var(--foreground-soft)",
-                flexShrink: 0,
-                transition: "color 0.2s",
-              }}
-            />
-            <input
-              id="media-url"
-              ref={inputRef}
-              type="url"
-              value={url}
-              onChange={(e) => onUrlChange(e.target.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              placeholder="Paste a YouTube URL…"
-              disabled={isLoading}
-              className="min-w-0 flex-1 bg-transparent text-base outline-none"
-              style={{
-                color: "var(--foreground)",
-                caretColor: "var(--primary)",
-              }}
-            />
-            <button
-              aria-label={hasUrl ? "Clear URL input" : "Paste URL from clipboard"}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors"
-              disabled={isLoading}
-              onClick={handleUtilityClick}
-              type="button"
-              style={{
-                background: "var(--surface-strong)",
-                border: "1px solid var(--border)",
-                color: "var(--foreground-muted)",
-                cursor: isLoading ? "wait" : "pointer",
-                opacity: isLoading ? 0.6 : 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {hasUrl ? (
-                <X size={13} aria-hidden="true" />
-              ) : (
-                <Clipboard size={13} aria-hidden="true" />
-              )}
-              {hasUrl ? "Clear" : "Paste"}
-            </button>
-          </div>
-
-          {/* Divider */}
+        <div style={{ display: "flex", alignItems: "stretch" }}>
+          {/* Left icon */}
           <div
             style={{
-              width: "1px",
-              height: "44px",
-              background: "var(--border)",
+              display: "flex",
+              alignItems: "center",
+              paddingLeft: "18px",
+              paddingRight: "4px",
               flexShrink: 0,
             }}
-            aria-hidden="true"
+          >
+            <Link2
+              size={17}
+              style={{
+                color: focused ? "var(--primary)" : "var(--foreground-subtle)",
+                transition: "color 0.2s",
+              }}
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Input */}
+          <label htmlFor="media-url" className="sr-only">Paste YouTube URL</label>
+          <input
+            id="media-url"
+            ref={inputRef}
+            type="url"
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            placeholder="Paste a YouTube URL…"
+            disabled={isLoading}
+            autoComplete="off"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              height: "56px",
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              fontSize: "15px",
+              fontFamily: "var(--font-body)",
+              color: "var(--foreground)",
+              padding: "0 12px",
+              caretColor: "var(--primary)",
+            }}
           />
 
-          {/* Submit button */}
-          <div className="p-2">
+          {/* Utility button */}
+          <button
+            aria-label={hasUrl ? "Clear input" : "Paste from clipboard"}
+            type="button"
+            disabled={isLoading}
+            onClick={handleUtilityClick}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "0 12px",
+              background: "none",
+              border: "none",
+              borderLeft: "1px solid var(--border-soft)",
+              cursor: isLoading ? "wait" : "pointer",
+              color: "var(--foreground-soft)",
+              fontSize: "12px",
+              fontWeight: 600,
+              fontFamily: "var(--font-body)",
+              flexShrink: 0,
+              transition: "color 0.15s",
+              opacity: isLoading ? 0.5 : 1,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-soft)";
+            }}
+          >
+            {hasUrl ? (
+              <X size={13} aria-hidden="true" />
+            ) : (
+              <Clipboard size={13} aria-hidden="true" />
+            )}
+            <span className="hidden sm:inline">{hasUrl ? "Clear" : "Paste"}</span>
+          </button>
+
+          {/* Divider */}
+          <div style={{ width: "1px", background: "var(--border-soft)", margin: "10px 0", flexShrink: 0 }} aria-hidden="true" />
+
+          {/* Analyze button */}
+          <div style={{ padding: "8px" }}>
             <button
-              className="flex items-center gap-2.5 rounded-xl px-5 font-bold text-sm transition-all duration-200 active:scale-95"
-              disabled={isLoading}
               type="submit"
+              disabled={isLoading}
               style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "7px",
+                height: "40px",
+                padding: "0 20px",
+                borderRadius: "8px",
+                border: "none",
                 background: isLoading ? "var(--primary-dim)" : "var(--primary)",
                 color: "#fff",
-                height: "44px",
-                paddingLeft: "20px",
-                paddingRight: "20px",
+                fontSize: "13px",
+                fontWeight: 700,
+                fontFamily: "var(--font-body)",
                 cursor: isLoading ? "wait" : "pointer",
-                opacity: isLoading ? 0.8 : 1,
-                boxShadow: isLoading ? "none" : "0 4px 20px var(--primary-glow)",
                 whiteSpace: "nowrap",
+                boxShadow: isLoading ? "none" : "0 2px 10px var(--primary-glow)",
+                transition: "all 0.2s var(--ease-out)",
+                letterSpacing: "-0.01em",
               }}
               onMouseEnter={(e) => {
                 if (!isLoading) {
                   (e.currentTarget as HTMLButtonElement).style.background = "var(--primary-strong)";
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
                 }
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = isLoading ? "var(--primary-dim)" : "var(--primary)";
+                (e.currentTarget as HTMLButtonElement).style.background = isLoading
+                  ? "var(--primary-dim)"
+                  : "var(--primary)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
               }}
             >
               {isLoading ? (
-                <LoaderCircle className="animate-spin" size={16} aria-hidden="true" />
+                <LoaderCircle className="animate-spin" size={14} aria-hidden="true" />
               ) : (
-                <Zap size={16} aria-hidden="true" />
+                <Search size={14} aria-hidden="true" />
               )}
-              {isLoading ? "Analyzing" : "Analyze"}
+              {isLoading ? "Analyzing…" : "Analyze"}
             </button>
           </div>
         </div>
 
-        {/* Error */}
+        {/* Error message */}
         {error && (
           <div
-            className="mx-4 mb-3 flex items-center gap-2 rounded-lg px-3 py-2"
-            style={{ background: "var(--error-soft)", border: "1px solid var(--error)30" }}
             role="alert"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px 12px",
+              borderTop: "1px solid var(--border-soft)",
+              background: "var(--error-soft)",
+            }}
           >
             <span
               style={{
@@ -180,12 +224,7 @@ export function UrlInputCard({
               }}
               aria-hidden="true"
             />
-            <p
-              className="text-sm font-medium"
-              style={{ color: "var(--error)" }}
-            >
-              {error}
-            </p>
+            <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--error)" }}>{error}</p>
           </div>
         )}
       </form>

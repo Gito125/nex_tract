@@ -10,9 +10,9 @@ import {
   RotateCcw,
   Square,
   XCircle,
+  FolderOpen,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
 import type { DownloadJob, DownloadStatus } from "@/lib/types";
 
 type MutationState = {
@@ -34,18 +34,36 @@ export function DownloadProgressCard({
   retryState: MutationState;
 }) {
   const canCancel = job.status === "pending" || job.status === "downloading";
-  const canRetry = job.status === "failed" || job.status === "cancelled";
-  const isAudio = job.selectedQuality.startsWith("audio_");
+  const canRetry  = job.status === "failed"  || job.status === "cancelled";
+  const isAudio   = job.selectedQuality.startsWith("audio_");
+  const meta      = STATUS_META[job.status];
+  const Icon      = meta.icon;
+
   const progressLabel = labelForProgress(job);
+  const progressPct   = Math.max(0, Math.min(job.progress, 100));
+  const pColor        = progressColor(job.status);
+
+  /* card border accent */
+  const borderStyle =
+    job.status === "failed"    ? "1px solid oklch(66% 0.22 22 / 0.35)" :
+    job.status === "completed" ? "1px solid oklch(64% 0.17 155 / 0.35)" :
+    job.status === "downloading" ? "1px solid var(--border-primary)" :
+    "1px solid var(--border)";
 
   return (
     <article
-      className="grid gap-4 rounded-xl p-3 sm:grid-cols-[112px_1fr] sm:p-4"
       style={{
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        gap: "14px",
+        padding: "16px",
+        borderRadius: "14px",
         background: "var(--surface-raised)",
-        border: "1px solid var(--border)",
+        border: borderStyle,
+        transition: "border 0.3s",
       }}
     >
+      {/* Thumbnail */}
       <MediaThumb
         duration={job.duration}
         isAudio={isAudio}
@@ -53,124 +71,179 @@ export function DownloadProgressCard({
         title={job.title}
       />
 
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <StatusBadge status={job.status} />
-              <span
-                className="rounded-md px-2 py-1 text-xs font-bold uppercase tracking-widest"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  color: "var(--foreground-soft)",
-                }}
-              >
-                {job.selectedQuality.replace("_", " ")}
-              </span>
-            </div>
-
-            <h3
-              className="line-clamp-2 text-sm font-bold leading-snug sm:text-base"
-              style={{ color: "var(--foreground)" }}
-              title={job.title}
-            >
-              {job.title}
-            </h3>
-          </div>
-
-          <div
-            className="text-right font-mono text-sm font-bold tabular-nums"
-            style={{ color: progressColor(job.status) }}
-            aria-label={`${job.progress}% complete`}
-          >
-            {job.progress}%
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <div
-            className="h-2 overflow-hidden rounded-full"
-            style={{ background: "var(--surface)" }}
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={job.progress}
-            aria-label={progressLabel}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-300"
+      {/* Content */}
+      <div style={{ minWidth: 0 }}>
+        {/* Top row: badges + percentage */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px", marginBottom: "8px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {/* Status badge */}
+            <span
               style={{
-                width: `${Math.max(0, Math.min(job.progress, 100))}%`,
-                background: progressColor(job.status),
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "4px 10px",
+                borderRadius: "9999px",
+                fontSize: "11px",
+                fontWeight: 700,
+                textTransform: "capitalize",
+                background: meta.background,
+                color: meta.color,
+                border: `1px solid ${meta.border}`,
               }}
-            />
-          </div>
+            >
+              <Icon
+                size={12}
+                aria-hidden="true"
+                style={{ animation: job.status === "downloading" ? "spin 0.8s linear infinite" : "none" }}
+              />
+              {job.status}
+            </span>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <Metric label="Phase" value={progressLabel} />
-            <Metric label="Speed" value={job.speed ?? "Waiting"} />
-            <Metric label="ETA" value={job.eta ?? "Waiting"} />
-            {job.fileSize ? <Metric label="Size" value={formatBytes(job.fileSize)} /> : null}
-          </div>
-        </div>
-
-        {job.outputPath ? (
-          <p
-            className="mt-3 truncate text-xs"
-            style={{ color: "var(--foreground-soft)" }}
-            title={job.outputPath}
-          >
-            {job.outputPath}
-          </p>
-        ) : null}
-
-        {job.errorMessage ? (
-          <p className="mt-3 text-sm font-medium" style={{ color: "var(--error)" }}>
-            {job.errorMessage}
-          </p>
-        ) : null}
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {canCancel ? (
-            <button
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-bold transition-all active:scale-95 disabled:cursor-wait disabled:opacity-60"
-              disabled={cancelState.isPending && cancelState.jobId === job.id}
-              onClick={() => onCancel(job.id)}
-              type="button"
+            {/* Quality pill */}
+            <span
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "4px 9px",
+                borderRadius: "9999px",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
                 background: "var(--surface)",
                 border: "1px solid var(--border-strong)",
-                color: "var(--foreground-muted)",
+                color: "var(--foreground-soft)",
+                textTransform: "uppercase",
               }}
             >
-              <Square size={14} aria-hidden="true" />
-              Cancel
-            </button>
-          ) : null}
+              {job.selectedQuality.replace("_", " ")}
+            </span>
+          </div>
 
-          {canRetry ? (
-            <button
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-bold transition-all active:scale-95 disabled:cursor-wait disabled:opacity-60"
+          {/* Percentage */}
+          <span
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "13px",
+              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              color: pColor,
+              flexShrink: 0,
+            }}
+            aria-label={`${job.progress}% complete`}
+          >
+            {progressPct}%
+          </span>
+        </div>
+
+        {/* Title */}
+        <h3
+          style={{
+            fontSize: "14px",
+            fontWeight: 600,
+            lineHeight: 1.4,
+            color: "var(--foreground)",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            marginBottom: "12px",
+          }}
+          title={job.title}
+        >
+          {job.title}
+        </h3>
+
+        {/* Progress bar */}
+        <div
+          style={{
+            height: "6px",
+            borderRadius: "9999px",
+            background: "var(--surface-strong)",
+            overflow: "hidden",
+            marginBottom: "10px",
+          }}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPct}
+          aria-label={progressLabel}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${progressPct}%`,
+              borderRadius: "9999px",
+              background: pColor,
+              transition: "width 0.4s var(--ease-out)",
+            }}
+          />
+        </div>
+
+        {/* Metrics row */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "6px" }}>
+          <MetricPill label="Phase" value={progressLabel} />
+          <MetricPill label="Speed" value={job.speed ?? "—"} />
+          <MetricPill label="ETA"   value={job.eta   ?? "—"} />
+          {job.fileSize ? <MetricPill label="Size" value={formatBytes(job.fileSize)} /> : null}
+        </div>
+
+        {/* File path */}
+        {job.outputPath && job.status === "completed" && (
+          <p
+            style={{
+              fontSize: "11px",
+              color: "var(--success)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              marginTop: "4px",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+            }}
+            title={job.outputPath}
+          >
+            <FolderOpen size={12} aria-hidden="true" />
+            {job.outputPath}
+          </p>
+        )}
+
+        {/* Error */}
+        {job.errorMessage && (
+          <p
+            style={{ fontSize: "12px", fontWeight: 500, color: "var(--error)", marginTop: "6px" }}
+          >
+            {job.errorMessage}
+          </p>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
+          {canCancel && (
+            <ActionBtn
+              disabled={cancelState.isPending && cancelState.jobId === job.id}
+              icon={Square}
+              label="Cancel"
+              onClick={() => onCancel(job.id)}
+            />
+          )}
+          {canRetry && (
+            <ActionBtn
               disabled={retryState.isPending && retryState.jobId === job.id}
+              icon={RotateCcw}
+              label="Retry"
               onClick={() => onRetry(job.id)}
-              type="button"
-              style={{
-                background: "var(--primary)",
-                color: "#fff",
-                boxShadow: "0 4px 16px var(--primary-glow)",
-              }}
-            >
-              <RotateCcw size={14} aria-hidden="true" />
-              Retry
-            </button>
-          ) : null}
+              primary
+            />
+          )}
         </div>
       </div>
     </article>
   );
 }
 
+/* ── Thumbnail ───────────────────────────────────────────────── */
 function MediaThumb({
   duration,
   isAudio,
@@ -182,204 +255,218 @@ function MediaThumb({
   thumbnail: string | null;
   title: string;
 }) {
+  const base: React.CSSProperties = {
+    width: "100px",
+    borderRadius: "10px",
+    overflow: "hidden",
+    border: "1px solid var(--border-strong)",
+    flexShrink: 0,
+    position: "relative",
+    aspectRatio: "16/9",
+    background: "var(--surface-muted)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
   if (isAudio) {
     return (
-      <div
-        className="relative aspect-video overflow-hidden rounded-lg sm:aspect-square"
-        style={{
-          background: "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))",
-          border: "1px solid var(--border-strong)",
-        }}
-        aria-label={`${title} audio artwork`}
-        role="img"
-      >
-        {thumbnail ? (
+      <div style={{ ...base, background: "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))" }} role="img" aria-label={`${title} audio`}>
+        {thumbnail && (
           <img
             src={thumbnail}
             alt=""
-            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-30 blur-md"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.25, filter: "blur(8px)", transform: "scale(1.1)" }}
           />
-        ) : null}
-        <div className="absolute inset-0 flex items-center justify-center p-4">
-          <div
-            className="relative flex aspect-square w-20 max-w-full items-center justify-center overflow-hidden rounded-xl"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border-strong)",
-              boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
-            }}
-          >
-            {thumbnail ? (
-              <img src={thumbnail} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <Disc3 size={34} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
-            )}
-            <span
-              className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full"
-              style={{ background: "rgba(0,0,0,0.72)", color: "#fff" }}
-            >
-              <FileAudio size={14} aria-hidden="true" />
-            </span>
-          </div>
+        )}
+        <div style={{ position: "relative" }}>
+          {thumbnail ? (
+            <img src={thumbnail} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
+          ) : (
+            <Disc3 size={30} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
+          )}
         </div>
+        <span
+          style={{
+            position: "absolute",
+            bottom: "4px",
+            right: "4px",
+            background: "rgba(0,0,0,0.72)",
+            color: "#fff",
+            borderRadius: "4px",
+            padding: "2px 5px",
+            fontSize: "9px",
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: "3px",
+          }}
+        >
+          <FileAudio size={9} aria-hidden="true" />
+        </span>
       </div>
     );
   }
 
   return (
-    <div
-      className="relative aspect-video overflow-hidden rounded-lg"
-      style={{
-        background: "var(--surface-muted)",
-        border: "1px solid var(--border-strong)",
-      }}
-      aria-label={`${title} thumbnail`}
-      role="img"
-    >
+    <div style={base} role="img" aria-label={`${title} thumbnail`}>
       {thumbnail ? (
-        <img src={thumbnail} alt="" className="h-full w-full object-cover" />
+        <img src={thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <Download size={32} style={{ color: "var(--foreground-subtle)" }} aria-hidden="true" />
-        </div>
+        <Download size={24} style={{ color: "var(--foreground-subtle)" }} aria-hidden="true" />
       )}
-      {duration ? (
+      {duration && (
         <span
-          className="absolute bottom-2 right-2 rounded-md px-2 py-1 text-[11px] font-bold tabular-nums"
-          style={{ background: "rgba(0,0,0,0.82)", color: "#fff" }}
+          style={{
+            position: "absolute",
+            bottom: "4px",
+            right: "4px",
+            background: "rgba(0,0,0,0.82)",
+            color: "#fff",
+            borderRadius: "4px",
+            padding: "2px 5px",
+            fontSize: "10px",
+            fontWeight: 700,
+            fontVariantNumeric: "tabular-nums",
+          }}
         >
           {formatDuration(duration)}
         </span>
-      ) : null}
+      )}
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: DownloadStatus }) {
-  const meta = STATUS_META[status];
-  const Icon = meta.icon;
-
+/* ── Metric pill ─────────────────────────────────────────────── */
+function MetricPill({ label, value }: { label: string; value: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold capitalize"
       style={{
-        background: meta.background,
-        color: meta.color,
-        border: `1px solid ${meta.border}`,
-      }}
-    >
-      <Icon
-        className={status === "downloading" ? "animate-spin" : undefined}
-        size={13}
-        aria-hidden="true"
-      />
-      {status}
-    </span>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1"
-      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "5px",
+        padding: "3px 8px",
+        borderRadius: "6px",
+        fontSize: "11px",
         background: "var(--surface)",
         border: "1px solid var(--border)",
         color: "var(--foreground-soft)",
       }}
     >
       {label}
-      <strong
-        className="font-mono font-semibold tabular-nums"
-        style={{ color: "var(--foreground-muted)" }}
-      >
+      <strong style={{ fontWeight: 600, color: "var(--foreground-muted)", fontVariantNumeric: "tabular-nums" }}>
         {value}
       </strong>
     </span>
   );
 }
 
+/* ── Action button ───────────────────────────────────────────── */
+function ActionBtn({
+  disabled,
+  icon: Icon,
+  label,
+  onClick,
+  primary,
+}: {
+  disabled?: boolean;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "6px 12px",
+        borderRadius: "8px",
+        border: primary ? "none" : "1px solid var(--border-strong)",
+        background: primary ? "var(--primary)" : "var(--surface)",
+        color: primary ? "#fff" : "var(--foreground-muted)",
+        fontSize: "12px",
+        fontWeight: 700,
+        cursor: disabled ? "wait" : "pointer",
+        opacity: disabled ? 0.6 : 1,
+        fontFamily: "var(--font-body)",
+        transition: "all 0.15s",
+        boxShadow: primary ? "0 2px 8px var(--primary-glow)" : "none",
+      }}
+    >
+      <Icon size={13} aria-hidden="true" />
+      {label}
+    </button>
+  );
+}
+
+/* ── Helpers ─────────────────────────────────────────────────── */
 function labelForProgress(job: DownloadJob): string {
-  if (job.status === "pending") return "Queued";
-  if (job.status === "completed") return "Completed";
-  if (job.status === "failed") return "Failed";
+  if (job.status === "pending")   return "Queued";
+  if (job.status === "completed") return "Done";
+  if (job.status === "failed")    return "Failed";
   if (job.status === "cancelled") return "Cancelled";
-  if (job.progressStatus === "merging") return "Merging";
-  if (job.progressStatus === "postprocessing") return "Post-processing";
+  if (job.progressStatus === "merging")          return "Merging";
+  if (job.progressStatus === "postprocessing")   return "Processing";
   return "Downloading";
 }
 
 function progressColor(status: DownloadStatus): string {
-  if (status === "completed") return "var(--success)";
-  if (status === "failed") return "var(--error)";
-  if (status === "cancelled") return "var(--foreground-soft)";
-  return "var(--primary-strong)";
+  if (status === "completed")   return "var(--success)";
+  if (status === "failed")      return "var(--error)";
+  if (status === "cancelled")   return "var(--foreground-soft)";
+  if (status === "downloading") return "var(--primary)";
+  return "var(--foreground-subtle)";
 }
 
 function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function formatBytes(bytes: number): string {
   const units = ["B", "KB", "MB", "GB"];
-  let value = bytes;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  const maximumFractionDigits = value >= 10 || unitIndex === 0 ? 0 : 1;
-  return `${value.toLocaleString(undefined, {
-    maximumFractionDigits,
-  })} ${units[unitIndex]}`;
+  let v = bytes, i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toLocaleString(undefined, { maximumFractionDigits: v >= 10 || i === 0 ? 0 : 1 })} ${units[i]}`;
 }
 
-const STATUS_META = {
+const STATUS_META: Record<DownloadStatus, { icon: LucideIcon; color: string; background: string; border: string }> = {
   pending: {
     icon: Clock3,
     color: "var(--foreground-muted)",
-    background: "var(--surface)",
+    background: "var(--surface-strong)",
     border: "var(--border-strong)",
   },
   downloading: {
     icon: LoaderCircle,
     color: "var(--primary-strong)",
-    background: "var(--primary-soft)",
+    background: "var(--primary-muted)",
     border: "var(--border-primary)",
   },
   completed: {
     icon: CheckCircle2,
     color: "var(--success)",
     background: "var(--success-soft)",
-    border: "var(--success)",
+    border: "oklch(64% 0.17 155 / 0.4)",
   },
   failed: {
     icon: XCircle,
     color: "var(--error)",
     background: "var(--error-soft)",
-    border: "var(--error)",
+    border: "oklch(66% 0.22 22 / 0.4)",
   },
   cancelled: {
     icon: Square,
     color: "var(--foreground-soft)",
-    background: "var(--surface)",
+    background: "var(--surface-strong)",
     border: "var(--border-strong)",
   },
-} satisfies Record<
-  DownloadStatus,
-  {
-    icon: LucideIcon;
-    color: string;
-    background: string;
-    border: string;
-  }
->;
+};

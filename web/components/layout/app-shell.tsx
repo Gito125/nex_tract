@@ -8,10 +8,10 @@ import {
   FolderArchive,
   HelpCircle,
   Home,
-  LogOut,
   Settings,
   Bell,
   UserCircle,
+  Layers,
 } from "lucide-react";
 
 import { BackendHealthCard } from "@/components/common/backend-health-card";
@@ -31,49 +31,84 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       className="min-h-screen"
       style={{ background: "var(--background)", color: "var(--foreground)" }}
     >
-      {/* Desktop sidebar */}
+      {/* ── Desktop sidebar ───────────────────────────────────── */}
       <aside
-        className="fixed inset-y-0 left-0 hidden w-72 lg:flex lg:flex-col"
+        className="fixed inset-y-0 left-0 hidden lg:flex lg:flex-col"
         style={{
-          background: "var(--surface)",
-          borderRight: "1px solid var(--border)",
+          width: "260px",
+          background: "var(--sidebar-bg)",
+          borderRight: "1px solid var(--sidebar-border)",
         }}
       >
         {/* Logo */}
-        <div className="px-6 pt-8 pb-6">
-          <div className="flex items-center gap-3">
+        <div style={{ padding: "32px 20px 24px" }}>
+          <Link href="/" className="flex items-center gap-3 group" style={{ textDecoration: "none" }}>
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-lg"
               style={{
-                background: "var(--primary-soft)",
-                border: "1px solid var(--border-primary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                background: "var(--primary)",
+                boxShadow: "0 4px 14px var(--primary-glow)",
+                flexShrink: 0,
               }}
             >
-              <FolderArchive
-                size={18}
-                style={{ color: "var(--primary-strong)" }}
-                aria-hidden="true"
-              />
+              <Layers size={18} color="#fff" aria-hidden="true" />
             </span>
             <div>
               <p
-                className="text-xl font-bold tracking-tight"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--foreground)" }}
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "var(--sidebar-text)",
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1.2,
+                }}
               >
                 Nextract
               </p>
-              <p className="text-xs font-medium" style={{ color: "var(--foreground-soft)" }}>
+              <p
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  color: "var(--sidebar-muted)",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  marginTop: "1px",
+                }}
+              >
                 Personal Archive
               </p>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Divider */}
-        <div style={{ height: "1px", background: "var(--border-soft)", margin: "0 24px" }} />
+        <div style={{ height: "1px", background: "var(--sidebar-border)", margin: "0 20px" }} />
 
-        {/* Nav */}
-        <nav aria-label="Primary navigation" className="mt-6 flex flex-col gap-1 px-3">
+        {/* Nav label */}
+        <p
+          style={{
+            fontSize: "10px",
+            fontWeight: 600,
+            color: "var(--sidebar-muted)",
+            letterSpacing: "0.10em",
+            textTransform: "uppercase",
+            padding: "20px 24px 8px",
+          }}
+        >
+          Navigation
+        </p>
+
+        {/* Nav items */}
+        <nav
+          aria-label="Primary navigation"
+          style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: "2px" }}
+        >
           {navItems.map((item) => (
             <DesktopNavButton
               isActive={isActivePath(pathname, item.href)}
@@ -83,97 +118,90 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Bottom */}
-        <div className="mt-auto px-3 pb-6 flex flex-col gap-3">
-          <div className="px-3 pb-3">
+        {/* Bottom section */}
+        <div style={{ padding: "0 12px 24px", display: "flex", flexDirection: "column", gap: "2px" }}>
+          <div style={{ padding: "12px", marginBottom: "8px" }}>
             <BackendHealthCard />
           </div>
-          <div
-            style={{
-              height: "1px",
-              background: "var(--border-soft)",
-              margin: "0 12px 12px",
-            }}
-          />
-          <button
-            className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors"
-            style={{ color: "var(--foreground-muted)" }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)";
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
-            }}
-            type="button"
-          >
-            <HelpCircle size={18} aria-hidden="true" />
-            Help & Support
-          </button>
-          <button
-            className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors"
-            style={{ color: "var(--foreground-muted)" }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "var(--error-soft)";
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--error)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
-            }}
-            type="button"
-          >
-            <LogOut size={18} aria-hidden="true" />
-            Sign Out
-          </button>
+          <div style={{ height: "1px", background: "var(--sidebar-border)", margin: "0 12px 8px" }} />
+          <SidebarFooterBtn icon={HelpCircle} label="Help & Support" />
+          <SidebarFooterBtn icon={UserCircle} label="Account" danger={false} />
         </div>
       </aside>
 
-      {/* Mobile header */}
+      {/* ── Mobile header ─────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-20 flex min-h-16 items-center justify-between px-5 lg:hidden"
+        className="sticky top-0 z-20 lg:hidden"
         style={{
-          background: "var(--surface)",
-          borderBottom: "1px solid var(--border)",
-          boxShadow: "var(--shadow-soft)",
+          background: "var(--sidebar-bg)",
+          borderBottom: "1px solid var(--sidebar-border)",
+          height: "60px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 20px",
         }}
       >
-        <div className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5" style={{ textDecoration: "none" }}>
           <span
-            className="flex h-8 w-8 items-center justify-center rounded-lg"
-            style={{ background: "var(--primary-soft)", border: "1px solid var(--border-primary)" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "30px",
+              height: "30px",
+              borderRadius: "8px",
+              background: "var(--primary)",
+              flexShrink: 0,
+            }}
           >
-            <FolderArchive size={16} style={{ color: "var(--primary-strong)" }} aria-hidden="true" />
+            <Layers size={14} color="#fff" aria-hidden="true" />
           </span>
           <span
-            className="text-lg font-bold tracking-tight"
-            style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--foreground)" }}
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "17px",
+              fontWeight: 700,
+              color: "var(--sidebar-text)",
+              letterSpacing: "-0.03em",
+            }}
           >
             Nextract
           </span>
-        </div>
-        <div className="flex items-center gap-3" style={{ color: "var(--foreground-muted)" }}>
-          <button type="button" aria-label="Notifications">
-            <Bell size={20} aria-hidden="true" />
+        </Link>
+        <div className="flex items-center gap-3" style={{ color: "var(--sidebar-muted)" }}>
+          <button
+            type="button"
+            aria-label="Notifications"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sidebar-muted)", display: "flex" }}
+          >
+            <Bell size={19} />
           </button>
-          <button type="button" aria-label="Account">
-            <UserCircle size={24} aria-hidden="true" />
+          <button
+            type="button"
+            aria-label="Account"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sidebar-muted)", display: "flex" }}
+          >
+            <UserCircle size={22} />
           </button>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="pb-24 lg:ml-72 lg:pb-0">{children}</main>
+      {/* ── Main content ──────────────────────────────────────── */}
+      <main style={{ paddingLeft: "260px", paddingBottom: "0" }} className="lg:pl-[260px] pl-0 pb-24 lg:pb-0">
+        {children}
+      </main>
 
-      {/* Mobile bottom nav */}
+      {/* ── Mobile bottom nav ─────────────────────────────────── */}
       <nav
         aria-label="Mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 px-2 py-2 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 lg:hidden"
         style={{
-          background: "var(--surface)",
-          borderTop: "1px solid var(--border)",
-          boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
+          background: "var(--sidebar-bg)",
+          borderTop: "1px solid var(--sidebar-border)",
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          padding: "8px 4px 12px",
         }}
       >
         {navItems.map((item) => (
@@ -196,37 +224,76 @@ function DesktopNavButton({
   item: (typeof navItems)[number];
 }) {
   const Icon = item.icon;
-  const className =
-    "relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-all";
-  const style = {
-    background: isActive ? "var(--primary-soft)" : "transparent",
-    color: isActive ? "var(--primary-strong)" : "var(--foreground-muted)",
-    border: isActive ? "1px solid var(--border-primary)" : "1px solid transparent",
+
+  const baseStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "10px 12px",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontWeight: 500,
+    textDecoration: "none",
+    transition: "all 0.15s",
+    border: "none",
+    cursor: item.href ? "pointer" : "not-allowed",
+    width: "100%",
+    textAlign: "left",
+    position: "relative",
+    background: isActive ? "var(--sidebar-active-bg)" : "transparent",
+    color: isActive ? "var(--sidebar-active-text)" : "var(--sidebar-muted)",
+    opacity: !item.href ? 0.55 : 1,
   };
+
   const content = (
     <>
-      {isActive && <ActiveMarker />}
-      <Icon size={18} aria-hidden="true" />
-      {item.label}
-      {!item.href && <SoonBadge />}
+      <Icon size={17} aria-hidden="true" style={{ flexShrink: 0 }} />
+      <span style={{ flex: 1 }}>{item.label}</span>
+      {!item.href && (
+        <span
+          style={{
+            fontSize: "9px",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            padding: "2px 6px",
+            borderRadius: "4px",
+            background: "var(--sidebar-hover)",
+            color: "var(--sidebar-muted)",
+          }}
+        >
+          Soon
+        </span>
+      )}
     </>
   );
 
   if (!item.href) {
     return (
-      <button
-        aria-disabled="true"
-        className={`${className} cursor-not-allowed opacity-70`}
-        style={style}
-        type="button"
-      >
+      <button aria-disabled="true" style={baseStyle} type="button">
         {content}
       </button>
     );
   }
 
   return (
-    <Link aria-current={isActive ? "page" : undefined} className={className} href={item.href} style={style}>
+    <Link
+      aria-current={isActive ? "page" : undefined}
+      href={item.href}
+      style={baseStyle}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          (e.currentTarget as HTMLAnchorElement).style.background = "var(--sidebar-hover)";
+          (e.currentTarget as HTMLAnchorElement).style.color = "var(--sidebar-text)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+          (e.currentTarget as HTMLAnchorElement).style.color = "var(--sidebar-muted)";
+        }
+      }}
+    >
       {content}
     </Link>
   );
@@ -240,88 +307,88 @@ function MobileNavButton({
   item: (typeof navItems)[number];
 }) {
   const Icon = item.icon;
-  const className =
-    "flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs font-semibold transition-all";
-  const style = {
-    color: isActive ? "var(--primary-strong)" : "var(--foreground-muted)",
-    background: isActive ? "var(--primary-muted)" : "transparent",
-    position: "relative" as const,
+
+  const style: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    padding: "6px 4px",
+    borderRadius: "10px",
+    fontSize: "10px",
+    fontWeight: 600,
+    textDecoration: "none",
+    border: "none",
+    cursor: item.href ? "pointer" : "not-allowed",
+    background: "transparent",
+    color: isActive ? "var(--sidebar-active-text)" : "var(--sidebar-muted)",
+    opacity: !item.href ? 0.5 : 1,
+    transition: "color 0.15s",
   };
+
   const content = (
     <>
-      {isActive && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "20px",
-            height: "2px",
-            borderRadius: "0 0 2px 2px",
-            background: "var(--accent)",
-            boxShadow: "0 0 6px var(--accent)",
-          }}
-        />
-      )}
-      <Icon size={20} aria-hidden="true" />
-      {item.label}
+      <Icon size={19} aria-hidden="true" />
+      <span>{item.label}</span>
     </>
   );
 
   if (!item.href) {
     return (
-      <button
-        aria-disabled="true"
-        className={`${className} cursor-not-allowed opacity-70`}
-        style={style}
-        type="button"
-      >
+      <button aria-disabled="true" style={style} type="button">
         {content}
       </button>
     );
   }
 
   return (
-    <Link aria-current={isActive ? "page" : undefined} className={className} href={item.href} style={style}>
+    <Link aria-current={isActive ? "page" : undefined} href={item.href} style={style}>
       {content}
     </Link>
   );
 }
 
-function ActiveMarker() {
+function SidebarFooterBtn({
+  icon: Icon,
+  label,
+  danger,
+}: {
+  icon: React.ElementType;
+  label: string;
+  danger?: boolean;
+}) {
   return (
-    <span
-      aria-hidden="true"
+    <button
+      type="button"
       style={{
-        position: "absolute",
-        left: 0,
-        top: "50%",
-        transform: "translateY(-50%)",
-        width: "3px",
-        height: "60%",
-        borderRadius: "0 2px 2px 0",
-        background: "var(--accent)",
-        boxShadow: "0 0 8px var(--accent)",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        padding: "9px 12px",
+        borderRadius: "10px",
+        fontSize: "13px",
+        fontWeight: 500,
+        border: "none",
+        background: "transparent",
+        color: "var(--sidebar-muted)",
+        cursor: "pointer",
+        width: "100%",
+        textAlign: "left",
+        transition: "all 0.15s",
       }}
-    />
-  );
-}
-
-function SoonBadge() {
-  return (
-    <span
-      className="ml-auto rounded px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider"
-      style={{
-        background: "var(--surface-strong)",
-        color: "var(--foreground-subtle)",
-        fontSize: "9px",
-        letterSpacing: "0.1em",
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "var(--sidebar-hover)";
+        (e.currentTarget as HTMLButtonElement).style.color = "var(--sidebar-text)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+        (e.currentTarget as HTMLButtonElement).style.color = "var(--sidebar-muted)";
       }}
     >
-      Soon
-    </span>
+      <Icon size={16} aria-hidden="true" />
+      {label}
+    </button>
   );
 }
 

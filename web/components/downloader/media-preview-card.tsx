@@ -11,16 +11,9 @@ import {
 } from "lucide-react";
 import type { AnalyzeResponse, QualityValue, RawFormat } from "@/lib/types";
 
-const Youtube = ({ size, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    height={size ?? 20}
-    width={size ?? 20}
-    fill="currentColor"
-    viewBox="0 0 24 24"
-    {...rest}
-  >
-    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+const YoutubeLogo = ({ size = 14 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" height={size} width={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
   </svg>
 );
 
@@ -45,38 +38,50 @@ export function MediaPreviewCard({
   const isAudioSelection = selectedQuality?.startsWith("audio_") ?? false;
 
   return (
-    <section
-      className="mx-auto flex w-full max-w-5xl flex-col gap-5 animate-fade-up"
-      aria-label="Media preview"
-    >
-      {/* Back */}
+    <section className="animate-fade-up" aria-label="Media preview">
+      {/* Back button */}
       <button
-        className="flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all"
-        onClick={onBack}
         type="button"
-        style={{ color: "var(--foreground-muted)" }}
+        onClick={onBack}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "7px",
+          padding: "7px 12px 7px 8px",
+          borderRadius: "8px",
+          background: "none",
+          border: "1px solid transparent",
+          cursor: "pointer",
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "var(--foreground-muted)",
+          marginBottom: "20px",
+          transition: "all 0.15s",
+          fontFamily: "var(--font-body)",
+        }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)";
+          (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-raised)";
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-strong)";
           (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+          (e.currentTarget as HTMLButtonElement).style.background = "none";
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "transparent";
           (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
         }}
       >
-        <ArrowLeft size={16} aria-hidden="true" />
-        Back
+        <ArrowLeft size={15} aria-hidden="true" />
+        Back to paste
       </button>
 
-      {/* Card */}
+      {/* Main card */}
       <div
-        className="overflow-hidden rounded-2xl"
         style={{
+          borderRadius: "20px",
+          overflow: "hidden",
           background: "var(--surface)",
           border: "1px solid var(--border)",
           boxShadow: "var(--shadow-lift)",
-          display: "grid",
-          gridTemplateColumns: "1fr",
         }}
       >
         <div
@@ -84,16 +89,19 @@ export function MediaPreviewCard({
             display: "grid",
             gridTemplateColumns: "1fr",
           }}
-          className="xl:grid xl:grid-cols-[1.4fr_1fr]"
+          className="xl:grid-cols-[1.4fr_1fr]"
         >
           {/* Thumbnail pane */}
           <div
-            className="relative flex items-center justify-center p-4"
             style={{
+              position: "relative",
               background: isAudioSelection
                 ? "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))"
-                : "#000",
-              minHeight: "260px",
+                : "oklch(8% 0.010 265)",
+              minHeight: "280px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <PreviewArtwork
@@ -105,79 +113,130 @@ export function MediaPreviewCard({
           </div>
 
           {/* Details pane */}
-          <div className="flex flex-col gap-6 p-6 xl:p-8" style={{ minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px",
+              padding: "28px",
+            }}
+          >
             {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div style={{ minWidth: 0, flex: 1 }}>
-                {/* Platform tag */}
-                <span
-                  className="mb-3 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold"
-                  style={{
-                    background: "rgba(255,92,72,0.12)",
-                    border: "1px solid rgba(255,92,72,0.2)",
-                    color: "#FF5C48",
-                  }}
-                >
-                  <Youtube size={11} aria-hidden="true" />
-                  YouTube
-                </span>
+            <div>
+              {/* Platform tag */}
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  background: "oklch(96% 0.02 22)",
+                  border: "1px solid oklch(88% 0.06 22)",
+                  color: "#CC2020",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.02em",
+                  marginBottom: "12px",
+                }}
+              >
+                <YoutubeLogo size={11} />
+                YouTube
+              </span>
 
-                <h2
-                  className="text-xl font-bold leading-snug xl:text-2xl"
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    color: "var(--foreground)",
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {preview.title}
-                </h2>
-                <p className="mt-2 text-sm font-medium truncate" style={{ color: "var(--foreground-muted)" }}>
-                  {preview.creator ?? "YouTube"}
-                </p>
-              </div>
+              <h2
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "22px",
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1.25,
+                  color: "var(--foreground)",
+                  marginBottom: "6px",
+                }}
+              >
+                {preview.title}
+              </h2>
+              <p
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "var(--foreground-muted)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {preview.creator ?? "YouTube"}
+              </p>
             </div>
 
             {/* Quality selector */}
             <div>
               <p
-                className="mb-3 text-xs font-bold uppercase tracking-widest"
-                style={{ color: "var(--foreground-soft)" }}
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "var(--foreground-subtle)",
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  marginBottom: "10px",
+                }}
               >
                 Format & Quality
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {preview.qualities.map((option) => {
                   const isSelected = option.value === selectedQuality;
                   return (
                     <button
                       key={option.value}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-150 active:scale-95"
-                      onClick={() => onSelectQuality(option.value)}
                       type="button"
+                      onClick={() => onSelectQuality(option.value)}
                       style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        padding: "7px 14px",
+                        borderRadius: "9999px",
+                        border: isSelected
+                          ? "1.5px solid var(--primary)"
+                          : "1.5px solid var(--border-strong)",
                         background: isSelected ? "var(--primary)" : "var(--surface-raised)",
                         color: isSelected ? "#fff" : "var(--foreground-muted)",
-                        border: isSelected
-                          ? "1px solid var(--primary)"
-                          : "1px solid var(--border)",
-                        boxShadow: isSelected ? "0 4px 16px var(--primary-glow)" : "none",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "var(--font-body)",
+                        transition: "all 0.15s var(--ease-out)",
+                        boxShadow: isSelected ? "0 2px 10px var(--primary-glow)" : "none",
                       }}
                     >
-                      {option.kind === "audio" ? (
-                        <FileAudio size={13} className="shrink-0" aria-hidden="true" />
-                      ) : null}
+                      {option.kind === "audio" && (
+                        <FileAudio size={12} className="shrink-0" aria-hidden="true" />
+                      )}
                       {option.label}
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-3 text-sm font-medium" style={{ color: "var(--foreground-muted)" }}>
-                Estimated size:{" "}
-                <span style={{ color: "var(--foreground)" }}>
-                  {selectedSize ? formatBytes(selectedSize) : "Unavailable"}
-                </span>
-              </p>
+              {selectedSize ? (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--foreground-soft)",
+                    marginTop: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  Estimated size:{" "}
+                  <span style={{ fontWeight: 600, color: "var(--foreground-muted)", fontVariantNumeric: "tabular-nums" }}>
+                    {formatBytes(selectedSize)}
+                  </span>
+                </p>
+              ) : null}
             </div>
 
             {/* Spacer */}
@@ -185,48 +244,99 @@ export function MediaPreviewCard({
 
             {/* Actions */}
             <div
-              className="flex flex-col gap-3 pt-5 sm:flex-row"
-              style={{ borderTop: "1px solid var(--border-soft)" }}
+              style={{
+                paddingTop: "20px",
+                borderTop: "1px solid var(--border-soft)",
+                display: "flex",
+                gap: "10px",
+                flexWrap: "wrap",
+              }}
             >
               <button
-                className="flex flex-1 min-h-12 items-center justify-center gap-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
                 disabled={!selectedQuality || isDownloadPending}
                 onClick={onDownload}
-                type="button"
                 style={{
+                  flex: 1,
+                  minHeight: "46px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  borderRadius: "10px",
+                  border: "none",
                   background: "var(--primary)",
                   color: "#fff",
-                  boxShadow: "0 4px 16px var(--primary-glow)",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  cursor: !selectedQuality || isDownloadPending ? "not-allowed" : "pointer",
+                  opacity: !selectedQuality || isDownloadPending ? 0.65 : 1,
+                  boxShadow: "0 4px 14px var(--primary-glow)",
+                  fontFamily: "var(--font-body)",
+                  transition: "all 0.15s var(--ease-out)",
+                  letterSpacing: "-0.01em",
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedQuality && !isDownloadPending) {
+                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px var(--primary-glow)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 14px var(--primary-glow)";
                 }}
               >
-                <Download size={18} aria-hidden="true" />
-                {isDownloadPending ? "Starting…" : "Download"}
+                <Download size={16} aria-hidden="true" />
+                {isDownloadPending ? "Starting…" : "Download Now"}
               </button>
+
               <button
-                className="flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-5 text-sm font-bold cursor-not-allowed"
-                disabled
                 type="button"
+                disabled
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "7px",
+                  padding: "0 16px",
+                  minHeight: "46px",
+                  borderRadius: "10px",
+                  border: "1.5px solid var(--border-strong)",
                   background: "var(--surface-raised)",
                   color: "var(--foreground-muted)",
-                  border: "1px solid var(--border)",
-                  opacity: 0.6,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "not-allowed",
+                  opacity: 0.55,
+                  fontFamily: "var(--font-body)",
                 }}
               >
-                <SlidersHorizontal size={16} aria-hidden="true" />
+                <SlidersHorizontal size={14} aria-hidden="true" />
                 Advanced
               </button>
             </div>
-            {downloadError ? (
-              <p className="text-sm font-medium" role="alert" style={{ color: "var(--error)" }}>
+
+            {downloadError && (
+              <p
+                role="alert"
+                style={{ fontSize: "13px", fontWeight: 500, color: "var(--error)", marginTop: "-8px" }}
+              >
                 {downloadError}
               </p>
-            ) : null}
+            )}
           </div>
         </div>
       </div>
 
-      <p className="text-center text-xs" style={{ color: "var(--foreground-soft)" }}>
+      <p
+        style={{
+          textAlign: "center",
+          fontSize: "12px",
+          color: "var(--foreground-subtle)",
+          marginTop: "12px",
+        }}
+      >
         Analysis complete · File size and quality may vary based on source availability.
       </p>
     </section>
@@ -247,43 +357,65 @@ function PreviewArtwork({
   if (isAudio) {
     return (
       <div
-        className="relative w-full overflow-hidden rounded-xl"
-        style={{
-          aspectRatio: "16/9",
-          border: "1px solid var(--border-strong)",
-        }}
+        style={{ position: "relative", width: "100%", aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center" }}
         role="img"
         aria-label={`${title} audio artwork`}
       >
-        {thumbnail ? (
+        {thumbnail && (
           <img
             src={thumbnail}
             alt=""
-            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-lg"
-          />
-        ) : null}
-        <div className="absolute inset-0 flex items-center justify-center p-8">
-          <div
-            className="relative flex aspect-square h-full max-h-64 items-center justify-center overflow-hidden rounded-2xl"
             style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border-strong)",
-              boxShadow: "0 18px 50px rgba(0,0,0,0.42)",
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: 0.25,
+              filter: "blur(16px)",
+              transform: "scale(1.1)",
+            }}
+          />
+        )}
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100px",
+            height: "100px",
+            borderRadius: "20px",
+            background: "var(--surface)",
+            border: "1px solid var(--border-strong)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+            overflow: "hidden",
+          }}
+        >
+          {thumbnail ? (
+            <img src={thumbnail} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <Disc3 size={48} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
+          )}
+          <span
+            style={{
+              position: "absolute",
+              bottom: "6px",
+              right: "6px",
+              background: "rgba(0,0,0,0.75)",
+              color: "#fff",
+              borderRadius: "5px",
+              padding: "3px 6px",
+              fontSize: "10px",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: "3px",
             }}
           >
-            {thumbnail ? (
-              <img src={thumbnail} alt={title} className="h-full w-full object-cover" />
-            ) : (
-              <Disc3 size={64} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
-            )}
-            <span
-              className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
-              style={{ background: "rgba(0,0,0,0.72)", color: "#fff" }}
-            >
-              <FileAudio size={13} aria-hidden="true" />
-              Audio
-            </span>
-          </div>
+            <FileAudio size={11} aria-hidden="true" />
+            Audio
+          </span>
         </div>
       </div>
     );
@@ -291,149 +423,110 @@ function PreviewArtwork({
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-xl"
-      style={{ aspectRatio: "16/9" }}
+      style={{ position: "relative", width: "100%", aspectRatio: "16/9" }}
       role="img"
       aria-label={`${title} thumbnail`}
     >
       {thumbnail ? (
-        <img src={thumbnail} alt={title} className="h-full w-full object-cover" />
+        <img src={thumbnail} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center"
-          style={{ background: "var(--surface-strong)" }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            background: "var(--surface-strong)",
+          }}
         >
           <CirclePlay size={52} style={{ color: "var(--foreground-subtle)" }} aria-hidden="true" />
         </div>
       )}
-
-      {duration ? (
+      {duration && (
         <span
-          className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold"
-          style={{ background: "rgba(0,0,0,0.85)", color: "#fff", backdropFilter: "blur(8px)" }}
+          style={{
+            position: "absolute",
+            bottom: "12px",
+            right: "12px",
+            background: "rgba(0,0,0,0.82)",
+            color: "#fff",
+            borderRadius: "6px",
+            padding: "4px 8px",
+            fontSize: "12px",
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            backdropFilter: "blur(8px)",
+            fontVariantNumeric: "tabular-nums",
+          }}
         >
           <Clock size={11} aria-hidden="true" />
           {formatDuration(duration)}
         </span>
-      ) : null}
+      )}
     </div>
   );
 }
 
+/* ── Helpers ─────────────────────────────────────────────────── */
 function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function estimateSelectedSize(
-  formats: RawFormat[],
-  selectedQuality: QualityValue | null,
-): number | null {
+function estimateSelectedSize(formats: RawFormat[], selectedQuality: QualityValue | null): number | null {
   if (!selectedQuality) return null;
-
-  if (selectedQuality === "best") {
-    return bestVideoSize(formats);
-  }
-
-  if (selectedQuality.startsWith("audio_")) {
-    return audioSize(formats, selectedQuality);
-  }
-
-  const height = Number.parseInt(selectedQuality, 10);
-  return videoSizeForHeight(formats, height);
+  if (selectedQuality === "best") return bestVideoSize(formats);
+  if (selectedQuality.startsWith("audio_")) return audioSize(formats, selectedQuality);
+  return videoSizeForHeight(formats, Number.parseInt(selectedQuality, 10));
 }
 
 function bestVideoSize(formats: RawFormat[]): number | null {
-  const videoFormats = formats
-    .filter((format) => hasVideo(format))
-    .sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
-
-  for (const format of videoFormats) {
-    const size = combinedVideoAudioSize(format, formats);
-    if (size) return size;
-  }
-
+  const vf = formats.filter(f => hasVideo(f)).sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
+  for (const f of vf) { const s = combinedVideoAudioSize(f, formats); if (s) return s; }
   return null;
 }
 
 function videoSizeForHeight(formats: RawFormat[], height: number): number | null {
-  const matchingFormats = formats
-    .filter((format) => hasVideo(format) && format.height === height)
-    .sort((a, b) => (b.filesize ?? 0) - (a.filesize ?? 0));
-
-  for (const format of matchingFormats) {
-    const size = combinedVideoAudioSize(format, formats);
-    if (size) return size;
-  }
-
+  const mf = formats.filter(f => hasVideo(f) && f.height === height).sort((a, b) => (b.filesize ?? 0) - (a.filesize ?? 0));
+  for (const f of mf) { const s = combinedVideoAudioSize(f, formats); if (s) return s; }
   return null;
 }
 
-function combinedVideoAudioSize(
-  videoFormat: RawFormat,
-  formats: RawFormat[],
-): number | null {
-  const videoSize = videoFormat.filesize;
-  if (!videoSize) return null;
-
-  if (hasAudio(videoFormat)) return videoSize;
-
-  const audioSize = bestAudioSize(formats);
-  return audioSize ? videoSize + audioSize : videoSize;
+function combinedVideoAudioSize(vf: RawFormat, formats: RawFormat[]): number | null {
+  const vs = vf.filesize;
+  if (!vs) return null;
+  if (hasAudio(vf)) return vs;
+  const as = bestAudioSize(formats);
+  return as ? vs + as : vs;
 }
 
-function audioSize(
-  formats: RawFormat[],
-  selectedQuality: QualityValue,
-): number | null {
-  const preferredExt = selectedQuality.replace("audio_", "");
-  const preferredFormats = formats.filter(
-    (format) => hasAudio(format) && !hasVideo(format) && format.ext === preferredExt,
-  );
-
-  return largestKnownSize(preferredFormats) ?? bestAudioSize(formats);
+function audioSize(formats: RawFormat[], selectedQuality: QualityValue): number | null {
+  const ext = selectedQuality.replace("audio_", "");
+  const preferred = formats.filter(f => hasAudio(f) && !hasVideo(f) && f.ext === ext);
+  return largestKnownSize(preferred) ?? bestAudioSize(formats);
 }
 
 function bestAudioSize(formats: RawFormat[]): number | null {
-  return largestKnownSize(
-    formats.filter((format) => hasAudio(format) && !hasVideo(format)),
-  );
+  return largestKnownSize(formats.filter(f => hasAudio(f) && !hasVideo(f)));
 }
 
 function largestKnownSize(formats: RawFormat[]): number | null {
-  const sizes = formats
-    .map((format) => format.filesize)
-    .filter((size): size is number => typeof size === "number" && size > 0);
-
+  const sizes = formats.map(f => f.filesize).filter((s): s is number => typeof s === "number" && s > 0);
   return sizes.length > 0 ? Math.max(...sizes) : null;
 }
 
-function hasVideo(format: RawFormat): boolean {
-  return Boolean(format.vcodec && format.vcodec !== "none");
-}
-
-function hasAudio(format: RawFormat): boolean {
-  return Boolean(format.acodec && format.acodec !== "none");
-}
+function hasVideo(f: RawFormat): boolean { return Boolean(f.vcodec && f.vcodec !== "none"); }
+function hasAudio(f: RawFormat): boolean { return Boolean(f.acodec && f.acodec !== "none"); }
 
 function formatBytes(bytes: number): string {
   const units = ["B", "KB", "MB", "GB"];
-  let value = bytes;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  const maximumFractionDigits = value >= 10 || unitIndex === 0 ? 0 : 1;
-  return `${value.toLocaleString(undefined, {
-    maximumFractionDigits,
-  })} ${units[unitIndex]}`;
+  let v = bytes, i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toLocaleString(undefined, { maximumFractionDigits: v >= 10 || i === 0 ? 0 : 1 })} ${units[i]}`;
 }

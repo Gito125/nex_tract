@@ -6,7 +6,8 @@ import {
   Archive,
   CirclePlay,
   ClipboardList,
-  FileVideo,
+  FileAudio,
+  Layers,
   Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -42,10 +43,7 @@ export function AnalyzeHome() {
   const [cancelJobId, setCancelJobId] = useState<string | null>(null);
   const [retryJobId, setRetryJobId] = useState<string | null>(null);
 
-  const settingsQuery = useQuery({
-    queryKey: ["settings"],
-    queryFn: getSettings,
-  });
+  const settingsQuery = useQuery({ queryKey: ["settings"], queryFn: getSettings });
 
   const analyzeMutation = useMutation({
     mutationFn: analyzeUrl,
@@ -68,10 +66,8 @@ export function AnalyzeHome() {
 
   useEffect(() => {
     if (!activeJobIds) return;
-
     const sources = activeJobIds.split("|").map((jobId) => {
       const source = new EventSource(getDownloadEventsUrl(jobId));
-
       source.onmessage = (event) => {
         try {
           const job = JSON.parse(event.data) as DownloadJob;
@@ -83,25 +79,18 @@ export function AnalyzeHome() {
           queryClient.invalidateQueries({ queryKey: ["downloads"] });
         }
       };
-
       source.onerror = () => {
         source.close();
         queryClient.invalidateQueries({ queryKey: ["downloads"] });
       };
-
       return source;
     });
-
-    return () => {
-      sources.forEach((source) => source.close());
-    };
+    return () => sources.forEach((s) => s.close());
   }, [activeJobIds, queryClient]);
 
   const createDownloadMutation = useMutation({
     mutationFn: createDownload,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["downloads"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["downloads"] }),
   });
 
   const cancelMutation = useMutation({
@@ -135,25 +124,16 @@ export function AnalyzeHome() {
     setClientError(null);
     setAnalysis(null);
     setSelectedQuality(null);
-
-    if (!trimmed) {
-      setClientError("Paste a YouTube URL to get started.");
-      return;
-    }
-
+    if (!trimmed) { setClientError("Paste a YouTube URL to get started."); return; }
     let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(trimmed);
-    } catch {
+    try { parsedUrl = new URL(trimmed); } catch {
       setClientError("Enter a full URL — e.g. https://youtube.com/watch?v=…");
       return;
     }
-
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
       setClientError("Only web links (http/https) are supported.");
       return;
     }
-
     analyzeMutation.mutate(trimmed);
   }
 
@@ -167,20 +147,21 @@ export function AnalyzeHome() {
 
   function handleDownload() {
     if (!analysis || !selectedQuality) return;
-
-    if (!confirmRepeatDownload(analysis, selectedQuality, downloadsQuery.data?.jobs ?? [])) {
-      return;
-    }
-
+    if (!confirmRepeatDownload(analysis, selectedQuality, downloadsQuery.data?.jobs ?? [])) return;
     createDownloadMutation.reset();
-    createDownloadMutation.mutate(
-      toDownloadRequest(analysis.webpageUrl, selectedQuality),
-    );
+    createDownloadMutation.mutate(toDownloadRequest(analysis.webpageUrl, selectedQuality));
   }
 
   if (analysis?.type === "video") {
     return (
-      <div className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-8 lg:px-12 lg:py-12 animate-fade-up">
+      <div
+        className="animate-fade-up"
+        style={{
+          maxWidth: "1100px",
+          margin: "0 auto",
+          padding: "32px 24px 48px",
+        }}
+      >
         <MediaPreviewCard
           downloadError={createDownloadMutation.error?.message ?? null}
           isDownloadPending={createDownloadMutation.isPending}
@@ -205,7 +186,10 @@ export function AnalyzeHome() {
 
   if (analysis?.type === "playlist") {
     return (
-      <div className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-8 lg:px-12 lg:py-12 animate-fade-up">
+      <div
+        className="animate-fade-up"
+        style={{ maxWidth: "900px", margin: "0 auto", padding: "32px 24px 48px" }}
+      >
         <PlaylistPreviewCard onBack={resetAnalysis} preview={analysis} />
       </div>
     );
@@ -213,74 +197,114 @@ export function AnalyzeHome() {
 
   return (
     <div
-      className="relative flex min-h-screen flex-col"
-      style={{ overflow: "hidden" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        position: "relative",
+        overflow: "hidden",
+      }}
     >
-      {/* Ambient background glow */}
+      {/* Ambient glow — top */}
       <div
         aria-hidden="true"
         style={{
           position: "absolute",
-          top: "-120px",
+          top: "-180px",
           left: "50%",
           transform: "translateX(-50%)",
-          width: "800px",
+          width: "700px",
           height: "500px",
           borderRadius: "50%",
-          background: "radial-gradient(ellipse, rgba(91,79,255,0.08) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse, var(--primary-glow) 0%, transparent 70%)",
           pointerEvents: "none",
+          zIndex: 0,
         }}
       />
 
-      {/* Hero */}
+      {/* Hero section */}
       <section
-        className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-6 pt-16 pb-12 sm:px-8 lg:px-12 lg:pt-24 lg:pb-16 text-center animate-fade-up"
-        style={{ flex: 1 }}
+        className="animate-fade-up"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "80px 24px 48px",
+          maxWidth: "860px",
+          margin: "0 auto",
+          width: "100%",
+          position: "relative",
+          zIndex: 1,
+          textAlign: "center",
+        }}
       >
-        {/* Eyebrow */}
-        <span
-          className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+        {/* Eyebrow badge */}
+        <div
+          className="animate-fade-up stagger-1"
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "5px 14px",
+            borderRadius: "9999px",
             background: "var(--primary-soft)",
             border: "1px solid var(--border-primary)",
             color: "var(--primary-strong)",
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            marginBottom: "28px",
           }}
         >
           <Sparkles size={11} aria-hidden="true" />
           Local-first · Privacy native
-        </span>
+        </div>
 
         {/* Headline */}
         <h1
-          className="mb-5 max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl"
+          className="animate-fade-up stagger-2"
           style={{
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(36px, 6vw, 62px)",
+            fontWeight: 800,
+            lineHeight: 1.08,
+            letterSpacing: "-0.04em",
             color: "var(--foreground)",
-            letterSpacing: "-0.03em",
+            marginBottom: "20px",
+            maxWidth: "700px",
           }}
         >
           Your media.{" "}
           <span
             style={{
-              background: "linear-gradient(135deg, var(--primary-strong), var(--accent))",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
+              color: "var(--primary)",
             }}
           >
             Your vault.
           </span>
         </h1>
 
+        {/* Subtext */}
         <p
-          className="mb-10 max-w-xl text-lg leading-relaxed"
-          style={{ color: "var(--foreground-muted)" }}
+          className="animate-fade-up stagger-3"
+          style={{
+            fontSize: "17px",
+            lineHeight: 1.65,
+            color: "var(--foreground-muted)",
+            maxWidth: "520px",
+            marginBottom: "44px",
+            fontWeight: 400,
+          }}
         >
-          Paste a link, pick your quality, and archive videos, audio, and playlists — offline, on your machine, in seconds.
+          Paste a link, pick your quality, and archive videos, audio,
+          and playlists — offline, on your machine.
         </p>
 
         {/* Input */}
-        <div className="w-full max-w-3xl">
+        <div className="animate-fade-up stagger-4" style={{ width: "100%", maxWidth: "680px" }}>
           <UrlInputCard
             error={visibleError}
             isLoading={analyzeMutation.isPending}
@@ -294,106 +318,197 @@ export function AnalyzeHome() {
           />
         </div>
 
+        {/* Analyzing state */}
         {analyzeMutation.isPending && (
           <p
-            className="mt-5 text-sm font-medium animate-fade-up"
+            className="animate-fade-in"
             role="status"
-            style={{ color: "var(--foreground-muted)" }}
+            style={{
+              marginTop: "16px",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "var(--foreground-soft)",
+            }}
           >
             Fetching metadata and available formats…
           </p>
         )}
 
-        {/* Capability chips */}
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <CapabilityChip icon={CirclePlay} label="YouTube" color="var(--error)" />
-          <CapabilityChip icon={FileVideo} label="Video" color="var(--primary-strong)" />
-          <CapabilityChip icon={Archive} label="Audio" color="var(--success)" />
-          <CapabilityChip icon={ClipboardList} label="Playlists" color="var(--accent)" />
+        {/* Platform chips */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: "10px",
+            marginTop: "36px",
+          }}
+        >
+          {CHIPS.map((chip, i) => (
+            <PlatformChip key={chip.label} {...chip} delay={i * 50} />
+          ))}
         </div>
       </section>
 
-      {/* Recent Activity */}
+      {/* Recent activity */}
       <section
-        className="mx-auto w-full max-w-4xl px-6 pb-12 sm:px-8 lg:px-12"
+        style={{
+          maxWidth: "860px",
+          margin: "0 auto",
+          width: "100%",
+          padding: "0 24px 64px",
+          position: "relative",
+          zIndex: 1,
+        }}
         aria-label="Recent activity"
       >
-        <div className="mb-4 flex items-center justify-between gap-4">
+        {/* Section header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "14px",
+          }}
+        >
           <h2
-            className="text-xl font-bold"
-            style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--foreground)" }}
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "18px",
+              fontWeight: 700,
+              color: "var(--foreground)",
+              letterSpacing: "-0.02em",
+            }}
           >
             Recent Activity
           </h2>
           <button
-            aria-disabled="true"
-            className="text-xs font-bold uppercase tracking-widest transition-opacity opacity-50 cursor-default"
-            style={{ color: "var(--primary-strong)" }}
             type="button"
+            aria-disabled="true"
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "var(--primary)",
+              background: "none",
+              border: "none",
+              cursor: "default",
+              opacity: 0.45,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+            }}
           >
             View All
           </button>
         </div>
 
+        {/* Empty state */}
         <div
-          className="flex min-h-36 flex-col items-center justify-center rounded-2xl px-6 py-10 text-center"
           style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "160px",
+            borderRadius: "16px",
             background: "var(--surface)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-soft)",
+            border: "1.5px dashed var(--border-strong)",
+            gap: "10px",
+            padding: "32px",
+            textAlign: "center",
           }}
         >
-          {/* Empty state icon cluster */}
           <div
-            className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl"
-            style={{ background: "var(--surface-strong)", border: "1px solid var(--border-strong)" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "44px",
+              height: "44px",
+              borderRadius: "12px",
+              background: "var(--surface-strong)",
+              border: "1px solid var(--border-strong)",
+            }}
           >
-            <Archive size={22} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
+            <Archive size={20} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
           </div>
-          <p className="text-sm font-semibold mb-1" style={{ color: "var(--foreground)" }}>
-            Vault is empty
-          </p>
-          <p className="max-w-xs text-sm leading-6" style={{ color: "var(--foreground-muted)" }}>
-            Paste a YouTube link above to start archiving content.
-          </p>
+          <div>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--foreground)", marginBottom: "4px" }}>
+              Vault is empty
+            </p>
+            <p style={{ fontSize: "13px", color: "var(--foreground-soft)", maxWidth: "280px", lineHeight: 1.5 }}>
+              Paste a YouTube link above to start archiving content.
+            </p>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer
-        className="mx-auto max-w-3xl w-full px-6 pb-12 pt-6 text-center text-xs leading-6 sm:px-8"
         style={{
+          textAlign: "center",
+          padding: "20px 24px 32px",
           borderTop: "1px solid var(--border-soft)",
-          color: "var(--foreground-soft)",
+          fontSize: "12px",
+          color: "var(--foreground-subtle)",
+          lineHeight: 1.6,
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        Nextract is intended for archiving personal or permitted content. Respect copyright and platform terms.
+        Nextract is for archiving personal or permitted content.
+        Download only media you own or have the right to save. Respect copyright.
       </footer>
     </div>
   );
 }
 
-function toDownloadRequest(
-  url: string,
-  quality: QualityValue,
-): DownloadCreateRequest {
+/* ── Platform chips ──────────────────────────────────────────────── */
+const CHIPS = [
+  { icon: CirclePlay, label: "YouTube", color: "#FF4444" },
+  { icon: FileAudio, label: "Audio", color: "var(--success)" },
+  { icon: ClipboardList, label: "Playlists", color: "var(--accent)" },
+  { icon: Archive, label: "Archive", color: "var(--primary)" },
+];
+
+function PlatformChip({
+  icon: Icon,
+  label,
+  color,
+  delay,
+}: {
+  icon: LucideIcon;
+  label: string;
+  color: string;
+  delay?: number;
+}) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "7px",
+        padding: "7px 14px",
+        borderRadius: "9999px",
+        background: "var(--surface)",
+        border: "1px solid var(--border-strong)",
+        fontSize: "12px",
+        fontWeight: 600,
+        color: "var(--foreground-muted)",
+        animationDelay: `${(delay ?? 0) + 280}ms`,
+      }}
+      className="animate-fade-up"
+    >
+      <Icon size={13} aria-hidden style={{ color }} />
+      {label}
+    </span>
+  );
+}
+
+/* ── Helpers ────────────────────────────────────────────────────── */
+function toDownloadRequest(url: string, quality: QualityValue): DownloadCreateRequest {
   const audioFormat = audioFormatForQuality(quality);
-
-  if (audioFormat) {
-    return {
-      url,
-      quality,
-      downloadType: "audio",
-      audioFormat,
-    };
-  }
-
-  return {
-    url,
-    quality,
-    downloadType: "video",
-    audioFormat: null,
-  };
+  if (audioFormat) return { url, quality, downloadType: "audio", audioFormat };
+  return { url, quality, downloadType: "video", audioFormat: null };
 }
 
 function audioFormatForQuality(quality: QualityValue): AudioFormat | null {
@@ -407,16 +522,12 @@ function selectDefaultQuality(
   analysis: AnalyzeResponse,
   settings: { defaultQuality: string; defaultAudioFormat: string } | undefined,
 ): QualityValue | null {
-  const available = new Set(analysis.qualities.map((option) => option.value));
+  const available = new Set(analysis.qualities.map((o) => o.value));
   const preferred =
     settings?.defaultQuality === "audio"
       ? (`audio_${settings.defaultAudioFormat}` as QualityValue)
       : (settings?.defaultQuality as QualityValue | undefined);
-
-  if (preferred && available.has(preferred)) {
-    return preferred;
-  }
-
+  if (preferred && available.has(preferred)) return preferred;
   return analysis.qualities[0]?.value ?? null;
 }
 
@@ -426,35 +537,15 @@ function confirmRepeatDownload(
   jobs: DownloadJob[],
 ): boolean {
   const matchingJobs = jobs.filter(
-    (job) =>
-      job.url === analysis.webpageUrl &&
-      job.status !== "failed" &&
-      job.status !== "cancelled",
+    (job) => job.url === analysis.webpageUrl && job.status !== "failed" && job.status !== "cancelled",
   );
-
   if (matchingJobs.length === 0) return true;
-
-  const sameQuality = matchingJobs.some(
-    (job) => job.selectedQuality === selectedQuality,
-  );
-
+  const sameQuality = matchingJobs.some((job) => job.selectedQuality === selectedQuality);
   if (sameQuality) {
-    return window.confirm(
-      `You already have ${formatQualityLabel(selectedQuality)} for this video. Download it again?`,
-    );
+    return window.confirm(`You already have ${selectedQuality.replaceAll("_", " ")} for this video. Download again?`);
   }
-
-  const existingQualities = Array.from(
-    new Set(matchingJobs.map((job) => formatQualityLabel(job.selectedQuality))),
-  ).join(", ");
-
-  return window.confirm(
-    `This video is already in your queue or vault as ${existingQualities}. Download ${formatQualityLabel(selectedQuality)} too?`,
-  );
-}
-
-function formatQualityLabel(quality: QualityValue): string {
-  return quality.replaceAll("_", " ");
+  const existing = Array.from(new Set(matchingJobs.map((j) => j.selectedQuality.replaceAll("_", " ")))).join(", ");
+  return window.confirm(`This video is in your queue as ${existing}. Download ${selectedQuality.replaceAll("_", " ")} too?`);
 }
 
 function upsertDownloadJob(
@@ -462,37 +553,7 @@ function upsertDownloadJob(
   job: DownloadJob,
 ): DownloadQueueResponse {
   if (!current) return { jobs: [job] };
-
-  const existingIndex = current.jobs.findIndex((item) => item.id === job.id);
-  if (existingIndex === -1) {
-    return { jobs: [job, ...current.jobs] };
-  }
-
-  return {
-    jobs: current.jobs.map((item, index) => (index === existingIndex ? job : item)),
-  };
-}
-
-function CapabilityChip({
-  icon: Icon,
-  label,
-  color,
-}: {
-  icon: LucideIcon;
-  label: string;
-  color: string;
-}) {
-  return (
-    <span
-      className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold"
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border-strong)",
-        color: "var(--foreground-muted)",
-      }}
-    >
-      <Icon size={14} aria-hidden style={{ color }} />
-      {label}
-    </span>
-  );
+  const idx = current.jobs.findIndex((item) => item.id === job.id);
+  if (idx === -1) return { jobs: [job, ...current.jobs] };
+  return { jobs: current.jobs.map((item, i) => (i === idx ? job : item)) };
 }

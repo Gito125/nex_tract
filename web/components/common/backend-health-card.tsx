@@ -11,55 +11,79 @@ export function BackendHealthCard() {
   });
 
   let label = "Connecting…";
-  let detail = "Reaching local FastAPI service";
-  let color = "var(--warning)";
-  let bg = "var(--warning-soft)";
+  let detail = "Reaching local service";
+  let dotColor = "var(--warning)";
   let Icon = LoaderCircle;
 
   if (data) {
     label = "API Online";
-    detail = `${data.app} · /api/health`;
-    color = "var(--success)";
-    bg = "var(--success-soft)";
+    detail = "/api/health · OK";
+    dotColor = "var(--success)";
     Icon = CheckCircle2;
   }
 
   if (error) {
     label = "API Offline";
-    detail = "Start FastAPI, then refresh";
-    color = "var(--error)";
-    bg = "var(--error-soft)";
+    detail = "Start FastAPI server";
+    dotColor = "var(--error)";
     Icon = WifiOff;
   }
 
   return (
     <div
-      className="flex items-center gap-3 rounded-lg px-3 py-2.5"
       style={{
-        background: bg,
-        border: `1px solid ${color}30`,
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        padding: "10px 12px",
+        borderRadius: "10px",
+        background: "oklch(100% 0 0 / 0.04)",
+        border: "1px solid oklch(100% 0 0 / 0.07)",
       }}
     >
+      {/* Dot indicator */}
       <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
-        style={{ background: `${color}20`, color }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "28px",
+          height: "28px",
+          borderRadius: "8px",
+          background: `${dotColor}20`,
+          flexShrink: 0,
+        }}
         aria-hidden="true"
       >
         <Icon
-          size={14}
-          className={isLoading ? "animate-spin" : ""}
+          size={13}
+          style={{
+            color: dotColor,
+            animation: isLoading ? "spin 0.8s linear infinite" : "none",
+          }}
         />
       </span>
-      <div className="min-w-0">
+
+      <div style={{ minWidth: 0 }}>
         <p
-          className="text-xs font-bold leading-none"
-          style={{ color }}
+          style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            color: dotColor,
+            lineHeight: 1.2,
+          }}
         >
           {label}
         </p>
         <p
-          className="mt-1 truncate text-xs"
-          style={{ color: "var(--foreground-muted)" }}
+          style={{
+            fontSize: "11px",
+            color: "var(--sidebar-muted)",
+            marginTop: "2px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
         >
           {detail}
         </p>

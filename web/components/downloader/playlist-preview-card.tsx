@@ -13,39 +13,53 @@ export function PlaylistPreviewCard({
   const itemCount = preview.playlist?.itemCount ?? 0;
 
   return (
-    <section
-      className="mx-auto flex w-full max-w-3xl flex-col gap-5 animate-fade-up"
-      aria-label="Playlist preview"
-    >
+    <section className="animate-fade-up" aria-label="Playlist preview">
       {/* Back */}
       <button
-        className="flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all"
-        onClick={onBack}
         type="button"
-        style={{ color: "var(--foreground-muted)" }}
+        onClick={onBack}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "7px",
+          padding: "7px 12px 7px 8px",
+          borderRadius: "8px",
+          background: "none",
+          border: "1px solid transparent",
+          cursor: "pointer",
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "var(--foreground-muted)",
+          marginBottom: "20px",
+          transition: "all 0.15s",
+          fontFamily: "var(--font-body)",
+        }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)";
+          (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-raised)";
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-strong)";
           (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+          (e.currentTarget as HTMLButtonElement).style.background = "none";
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "transparent";
           (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
         }}
       >
-        <ArrowLeft size={16} aria-hidden="true" />
-        Back
+        <ArrowLeft size={15} aria-hidden="true" />
+        Back to paste
       </button>
 
       {/* Card */}
       <div
-        className="rounded-2xl overflow-hidden"
         style={{
+          borderRadius: "20px",
+          overflow: "hidden",
           background: "var(--surface)",
           border: "1px solid var(--border)",
           boxShadow: "var(--shadow-lift)",
         }}
       >
-        {/* Color bar */}
+        {/* Accent bar */}
         <div
           style={{
             height: "3px",
@@ -54,14 +68,20 @@ export function PlaylistPreviewCard({
           aria-hidden="true"
         />
 
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-            {/* Icon */}
+        <div style={{ padding: "32px" }}>
+          {/* Icon + title */}
+          <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>
             <div
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl"
               style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "64px",
+                height: "64px",
+                borderRadius: "16px",
                 background: "var(--primary-soft)",
                 border: "1px solid var(--border-primary)",
+                flexShrink: 0,
               }}
             >
               <ListVideo size={28} style={{ color: "var(--primary-strong)" }} aria-hidden="true" />
@@ -69,37 +89,53 @@ export function PlaylistPreviewCard({
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <p
-                className="mb-2 text-xs font-bold uppercase tracking-widest"
-                style={{ color: "var(--foreground-soft)" }}
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: "var(--foreground-subtle)",
+                  marginBottom: "8px",
+                }}
               >
                 YouTube Playlist
               </p>
 
               <h2
-                className="text-2xl font-bold leading-snug sm:text-3xl"
                 style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontFamily: "var(--font-display)",
+                  fontSize: "clamp(20px, 3vw, 28px)",
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1.2,
                   color: "var(--foreground)",
-                  letterSpacing: "-0.02em",
+                  marginBottom: "12px",
+                  wordBreak: "break-word",
                 }}
               >
                 {preview.title}
               </h2>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold"
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
                     background: "var(--accent-soft)",
                     border: "1px solid var(--accent-muted)",
                     color: "var(--accent-strong)",
+                    fontSize: "13px",
+                    fontWeight: 700,
                   }}
                 >
                   <ClipboardList size={13} aria-hidden="true" />
                   {itemCount} {itemCount === 1 ? "item" : "items"}
                 </span>
-                <p className="text-sm" style={{ color: "var(--foreground-muted)" }}>
-                  Item selection & bulk download in a later phase.
+                <p style={{ fontSize: "13px", color: "var(--foreground-muted)" }}>
+                  Item selection & bulk download coming in a later phase.
                 </p>
               </div>
             </div>
@@ -107,21 +143,34 @@ export function PlaylistPreviewCard({
 
           {/* Action */}
           <div
-            className="mt-8 pt-6"
-            style={{ borderTop: "1px solid var(--border-soft)" }}
+            style={{
+              marginTop: "28px",
+              paddingTop: "24px",
+              borderTop: "1px solid var(--border-soft)",
+            }}
           >
             <button
-              className="flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-8 text-sm font-bold cursor-not-allowed"
-              disabled
               type="button"
+              disabled
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "0 24px",
+                minHeight: "46px",
+                borderRadius: "10px",
+                border: "none",
                 background: "var(--primary)",
                 color: "#fff",
-                opacity: 0.6,
-                boxShadow: "0 4px 16px var(--primary-glow)",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: "not-allowed",
+                opacity: 0.55,
+                fontFamily: "var(--font-body)",
+                letterSpacing: "-0.01em",
               }}
             >
-              <Download size={18} aria-hidden="true" />
+              <Download size={16} aria-hidden="true" />
               Download Playlist — Coming Soon
             </button>
           </div>
