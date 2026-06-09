@@ -19,6 +19,7 @@ import {
   analyzeUrl,
   cancelDownload,
   createDownload,
+  getSettings,
   getDownloadEventsUrl,
   listDownloads,
   retryDownload,
@@ -41,11 +42,16 @@ export function AnalyzeHome() {
   const [cancelJobId, setCancelJobId] = useState<string | null>(null);
   const [retryJobId, setRetryJobId] = useState<string | null>(null);
 
+  const settingsQuery = useQuery({
+    queryKey: ["settings"],
+    queryFn: getSettings,
+  });
+
   const analyzeMutation = useMutation({
     mutationFn: analyzeUrl,
     onSuccess: (data) => {
       setAnalysis(data);
-      setSelectedQuality(data.qualities[0]?.value ?? null);
+      setSelectedQuality(selectDefaultQuality(data, settingsQuery.data));
     },
   });
 
@@ -395,6 +401,23 @@ function audioFormatForQuality(quality: QualityValue): AudioFormat | null {
   if (quality === "audio_mp3") return "mp3";
   if (quality === "audio_opus") return "opus";
   return null;
+}
+
+function selectDefaultQuality(
+  analysis: AnalyzeResponse,
+  settings: { defaultQuality: string; defaultAudioFormat: string } | undefined,
+): QualityValue | null {
+  const available = new Set(analysis.qualities.map((option) => option.value));
+  const preferred =
+    settings?.defaultQuality === "audio"
+      ? (`audio_${settings.defaultAudioFormat}` as QualityValue)
+      : (settings?.defaultQuality as QualityValue | undefined);
+
+  if (preferred && available.has(preferred)) {
+    return preferred;
+  }
+
+  return analysis.qualities[0]?.value ?? null;
 }
 
 function confirmRepeatDownload(

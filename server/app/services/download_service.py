@@ -10,9 +10,8 @@ from typing import Any, AsyncIterator, Iterator, cast
 
 from sqlmodel import Session, col, select
 
-from app.core.config import get_settings
 from app.db.database import engine
-from app.db.models import DownloadJob, DownloadStatus
+from app.db.models import AppSettings, DownloadJob, DownloadStatus
 from app.schemas.download import (
     AudioFormat,
     DownloadCreateRequest,
@@ -23,6 +22,11 @@ from app.schemas.download import (
 )
 from app.services.analyze_service import analyze_url
 from app.services.exceptions import AnalyzeError, DownloadError
+from app.services.history_service import (
+    completed_history_exists,
+    record_download_history,
+)
+from app.services.settings_service import get_app_settings
 from app.utils.filename import sanitize_filename
 from app.utils.platform_detector import PlatformValidationError, detect_platform
 from app.utils.progress_parser import ProgressUpdate, parse_ytdlp_progress_line
@@ -77,9 +81,19 @@ def create_download_job(
     except AnalyzeError as exc:
         raise DownloadError(exc.message, status_code=exc.status_code) from exc
 
+    app_settings = get_app_settings(session)
     available_qualities = {option.value for option in analysis.qualities}
     if request.quality not in available_qualities:
         raise DownloadError("Selected quality is not available for this media.")
+    if app_settings.skip_existing and completed_history_exists(
+        url=analysis.webpage_url,
+        selected_quality=request.quality,
+        audio_format=request.audio_format,
+        session=session,
+    ):
+        raise DownloadError(
+            "This download already exists in history. Turn off Skip existing to download it again."
+        )
 
     job = DownloadJob(
         url=analysis.webpage_url,
@@ -188,18 +202,18 @@ def retry_download_job(job_id: str, session: Session) -> DownloadJobResponse:
 
 
 def build_ytdlp_args(job: DownloadJob) -> list[str]:
-    settings = get_settings()
-    download_root = settings.download_root.resolve()
-    safe_title = sanitize_filename(job.title)
+    app_settings = _current_app_settings()
+    download_root = Path(app_settings.download_folder).resolve()
 
     q = cast(QualityValue, job.selected_quality)
-    output_template = download_root / f"{safe_title}-%(id)s-{q}.%(ext)s"
+    output_template = download_root / f"{_render_filename_template(job, q)}.%(ext)s"
 
     args = [
         "yt-dlp",
         "--no-playlist",
         "--no-warnings",
         "--no-simulate",
+        "--no-overwrites",
         "--progress",
         "--newline",
         "--paths",
@@ -257,8 +271,8 @@ def _run_download_job(job_id: str) -> None:
         if not job or job.status != DownloadStatus.PENDING.value:
             return
 
-        settings = get_settings()
-        settings.download_root.mkdir(parents=True, exist_ok=True)
+        app_settings = get_app_settings(session)
+        Path(app_settings.download_folder).mkdir(parents=True, exist_ok=True)
         args = build_ytdlp_args(job)
 
     try:
@@ -328,6 +342,7 @@ def _run_download_job(job_id: str) -> None:
 
         job.updated_at = _utc_now()
         session.add(job)
+        record_download_history(job, session)
         session.commit()
 
 
@@ -454,6 +469,7 @@ def _mark_failed(job_id: str, message: str) -> None:
         job.completed_at = _utc_now()
         job.updated_at = _utc_now()
         session.add(job)
+        record_download_history(job, session)
         session.commit()
 
 
@@ -471,8 +487,8 @@ def _friendly_ytdlp_error(stderr: str) -> str:
 
 
 def _safe_output_path(stdout: str) -> str | None:
-    settings = get_settings()
-    download_root = settings.download_root.resolve()
+    app_settings = _current_app_settings()
+    download_root = Path(app_settings.download_folder).resolve()
 
     for line in reversed(stdout.splitlines()):
         candidate = line.strip()
@@ -500,3 +516,25 @@ def _file_size(output_path: str | None) -> int | None:
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def _current_app_settings() -> AppSettings:
+    with Session(engine) as session:
+        return get_app_settings(session)
+
+
+def _render_filename_template(job: DownloadJob, quality: QualityValue) -> str:
+    app_settings = _current_app_settings()
+    template = app_settings.filename_template or "{title}-{id}-{quality}"
+    values = {
+        "{title}": sanitize_filename(job.title),
+        "{id}": "%(id)s",
+        "{quality}": sanitize_filename(quality),
+        "{platform}": sanitize_filename(job.platform),
+    }
+
+    rendered = template
+    for placeholder, value in values.items():
+        rendered = rendered.replace(placeholder, value)
+
+    return sanitize_filename(rendered, fallback="download")

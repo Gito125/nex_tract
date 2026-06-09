@@ -1,6 +1,6 @@
 [project]
 name = "nextract-server"
-version = "0.2.4"
+version = "0.3.0"
 description = "FastAPI backend for Nextract"
 requires-python = ">=3.12"
 dependencies = [

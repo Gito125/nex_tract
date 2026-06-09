@@ -2,21 +2,24 @@ import json
 import subprocess
 import threading
 import time
+from pathlib import Path
 from typing import Any, cast
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from sqlmodel import Session
 
-from app.core.config import get_settings
-from app.db.models import DownloadJob, DownloadStatus
+from app.db.database import engine
+from app.db.models import DownloadHistoryItem, DownloadJob, DownloadStatus
 from app.main import app
 from app.services.download_service import build_ytdlp_args
+from app.services.settings_service import get_app_settings
 
 client = TestClient(app)
 
 
 def test_create_download_job_completes_successfully() -> None:
-    output_path = get_settings().download_root / "Example Video-abc123.mp4"
+    output_path = _download_folder() / "Example Video-abc123.mp4"
 
     with (
         patch(
@@ -46,6 +49,13 @@ def test_create_download_job_completes_successfully() -> None:
     assert job["progress"] == 100
     assert job["progressStatus"] == "completed"
     assert job["outputPath"] == str(output_path)
+    history_response = client.get(
+        "/api/history",
+        params={"query": "Example Video", "status": "completed", "limit": 10},
+    )
+    assert history_response.status_code == 200
+    history_items = history_response.json()["items"]
+    assert any(item["jobId"] == job_id for item in history_items)
     assert popen.call_args is not None
     assert "shell" not in popen.call_args.kwargs
 
@@ -83,23 +93,59 @@ def test_create_download_rejects_playlist() -> None:
 
 
 def test_build_ytdlp_args_uses_argument_array() -> None:
-    job = DownloadJob(
-        url="https://www.youtube.com/watch?v=abc123",
-        title='Bad/File:Name?',
-        selected_quality="audio_mp3",
-        audio_format="mp3",
-    )
+    original = client.get("/api/settings").json()
+    try:
+        response = client.patch(
+            "/api/settings",
+            json={"filenameTemplate": "{title}-{id}-{quality}"},
+        )
+        assert response.status_code == 200
 
-    args = build_ytdlp_args(job)
+        job = DownloadJob(
+            url="https://www.youtube.com/watch?v=abc123",
+            title='Bad/File:Name?',
+            selected_quality="audio_mp3",
+            audio_format="mp3",
+        )
 
-    assert isinstance(args, list)
-    assert args[0] == "yt-dlp"
-    assert "--extract-audio" in args
-    assert "--audio-format" in args
-    assert "--no-simulate" in args
-    assert "--progress" in args
-    assert "--newline" in args
-    assert any("Bad File Name-%(id)s-audio_mp3.%(ext)s" in item for item in args)
+        args = build_ytdlp_args(job)
+
+        assert isinstance(args, list)
+        assert args[0] == "yt-dlp"
+        assert "--extract-audio" in args
+        assert "--audio-format" in args
+        assert "--no-simulate" in args
+        assert "--progress" in args
+        assert "--newline" in args
+        assert any("Bad File Name-%(id)s-audio_mp3.%(ext)s" in item for item in args)
+    finally:
+        client.patch("/api/settings", json=original)
+
+
+def test_build_ytdlp_args_uses_active_settings(tmp_path: Path) -> None:
+    original = client.get("/api/settings").json()
+    try:
+        response = client.patch(
+            "/api/settings",
+            json={
+                "downloadFolder": str(tmp_path),
+                "filenameTemplate": "{title}-{platform}-{quality}-{id}",
+            },
+        )
+        assert response.status_code == 200
+
+        job = DownloadJob(
+            url="https://www.youtube.com/watch?v=abc123",
+            title="Example/Video",
+            selected_quality="720p",
+        )
+        args = build_ytdlp_args(job)
+
+        assert str(tmp_path) in args
+        assert any("Example Video-youtube-720p-%(id)s.%(ext)s" in item for item in args)
+        assert "--no-overwrites" in args
+    finally:
+        client.patch("/api/settings", json=original)
 
 
 def test_download_progress_output_updates_metrics() -> None:
@@ -173,6 +219,62 @@ def test_failed_download_updates_status_with_friendly_error() -> None:
         job = _wait_for_status(job_id, "failed")
 
     assert job["errorMessage"] == "Selected quality is not available for this media."
+    history_response = client.get(
+        "/api/history",
+        params={"query": "Example Video", "status": "failed", "limit": 10},
+    )
+    assert history_response.status_code == 200
+    history_items = history_response.json()["items"]
+    assert any(
+        item["jobId"] == job_id
+        and item["errorMessage"] == "Selected quality is not available for this media."
+        for item in history_items
+    )
+
+
+def test_skip_existing_rejects_completed_duplicate(tmp_path: Path) -> None:
+    existing_path = tmp_path / "existing.mp4"
+    existing_path.write_text("video", encoding="utf-8")
+    original = client.get("/api/settings").json()
+
+    with Session(engine) as session:
+        item = DownloadHistoryItem(
+            job_id="existing-job",
+            url="https://www.youtube.com/watch?v=abc123",
+            title="Example Video",
+            selected_quality="best",
+            status=DownloadStatus.COMPLETED.value,
+            output_path=str(existing_path),
+            download_folder=str(tmp_path),
+        )
+        session.add(item)
+        session.commit()
+
+    try:
+        settings_response = client.patch(
+            "/api/settings",
+            json={"downloadFolder": str(tmp_path), "skipExisting": True},
+        )
+        assert settings_response.status_code == 200
+
+        with patch(
+            "app.platforms.youtube.subprocess.run",
+            return_value=_completed_process(_video_metadata()),
+        ):
+            response = client.post(
+                "/api/downloads",
+                json={
+                    "url": "https://www.youtube.com/watch?v=abc123",
+                    "quality": "best",
+                    "downloadType": "video",
+                    "audioFormat": None,
+                },
+            )
+
+        assert response.status_code == 400
+        assert response.json()["detail"].startswith("This download already exists")
+    finally:
+        client.patch("/api/settings", json=original)
 
 
 def test_cancel_active_download_marks_job_cancelled() -> None:
@@ -257,10 +359,6 @@ def _wait_for_progress(
 
 
 def _create_failed_job() -> str:
-    from sqlmodel import Session
-
-    from app.db.database import engine
-
     with Session(engine) as session:
         job = DownloadJob(
             url="https://www.youtube.com/watch?v=failed",
@@ -273,6 +371,11 @@ def _create_failed_job() -> str:
         session.commit()
         session.refresh(job)
         return job.id
+
+
+def _download_folder() -> Path:
+    with Session(engine) as session:
+        return Path(get_app_settings(session).download_folder)
 
 
 def _completed_process(payload: dict[str, Any]) -> subprocess.CompletedProcess[str]:

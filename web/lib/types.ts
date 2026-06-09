@@ -107,3 +107,72 @@ export type DownloadJob = {
 export type DownloadQueueResponse = {
   jobs: DownloadJob[];
 };
+
+export type HistoryStatus = "completed" | "failed";
+
+export type HistoryItem = {
+  id: string;
+  jobId: string;
+  url: string;
+  platform: "youtube";
+  mediaType: "video";
+  title: string;
+  thumbnail: string | null;
+  duration: number | null;
+  selectedQuality: QualityValue;
+  audioFormat: AudioFormat | null;
+  status: HistoryStatus;
+  outputPath: string | null;
+  downloadFolder: string | null;
+  fileSize: number | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string;
+};
+
+export type HistoryListResponse = {
+  items: HistoryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type HistoryFilters = {
+  query?: string;
+  status?: HistoryStatus;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type HistoryActionResponse = {
+  message: string;
+};
+
+export type DefaultQuality = "best" | "1080p" | "720p" | "480p" | "360p" | "audio";
+export type ThemeValue = "system" | "light" | "dark";
+
+export type AppSettings = {
+  downloadFolder: string;
+  defaultQuality: DefaultQuality;
+  defaultAudioFormat: AudioFormat;
+  theme: ThemeValue;
+  filenameTemplate: string;
+  skipExisting: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SettingsUpdateRequest = Partial<
+  Pick<
+    AppSettings,
+    | "downloadFolder"
+    | "defaultQuality"
+    | "defaultAudioFormat"
+    | "theme"
+    | "filenameTemplate"
+    | "skipExisting"
+  >
+>;

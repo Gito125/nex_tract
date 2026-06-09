@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Clock3,
   Download,
@@ -15,13 +17,15 @@ import {
 import { BackendHealthCard } from "@/components/common/backend-health-card";
 
 const navItems = [
-  { label: "Home", icon: Home, active: true },
-  { label: "Queue", icon: Download, active: false },
-  { label: "History", icon: Clock3, active: false },
-  { label: "Settings", icon: Settings, active: false },
+  { label: "Home", icon: Home, href: "/" },
+  { label: "Queue", icon: Download, href: null },
+  { label: "History", icon: Clock3, href: "/history" },
+  { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
     <div
       className="min-h-screen"
@@ -71,7 +75,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Nav */}
         <nav aria-label="Primary navigation" className="mt-6 flex flex-col gap-1 px-3">
           {navItems.map((item) => (
-            <DesktopNavButton key={item.label} item={item} />
+            <DesktopNavButton
+              isActive={isActivePath(pathname, item.href)}
+              item={item}
+              key={item.label}
+            />
           ))}
         </nav>
 
@@ -169,79 +177,79 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
       >
         {navItems.map((item) => (
-          <MobileNavButton key={item.label} item={item} />
+          <MobileNavButton
+            isActive={isActivePath(pathname, item.href)}
+            item={item}
+            key={item.label}
+          />
         ))}
       </nav>
     </div>
   );
 }
 
-function DesktopNavButton({ item }: { item: (typeof navItems)[number] }) {
+function DesktopNavButton({
+  isActive,
+  item,
+}: {
+  isActive: boolean;
+  item: (typeof navItems)[number];
+}) {
   const Icon = item.icon;
-
-  return (
-    <button
-      aria-current={item.active ? "page" : undefined}
-      aria-disabled={!item.active}
-      className="relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-all"
-      style={{
-        background: item.active ? "var(--primary-soft)" : "transparent",
-        color: item.active ? "var(--primary-strong)" : "var(--foreground-muted)",
-        border: item.active ? "1px solid var(--border-primary)" : "1px solid transparent",
-      }}
-      type="button"
-    >
-      {/* Amber tape marker — the signature element */}
-      {item.active && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: 0,
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: "3px",
-            height: "60%",
-            borderRadius: "0 2px 2px 0",
-            background: "var(--accent)",
-            boxShadow: "0 0 8px var(--accent)",
-          }}
-        />
-      )}
+  const className =
+    "relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-all";
+  const style = {
+    background: isActive ? "var(--primary-soft)" : "transparent",
+    color: isActive ? "var(--primary-strong)" : "var(--foreground-muted)",
+    border: isActive ? "1px solid var(--border-primary)" : "1px solid transparent",
+  };
+  const content = (
+    <>
+      {isActive && <ActiveMarker />}
       <Icon size={18} aria-hidden="true" />
       {item.label}
-      {!item.active && (
-        <span
-          className="ml-auto text-xs font-bold uppercase tracking-wider rounded px-1.5 py-0.5"
-          style={{
-            background: "var(--surface-strong)",
-            color: "var(--foreground-subtle)",
-            fontSize: "9px",
-            letterSpacing: "0.1em",
-          }}
-        >
-          Soon
-        </span>
-      )}
-    </button>
+      {!item.href && <SoonBadge />}
+    </>
+  );
+
+  if (!item.href) {
+    return (
+      <button
+        aria-disabled="true"
+        className={`${className} cursor-not-allowed opacity-70`}
+        style={style}
+        type="button"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link aria-current={isActive ? "page" : undefined} className={className} href={item.href} style={style}>
+      {content}
+    </Link>
   );
 }
 
-function MobileNavButton({ item }: { item: (typeof navItems)[number] }) {
+function MobileNavButton({
+  isActive,
+  item,
+}: {
+  isActive: boolean;
+  item: (typeof navItems)[number];
+}) {
   const Icon = item.icon;
-  return (
-    <button
-      aria-current={item.active ? "page" : undefined}
-      aria-disabled={!item.active}
-      className="flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs font-semibold transition-all"
-      style={{
-        color: item.active ? "var(--primary-strong)" : "var(--foreground-muted)",
-        background: item.active ? "var(--primary-muted)" : "transparent",
-        position: "relative",
-      }}
-      type="button"
-    >
-      {item.active && (
+  const className =
+    "flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs font-semibold transition-all";
+  const style = {
+    color: isActive ? "var(--primary-strong)" : "var(--foreground-muted)",
+    background: isActive ? "var(--primary-muted)" : "transparent",
+    position: "relative" as const,
+  };
+  const content = (
+    <>
+      {isActive && (
         <span
           aria-hidden="true"
           style={{
@@ -259,6 +267,66 @@ function MobileNavButton({ item }: { item: (typeof navItems)[number] }) {
       )}
       <Icon size={20} aria-hidden="true" />
       {item.label}
-    </button>
+    </>
   );
+
+  if (!item.href) {
+    return (
+      <button
+        aria-disabled="true"
+        className={`${className} cursor-not-allowed opacity-70`}
+        style={style}
+        type="button"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link aria-current={isActive ? "page" : undefined} className={className} href={item.href} style={style}>
+      {content}
+    </Link>
+  );
+}
+
+function ActiveMarker() {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        left: 0,
+        top: "50%",
+        transform: "translateY(-50%)",
+        width: "3px",
+        height: "60%",
+        borderRadius: "0 2px 2px 0",
+        background: "var(--accent)",
+        boxShadow: "0 0 8px var(--accent)",
+      }}
+    />
+  );
+}
+
+function SoonBadge() {
+  return (
+    <span
+      className="ml-auto rounded px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider"
+      style={{
+        background: "var(--surface-strong)",
+        color: "var(--foreground-subtle)",
+        fontSize: "9px",
+        letterSpacing: "0.1em",
+      }}
+    >
+      Soon
+    </span>
+  );
+}
+
+function isActivePath(pathname: string, href: string | null) {
+  if (!href) return false;
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

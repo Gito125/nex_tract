@@ -16,8 +16,8 @@ Update it as you build.
 ## Current Focus
 
 ```txt
-Current Phase: Phase 4 — Progress Tracking
-Current Goal: Show real-time download progress, speed, ETA, and merging/post-processing states in the queue UI.
+Current Phase: Phase 6 — Playlist Support
+Current Goal: Support full YouTube playlist downloads.
 ```
 
 ---
@@ -234,26 +234,26 @@ Store download history and allow user preferences.
 
 ## History
 
-- [ ] Create history database model.
-- [ ] Save completed downloads.
-- [ ] Save failed downloads.
-- [ ] Add `/api/history`.
-- [ ] Build history page.
-- [ ] Add search.
-- [ ] Add filters.
-- [ ] Add open file/folder action.
-- [ ] Add re-download action.
+- [x] Create history database model.
+- [x] Save completed downloads.
+- [x] Save failed downloads.
+- [x] Add `/api/history`.
+- [x] Build history page.
+- [x] Add search.
+- [x] Add filters.
+- [x] Add open file/folder action.
+- [x] Add re-download action.
 
 ## Settings
 
-- [ ] Create settings database model.
-- [ ] Add `/api/settings`.
-- [ ] Allow download folder change.
-- [ ] Allow default quality change.
-- [ ] Allow default audio format change.
-- [ ] Allow theme change.
-- [ ] Allow filename template change.
-- [ ] Allow skip existing toggle.
+- [x] Create settings database model.
+- [x] Add `/api/settings`.
+- [x] Allow download folder change.
+- [x] Allow default quality change.
+- [x] Allow default audio format change.
+- [x] Allow theme change.
+- [x] Allow filename template change.
+- [x] Allow skip existing toggle.
 
 ## Exit Criteria
 

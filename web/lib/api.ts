@@ -5,6 +5,11 @@ import type {
   DownloadJob,
   DownloadQueueResponse,
   HealthResponse,
+  HistoryActionResponse,
+  HistoryFilters,
+  HistoryListResponse,
+  AppSettings,
+  SettingsUpdateRequest,
 } from "@/lib/types";
 
 const API_BASE_URL =
@@ -90,6 +95,57 @@ export function retryDownload(jobId: string): Promise<DownloadJob> {
 
 export function getDownloadEventsUrl(jobId: string): string {
   return `${API_BASE_URL}/api/downloads/${jobId}/events`;
+}
+
+export function listHistory(
+  filters: HistoryFilters = {},
+): Promise<HistoryListResponse> {
+  const params = new URLSearchParams();
+
+  if (filters.query) params.set("query", filters.query);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.from) params.set("from", filters.from);
+  if (filters.to) params.set("to", filters.to);
+  if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.offset) params.set("offset", String(filters.offset));
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return request<HistoryListResponse>(`/api/history${suffix}`);
+}
+
+export function redownloadHistoryItem(historyId: string): Promise<DownloadJob> {
+  return request<DownloadJob>(`/api/history/${historyId}/redownload`, {
+    method: "POST",
+  });
+}
+
+export function openHistoryFile(
+  historyId: string,
+): Promise<HistoryActionResponse> {
+  return request<HistoryActionResponse>(`/api/history/${historyId}/open-file`, {
+    method: "POST",
+  });
+}
+
+export function openHistoryFolder(
+  historyId: string,
+): Promise<HistoryActionResponse> {
+  return request<HistoryActionResponse>(`/api/history/${historyId}/open-folder`, {
+    method: "POST",
+  });
+}
+
+export function getSettings(): Promise<AppSettings> {
+  return request<AppSettings>("/api/settings");
+}
+
+export function updateSettings(
+  body: SettingsUpdateRequest,
+): Promise<AppSettings> {
+  return request<AppSettings>("/api/settings", {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
