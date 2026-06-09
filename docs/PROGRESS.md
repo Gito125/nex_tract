@@ -156,26 +156,26 @@ Download one YouTube video with selected quality.
 
 ## Backend
 
-- [ ] Add download job model.
-- [ ] Add `/api/downloads` create endpoint.
-- [ ] Build safe yt-dlp command arguments.
-- [ ] Save file to default folder.
-- [ ] Update job status.
-- [ ] Handle download success.
-- [ ] Handle download failure.
-- [ ] Sanitize filenames.
-- [ ] Add basic logs.
+- [x] Add download job model.
+- [x] Add `/api/downloads` create endpoint.
+- [x] Build safe yt-dlp command arguments.
+- [x] Save file to default folder.
+- [x] Update job status.
+- [x] Handle download success.
+- [x] Handle download failure.
+- [x] Sanitize filenames.
+- [x] Add basic logs.
 
 ## Frontend
 
-- [ ] Add Download button.
-- [ ] Add download queue UI.
-- [ ] Show pending status.
-- [ ] Show downloading status.
-- [ ] Show completed status.
-- [ ] Show failed status.
-- [ ] Add retry button.
-- [ ] Add cancel button if possible.
+- [x] Add Download button.
+- [x] Add download queue UI.
+- [x] Show pending status.
+- [x] Show downloading status.
+- [x] Show completed status.
+- [x] Show failed status.
+- [x] Add retry button.
+- [x] Add cancel button if possible.
 
 ## Exit Criteria
 

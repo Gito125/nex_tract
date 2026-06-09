@@ -1,4 +1,11 @@
-import type { AnalyzeRequest, AnalyzeResponse, HealthResponse } from "@/lib/types";
+import type {
+  AnalyzeRequest,
+  AnalyzeResponse,
+  DownloadCreateRequest,
+  DownloadJob,
+  DownloadQueueResponse,
+  HealthResponse,
+} from "@/lib/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
@@ -38,6 +45,31 @@ export function analyzeUrl(url: string): Promise<AnalyzeResponse> {
   return request<AnalyzeResponse>("/api/analyze", {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export function createDownload(
+  body: DownloadCreateRequest,
+): Promise<DownloadJob> {
+  return request<DownloadJob>("/api/downloads", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function listDownloads(): Promise<DownloadQueueResponse> {
+  return request<DownloadQueueResponse>("/api/downloads");
+}
+
+export function cancelDownload(jobId: string): Promise<DownloadJob> {
+  return request<DownloadJob>(`/api/downloads/${jobId}/cancel`, {
+    method: "POST",
+  });
+}
+
+export function retryDownload(jobId: string): Promise<DownloadJob> {
+  return request<DownloadJob>(`/api/downloads/${jobId}/retry`, {
+    method: "POST",
   });
 }
 

@@ -13,21 +13,29 @@ import type { AnalyzeResponse, QualityValue } from "@/lib/types";
 const Youtube = ({ size, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
+    height={size ?? 20}
+    width={size ?? 20}
     fill="currentColor"
     viewBox="0 0 24 24"
+    {...rest}
   >
     <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
   </svg>
 );
 
 export function MediaPreviewCard({
+  downloadError,
+  isDownloadPending,
   onBack,
+  onDownload,
   onSelectQuality,
   preview,
   selectedQuality,
 }: {
+  downloadError: string | null;
+  isDownloadPending: boolean;
   onBack: () => void;
+  onDownload: () => void;
   onSelectQuality: (quality: QualityValue) => void;
   preview: AnalyzeResponse;
   selectedQuality: QualityValue | null;
@@ -192,18 +200,18 @@ export function MediaPreviewCard({
               style={{ borderTop: "1px solid var(--border-soft)" }}
             >
               <button
-                className="flex flex-1 min-h-12 items-center justify-center gap-2.5 rounded-xl text-sm font-bold transition-all cursor-not-allowed"
-                disabled
+                className="flex flex-1 min-h-12 items-center justify-center gap-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={!selectedQuality || isDownloadPending}
+                onClick={onDownload}
                 type="button"
                 style={{
                   background: "var(--primary)",
                   color: "#fff",
-                  opacity: 0.6,
                   boxShadow: "0 4px 16px var(--primary-glow)",
                 }}
               >
                 <Download size={18} aria-hidden="true" />
-                Download — Phase 3
+                {isDownloadPending ? "Starting…" : "Download"}
               </button>
               <button
                 className="flex min-h-12 items-center justify-center gap-2.5 rounded-xl px-5 text-sm font-bold cursor-not-allowed"
@@ -220,6 +228,11 @@ export function MediaPreviewCard({
                 Advanced
               </button>
             </div>
+            {downloadError ? (
+              <p className="text-sm font-medium" role="alert" style={{ color: "var(--error)" }}>
+                {downloadError}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

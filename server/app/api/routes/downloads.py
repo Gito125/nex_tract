@@ -1,0 +1,70 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session
+
+from app.db.database import get_session
+from app.schemas.download import (
+    DownloadCreateRequest,
+    DownloadJobResponse,
+    DownloadQueueResponse,
+)
+from app.services.download_service import (
+    cancel_download_job,
+    create_download_job,
+    get_download_job,
+    list_download_jobs,
+    retry_download_job,
+)
+from app.services.exceptions import DownloadError
+
+router = APIRouter(tags=["downloads"])
+
+
+@router.post("/downloads", response_model=DownloadJobResponse)
+async def create_download(
+    request: DownloadCreateRequest,
+    session: Session = Depends(get_session),
+) -> DownloadJobResponse:
+    try:
+        return create_download_job(request, session)
+    except DownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.get("/downloads", response_model=DownloadQueueResponse)
+async def get_downloads(
+    session: Session = Depends(get_session),
+) -> DownloadQueueResponse:
+    return DownloadQueueResponse(jobs=list_download_jobs(session))
+
+
+@router.get("/downloads/{job_id}", response_model=DownloadJobResponse)
+async def get_download(
+    job_id: str,
+    session: Session = Depends(get_session),
+) -> DownloadJobResponse:
+    try:
+        return get_download_job(job_id, session)
+    except DownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.post("/downloads/{job_id}/cancel", response_model=DownloadJobResponse)
+async def cancel_download(
+    job_id: str,
+    session: Session = Depends(get_session),
+) -> DownloadJobResponse:
+    try:
+        return cancel_download_job(job_id, session)
+    except DownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.post("/downloads/{job_id}/retry", response_model=DownloadJobResponse)
+async def retry_download(
+    job_id: str,
+    session: Session = Depends(get_session),
+) -> DownloadJobResponse:
+    try:
+        return retry_download_job(job_id, session)
+    except DownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc

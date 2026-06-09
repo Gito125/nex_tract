@@ -54,3 +54,44 @@ export type AnalyzeResponse = {
   rawFormats: RawFormat[];
   playlist: PlaylistSummary | null;
 };
+
+export type DownloadStatus =
+  | "pending"
+  | "downloading"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type DownloadType = "video" | "audio";
+export type AudioFormat = "m4a" | "mp3" | "opus";
+
+export type DownloadCreateRequest = {
+  url: string;
+  quality: QualityValue;
+  downloadType: DownloadType;
+  audioFormat: AudioFormat | null;
+};
+
+export type DownloadJob = {
+  id: string;
+  url: string;
+  platform: "youtube";
+  mediaType: "video";
+  title: string;
+  thumbnail: string | null;
+  duration: number | null;
+  selectedQuality: QualityValue;
+  audioFormat: AudioFormat | null;
+  status: DownloadStatus;
+  progress: number;
+  outputPath: string | null;
+  fileSize: number | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+};
+
+export type DownloadQueueResponse = {
+  jobs: DownloadJob[];
+};

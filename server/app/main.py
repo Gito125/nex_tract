@@ -2,13 +2,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.analyze import router as analyze_router
+from app.api.routes.downloads import router as downloads_router
 from app.api.routes.health import router as health_router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
+from app.db.database import init_db
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    init_db()
     app = FastAPI(title="Nextract API", version="0.1.0")
 
     app.add_middleware(
@@ -21,6 +24,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router, prefix="/api")
     app.include_router(analyze_router, prefix="/api")
+    app.include_router(downloads_router, prefix="/api")
     register_error_handlers(app)
 
     return app

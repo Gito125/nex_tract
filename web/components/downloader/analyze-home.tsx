@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
   CirclePlay,
@@ -11,17 +11,32 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { DownloadQueue } from "@/components/downloads/download-queue";
 import { MediaPreviewCard } from "@/components/downloader/media-preview-card";
 import { PlaylistPreviewCard } from "@/components/downloader/playlist-preview-card";
 import { UrlInputCard } from "@/components/downloader/url-input-card";
-import { analyzeUrl } from "@/lib/api";
-import type { AnalyzeResponse, QualityValue } from "@/lib/types";
+import {
+  analyzeUrl,
+  cancelDownload,
+  createDownload,
+  listDownloads,
+  retryDownload,
+} from "@/lib/api";
+import type {
+  AnalyzeResponse,
+  AudioFormat,
+  DownloadCreateRequest,
+  QualityValue,
+} from "@/lib/types";
 
 export function AnalyzeHome() {
+  const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
   const [clientError, setClientError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null);
   const [selectedQuality, setSelectedQuality] = useState<QualityValue | null>(null);
+  const [cancelJobId, setCancelJobId] = useState<string | null>(null);
+  const [retryJobId, setRetryJobId] = useState<string | null>(null);
 
   const analyzeMutation = useMutation({
     mutationFn: analyzeUrl,
@@ -31,8 +46,44 @@ export function AnalyzeHome() {
     },
   });
 
+  const downloadsQuery = useQuery({
+    queryKey: ["downloads"],
+    queryFn: listDownloads,
+    refetchInterval: 2_000,
+  });
+
+  const createDownloadMutation = useMutation({
+    mutationFn: createDownload,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["downloads"] });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: cancelDownload,
+    onMutate: (jobId) => setCancelJobId(jobId),
+    onSettled: () => {
+      setCancelJobId(null);
+      queryClient.invalidateQueries({ queryKey: ["downloads"] });
+    },
+  });
+
+  const retryMutation = useMutation({
+    mutationFn: retryDownload,
+    onMutate: (jobId) => setRetryJobId(jobId),
+    onSettled: () => {
+      setRetryJobId(null);
+      queryClient.invalidateQueries({ queryKey: ["downloads"] });
+    },
+  });
+
   const visibleError =
     clientError ?? (analyzeMutation.error ? analyzeMutation.error.message : null);
+  const queueError =
+    createDownloadMutation.error?.message ??
+    cancelMutation.error?.message ??
+    retryMutation.error?.message ??
+    (downloadsQuery.error ? downloadsQuery.error.message : null);
 
   function handleSubmit(value: string) {
     const trimmed = value.trim();
@@ -66,16 +117,38 @@ export function AnalyzeHome() {
     setSelectedQuality(null);
     setClientError(null);
     analyzeMutation.reset();
+    createDownloadMutation.reset();
+  }
+
+  function handleDownload() {
+    if (!analysis || !selectedQuality) return;
+
+    createDownloadMutation.reset();
+    createDownloadMutation.mutate(
+      toDownloadRequest(analysis.webpageUrl, selectedQuality),
+    );
   }
 
   if (analysis?.type === "video") {
     return (
       <div className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-8 lg:px-12 lg:py-12 animate-fade-up">
         <MediaPreviewCard
+          downloadError={createDownloadMutation.error?.message ?? null}
+          isDownloadPending={createDownloadMutation.isPending}
           onBack={resetAnalysis}
+          onDownload={handleDownload}
           onSelectQuality={setSelectedQuality}
           preview={analysis}
           selectedQuality={selectedQuality}
+        />
+        <DownloadQueue
+          cancelState={{ isPending: cancelMutation.isPending, jobId: cancelJobId }}
+          error={queueError}
+          isLoading={downloadsQuery.isLoading}
+          jobs={downloadsQuery.data?.jobs ?? []}
+          onCancel={(jobId) => cancelMutation.mutate(jobId)}
+          onRetry={(jobId) => retryMutation.mutate(jobId)}
+          retryState={{ isPending: retryMutation.isPending, jobId: retryJobId }}
         />
       </div>
     );
@@ -249,6 +322,36 @@ export function AnalyzeHome() {
       </footer>
     </div>
   );
+}
+
+function toDownloadRequest(
+  url: string,
+  quality: QualityValue,
+): DownloadCreateRequest {
+  const audioFormat = audioFormatForQuality(quality);
+
+  if (audioFormat) {
+    return {
+      url,
+      quality,
+      downloadType: "audio",
+      audioFormat,
+    };
+  }
+
+  return {
+    url,
+    quality,
+    downloadType: "video",
+    audioFormat: null,
+  };
+}
+
+function audioFormatForQuality(quality: QualityValue): AudioFormat | null {
+  if (quality === "audio_m4a") return "m4a";
+  if (quality === "audio_mp3") return "mp3";
+  if (quality === "audio_opus") return "opus";
+  return null;
 }
 
 function CapabilityChip({
