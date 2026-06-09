@@ -1,43 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import { Link2, LoaderCircle, Search } from "lucide-react";
 
-export function UrlInputCard() {
-  const [url, setUrl] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
-
+export function UrlInputCard({
+  error,
+  isLoading,
+  onSubmit,
+  onUrlChange,
+  url,
+}: {
+  error: string | null;
+  isLoading: boolean;
+  onSubmit: (url: string) => void;
+  onUrlChange: (url: string) => void;
+  url: string;
+}) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-
-    const value = url.trim();
-
-    if (!value) {
-      setError("Paste a YouTube URL to analyze.");
-      return;
-    }
-
-    let parsedUrl: URL;
-
-    try {
-      parsedUrl = new URL(value);
-    } catch {
-      setError("Use a complete URL, for example https://youtube.com/watch?v=...");
-      return;
-    }
-
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      setError("Only web links are supported.");
-      return;
-    }
-
-    setIsChecking(true);
-    window.setTimeout(() => {
-      setIsChecking(false);
-      setError("Analysis is coming in Phase 2. Backend health is available now.");
-    }, 350);
+    onSubmit(url);
   }
 
   return (
@@ -55,27 +36,23 @@ export function UrlInputCard() {
             id="media-url"
             type="url"
             value={url}
-            onChange={(event) => {
-              setUrl(event.target.value);
-              if (error) {
-                setError(null);
-              }
-            }}
+            onChange={(event) => onUrlChange(event.target.value)}
             placeholder="Paste URL here..."
+            disabled={isLoading}
             className="min-w-0 flex-1 bg-transparent text-base text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-soft)] sm:text-lg"
           />
         </div>
         <button
           className="flex min-h-16 items-center justify-center gap-3 rounded-xl bg-[var(--primary)] px-8 text-base font-bold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--primary-strong)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-80 sm:min-w-52"
-          disabled={isChecking}
+          disabled={isLoading}
           type="submit"
         >
-          {isChecking ? (
+          {isLoading ? (
             <LoaderCircle className="animate-spin" size={24} aria-hidden="true" />
           ) : (
             <Search size={24} aria-hidden="true" />
           )}
-          Analyze Link
+          {isLoading ? "Analyzing" : "Analyze Link"}
         </button>
       </div>
 

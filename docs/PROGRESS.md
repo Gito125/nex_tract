@@ -16,8 +16,8 @@ Update it as you build.
 ## Current Focus
 
 ```txt
-Current Phase: Phase 2 — YouTube Link Analysis
-Current Goal: Add URL analysis, YouTube platform detection, yt-dlp metadata extraction, and media preview UI.
+Current Phase: Phase 3 — Single Video Download
+Current Goal: Add download job creation, safe yt-dlp download execution, and queue status UI for one YouTube video.
 ```
 
 ---
@@ -113,28 +113,28 @@ Analyze YouTube links and return clean metadata.
 
 ## Backend
 
-- [ ] Add `/api/analyze` endpoint.
-- [ ] Add URL validation.
-- [ ] Add platform detector.
-- [ ] Add YouTube platform adapter.
-- [ ] Add yt-dlp metadata extraction.
-- [ ] Return title.
-- [ ] Return thumbnail.
-- [ ] Return duration.
-- [ ] Return platform.
-- [ ] Return media type.
-- [ ] Return raw formats.
-- [ ] Add format normalization service.
-- [ ] Return clean quality options.
+- [x] Add `/api/analyze` endpoint.
+- [x] Add URL validation.
+- [x] Add platform detector.
+- [x] Add YouTube platform adapter.
+- [x] Add yt-dlp metadata extraction.
+- [x] Return title.
+- [x] Return thumbnail.
+- [x] Return duration.
+- [x] Return platform.
+- [x] Return media type.
+- [x] Return raw formats.
+- [x] Add format normalization service.
+- [x] Return clean quality options.
 
 ## Frontend
 
-- [ ] Build URL input card.
-- [ ] Build loading state.
-- [ ] Build media preview card.
-- [ ] Build platform badge.
-- [ ] Build quality selector.
-- [ ] Show analysis errors.
+- [x] Build URL input card.
+- [x] Build loading state.
+- [x] Build media preview card.
+- [x] Build platform badge.
+- [x] Build quality selector.
+- [x] Show analysis errors.
 
 ## Exit Criteria
 

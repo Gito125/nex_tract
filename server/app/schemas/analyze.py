@@ -1,0 +1,60 @@
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class AnalyzeRequest(BaseModel):
+    url: str = Field(min_length=1, max_length=2048)
+
+
+class QualityOption(BaseModel):
+    label: str
+    value: Literal[
+        "best",
+        "1080p",
+        "720p",
+        "480p",
+        "360p",
+        "audio_m4a",
+        "audio_mp3",
+        "audio_opus",
+    ]
+    available: bool = True
+    kind: Literal["video", "audio"]
+
+
+class RawFormat(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    format_id: str | None = Field(default=None, alias="formatId")
+    ext: str | None = None
+    height: int | None = None
+    width: int | None = None
+    fps: float | None = None
+    vcodec: str | None = None
+    acodec: str | None = None
+    filesize: int | None = None
+    tbr: float | None = None
+
+
+class PlaylistSummary(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str | None = None
+    title: str | None = None
+    item_count: int = Field(default=0, alias="itemCount")
+
+
+class AnalyzeResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    platform: Literal["youtube"]
+    type: Literal["video", "playlist"]
+    title: str
+    thumbnail: str | None = None
+    duration: int | None = None
+    creator: str | None = None
+    webpage_url: str = Field(alias="webpageUrl")
+    qualities: list[QualityOption]
+    raw_formats: list[RawFormat] = Field(default_factory=list, alias="rawFormats")
+    playlist: PlaylistSummary | None = None
