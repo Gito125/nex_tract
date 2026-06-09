@@ -3,7 +3,7 @@ import json
 import logging
 import subprocess
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, AsyncIterator, Iterator, Literal, NamedTuple, cast
@@ -54,6 +54,8 @@ TERMINAL_ITEM_STATUSES = {
 _executor = ThreadPoolExecutor(max_workers=1)
 _process_lock = threading.Lock()
 _active_processes: dict[str, subprocess.Popen[str]] = {}
+SIZE_ESTIMATE_MAX_WORKERS = 4
+SIZE_ESTIMATE_ITEM_TIMEOUT = 12
 
 EstimateKind = Literal["exact", "approximate", "unknown"]
 
@@ -163,32 +165,35 @@ def estimate_playlist_sizes(
     analyzed_items = 0
     failed_items = 0
 
-    for item in request.items:
-        try:
-            platform = detect_platform(item.url)
-            if platform.platform != "youtube":
-                raise PlaylistError("Only YouTube links are supported in this version.")
-            metadata = extract_youtube_metadata(platform.url, "video")
-        except (AnalyzeError, PlatformValidationError, PlaylistError):
-            failed_items += 1
-            for quality in qualities:
-                unavailable_items[quality] += 1
-            continue
+    max_workers = min(SIZE_ESTIMATE_MAX_WORKERS, len(request.items))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(_extract_size_metadata, item.url)
+            for item in request.items
+        ]
 
-        formats = _list_value(metadata.get("formats"))
-        analyzed_items += 1
-
-        for quality in qualities:
-            estimate = _estimate_quality_size(formats, quality, metadata)
-            if estimate is None:
-                unavailable_items[quality] += 1
+        for future in as_completed(futures):
+            metadata = future.result()
+            if metadata is None:
+                failed_items += 1
+                for quality in qualities:
+                    unavailable_items[quality] += 1
                 continue
-            totals[quality] += estimate.bytes
-            estimated_items[quality] += 1
-            estimate_kinds[quality] = _merge_estimate_kind(
-                estimate_kinds[quality],
-                estimate.kind,
-            )
+
+            formats = _list_value(metadata.get("formats"))
+            analyzed_items += 1
+
+            for quality in qualities:
+                estimate = _estimate_quality_size(formats, quality, metadata)
+                if estimate is None:
+                    unavailable_items[quality] += 1
+                    continue
+                totals[quality] += estimate.bytes
+                estimated_items[quality] += 1
+                estimate_kinds[quality] = _merge_estimate_kind(
+                    estimate_kinds[quality],
+                    estimate.kind,
+                )
 
     return PlaylistSizeEstimateResponse(
         requestedItems=len(request.items),
@@ -209,6 +214,20 @@ def estimate_playlist_sizes(
             for quality in qualities
         ],
     )
+
+
+def _extract_size_metadata(url: str) -> dict[str, Any] | None:
+    try:
+        platform = detect_platform(url)
+        if platform.platform != "youtube":
+            return None
+        return extract_youtube_metadata(
+            platform.url,
+            "video",
+            timeout=SIZE_ESTIMATE_ITEM_TIMEOUT,
+        )
+    except (AnalyzeError, PlatformValidationError):
+        return None
 
 
 async def stream_playlist_events(playlist_id: str) -> AsyncIterator[str]:

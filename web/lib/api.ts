@@ -134,7 +134,7 @@ export function estimatePlaylistSizes(
   return request<PlaylistSizeEstimateResponse>("/api/playlists/size-estimate", {
     method: "POST",
     body: JSON.stringify(body),
-  }, 180_000);
+  }, 60_000);
 }
 
 export function listHistory(

@@ -42,7 +42,7 @@ class PlaylistSizeEstimateItem(BaseModel):
 
 
 class PlaylistSizeEstimateRequest(BaseModel):
-    items: list[PlaylistSizeEstimateItem] = Field(min_length=1, max_length=100)
+    items: list[PlaylistSizeEstimateItem] = Field(min_length=1, max_length=20)
     qualities: list[QualityValue] | None = None
 
 

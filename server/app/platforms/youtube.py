@@ -7,7 +7,11 @@ from app.services.exceptions import AnalyzeError
 MediaType = Literal["video", "playlist"]
 
 
-def extract_youtube_metadata(url: str, media_type: MediaType) -> dict[str, Any]:
+def extract_youtube_metadata(
+    url: str,
+    media_type: MediaType,
+    timeout: int = 45,
+) -> dict[str, Any]:
     args = ["yt-dlp", "--dump-single-json", "--no-warnings"]
 
     if media_type == "playlist":
@@ -22,7 +26,7 @@ def extract_youtube_metadata(url: str, media_type: MediaType) -> dict[str, Any]:
             args,
             capture_output=True,
             text=True,
-            timeout=45,
+            timeout=timeout,
             check=False,
         )
     except FileNotFoundError as exc:

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Ban,
@@ -28,7 +28,7 @@ type PlaylistStartOptions = Pick<
 >;
 
 type SelectionMode = "selected" | "range";
-const AUTO_ESTIMATE_LIMIT = 10;
+const MAX_ESTIMATE_ITEMS = 20;
 
 export function PlaylistPreviewCard({
   defaultSkipExisting,
@@ -95,49 +95,20 @@ export function PlaylistPreviewCard({
       ),
     [items, rangeEnd, rangeStart, selectedIndexes, selectionMode],
   );
-  const selectedEstimateKey = useMemo(
-    () => selectedAvailableItems.map((item) => item.url).join("|"),
-    [selectedAvailableItems],
-  );
-  const lastAutoEstimateKey = useRef<string | null>(null);
   const isRunning = playlist?.status === "pending" || playlist?.status === "downloading";
   const canStart = Boolean(selectedQuality) && selectedCount > 0 && !isStartPending && !isRunning;
 
   const estimateSizes = useCallback(() => {
     if (selectedAvailableItems.length === 0) return;
+    const itemsToEstimate = selectedAvailableItems.slice(0, MAX_ESTIMATE_ITEMS);
     onEstimateSizes({
-      items: selectedAvailableItems.map((item) => ({
+      items: itemsToEstimate.map((item) => ({
         index: item.index,
         url: item.url,
       })),
       qualities: preview.qualities.map((option) => option.value),
     });
   }, [onEstimateSizes, preview.qualities, selectedAvailableItems]);
-
-  useEffect(() => {
-    if (
-      isRunning ||
-      isEstimatePending ||
-      selectedAvailableItems.length === 0 ||
-      selectedAvailableItems.length > AUTO_ESTIMATE_LIMIT ||
-      selectedEstimateKey === lastAutoEstimateKey.current
-    ) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      lastAutoEstimateKey.current = selectedEstimateKey;
-      estimateSizes();
-    }, 450);
-
-    return () => window.clearTimeout(timeout);
-  }, [
-    isEstimatePending,
-    isRunning,
-    selectedAvailableItems,
-    selectedEstimateKey,
-    estimateSizes,
-  ]);
 
   function toggleIndex(index: number) {
     setSelectedIndexes((current) =>
@@ -274,16 +245,13 @@ export function PlaylistPreviewCard({
                   {isEstimatePending
                     ? "Calculating sizes..."
                     : sizeEstimate
-                      ? `Refresh sizes for ${selectedAvailableItems.length} selected`
-                      : `Calculate sizes for ${selectedAvailableItems.length} selected`}
+                      ? estimateButtonLabel("Refresh", selectedAvailableItems.length)
+                      : estimateButtonLabel("Calculate", selectedAvailableItems.length)}
                 </button>
                 {sizeEstimate && (
                   <p style={{ ...mutedTextStyle, marginTop: "8px", lineHeight: 1.45 }}>
-                    Estimated from {sizeEstimate.analyzedItems}/{sizeEstimate.requestedItems} selected videos.
-                    {" "}
-                    {selectedAvailableItems.length > AUTO_ESTIMATE_LIMIT
-                      ? "Large selections use manual refresh to avoid rate limits."
-                      : "Small selections refresh automatically."}
+                    Estimated from {sizeEstimate.analyzedItems}/{sizeEstimate.requestedItems} videos.
+                    {" "}Refresh manually after changing the selection.
                   </p>
                 )}
                 {sizeEstimateError && <p role="alert" style={errorStyle}>{sizeEstimateError}</p>}
@@ -618,6 +586,13 @@ function selectedPlaylistItems(
     }
     return selectedIndexes.includes(item.index);
   });
+}
+
+function estimateButtonLabel(action: "Calculate" | "Refresh", selectedCount: number): string {
+  if (selectedCount > MAX_ESTIMATE_ITEMS) {
+    return `${action} sizes for first ${MAX_ESTIMATE_ITEMS} of ${selectedCount}`;
+  }
+  return `${action} sizes for ${selectedCount} selected`;
 }
 
 function formatDuration(duration: number | null): string {
