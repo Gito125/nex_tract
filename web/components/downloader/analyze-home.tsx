@@ -56,7 +56,7 @@ export function AnalyzeHome() {
   });
 
   const activeJobIds = (downloadsQuery.data?.jobs ?? [])
-    .filter((job) => job.status === "pending" || job.status === "downloading")
+    .filter((job) => job.status === "downloading")
     .map((job) => job.id)
     .join("|");
 

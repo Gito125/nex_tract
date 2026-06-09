@@ -8,7 +8,7 @@ router = APIRouter(tags=["analyze"])
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_media(request: AnalyzeRequest) -> AnalyzeResponse:
+def analyze_media(request: AnalyzeRequest) -> AnalyzeResponse:
     try:
         return analyze_url(str(request.url))
     except AnalyzeError as exc:
