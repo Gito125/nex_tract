@@ -199,6 +199,8 @@ def build_ytdlp_args(job: DownloadJob) -> list[str]:
         "yt-dlp",
         "--no-playlist",
         "--no-warnings",
+        "--no-simulate",
+        "--progress",
         "--newline",
         "--paths",
         str(download_root),
@@ -351,12 +353,35 @@ def _iter_process_lines(process: subprocess.Popen[str]) -> Iterator[str]:
         return
 
     if isinstance(stream, str):
-        for line in stream.splitlines():
+        for line in _split_progress_chunks(stream):
             yield line.strip()
         return
 
-    for line in stream:
-        yield line.strip()
+    buffer = ""
+    while True:
+        char = stream.read(1)
+        if not char:
+            break
+
+        if char in {"\n", "\r"}:
+            if buffer.strip():
+                yield buffer.strip()
+            buffer = ""
+            continue
+
+        buffer += char
+
+    if buffer.strip():
+        yield buffer.strip()
+
+
+def _split_progress_chunks(output: str) -> list[str]:
+    return [
+        chunk
+        for line in output.splitlines()
+        for chunk in line.split("\r")
+        if chunk.strip()
+    ]
 
 
 def _wait_for_process(process: subprocess.Popen[str]) -> str:

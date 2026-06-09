@@ -96,6 +96,8 @@ def test_build_ytdlp_args_uses_argument_array() -> None:
     assert args[0] == "yt-dlp"
     assert "--extract-audio" in args
     assert "--audio-format" in args
+    assert "--no-simulate" in args
+    assert "--progress" in args
     assert "--newline" in args
     assert any("Bad File Name-%(id)s.%(ext)s" in item for item in args)
 
