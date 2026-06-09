@@ -17,6 +17,7 @@ export function UrlInputCard({
   url: string;
 }) {
   const [focused, setFocused] = useState(false);
+  const [utilityMessage, setUtilityMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasUrl = url.trim().length > 0;
 
@@ -29,14 +30,20 @@ export function UrlInputCard({
     if (isLoading) return;
     if (hasUrl) {
       onUrlChange("");
+      setUtilityMessage("Input cleared.");
       inputRef.current?.focus();
       return;
     }
     try {
       const text = await navigator.clipboard.readText();
-      if (text) onUrlChange(text);
+      if (text) {
+        onUrlChange(text);
+        setUtilityMessage("Link pasted from clipboard.");
+      } else {
+        setUtilityMessage("Clipboard is empty.");
+      }
     } catch {
-      // permission denied
+      setUtilityMessage("Clipboard access was blocked.");
     } finally {
       inputRef.current?.focus();
     }
@@ -48,14 +55,14 @@ export function UrlInputCard({
       <form
         onSubmit={handleSubmit}
         style={{
-          borderRadius: "14px",
+          borderRadius: "var(--radius-lg)",
           overflow: "hidden",
           background: "var(--surface)",
           border: focused
-            ? "1.5px solid var(--primary)"
+            ? "1px solid var(--primary)"
             : error
-            ? "1.5px solid var(--error)"
-            : "1.5px solid var(--border-strong)",
+            ? "1px solid var(--error)"
+            : "1px solid var(--border-strong)",
           boxShadow: focused
             ? "0 0 0 4px var(--primary-glow), var(--shadow-lift)"
             : error
@@ -70,7 +77,7 @@ export function UrlInputCard({
             style={{
               display: "flex",
               alignItems: "center",
-              paddingLeft: "18px",
+              paddingLeft: "20px",
               paddingRight: "4px",
               flexShrink: 0,
             }}
@@ -102,14 +109,14 @@ export function UrlInputCard({
             style={{
               flex: 1,
               minWidth: 0,
-              height: "56px",
+              height: "64px",
               background: "transparent",
               border: "none",
               outline: "none",
-              fontSize: "15px",
+              fontSize: "16px",
               fontFamily: "var(--font-body)",
               color: "var(--foreground)",
-              padding: "0 12px",
+              padding: "0 16px",
               caretColor: "var(--primary)",
             }}
           />
@@ -125,7 +132,8 @@ export function UrlInputCard({
               display: "flex",
               alignItems: "center",
               gap: "5px",
-              padding: "0 12px",
+              minWidth: "48px",
+              padding: "0 14px",
               background: "none",
               border: "none",
               borderLeft: "1px solid var(--border-soft)",
@@ -166,20 +174,20 @@ export function UrlInputCard({
                 display: "flex",
                 alignItems: "center",
                 gap: "7px",
-                height: "40px",
-                padding: "0 20px",
-                borderRadius: "8px",
+                height: "48px",
+                padding: "0 24px",
+                borderRadius: "var(--radius-md)",
                 border: "none",
                 background: isLoading ? "var(--primary-dim)" : "var(--primary)",
                 color: "var(--on-primary)",
-                fontSize: "13px",
+                fontSize: "14px",
                 fontWeight: 700,
                 fontFamily: "var(--font-body)",
                 cursor: isLoading ? "wait" : "pointer",
                 whiteSpace: "nowrap",
                 boxShadow: isLoading ? "none" : "0 2px 10px var(--primary-glow)",
                 transition: "all 0.2s var(--ease-out)",
-                letterSpacing: "-0.01em",
+                letterSpacing: "0",
               }}
               onMouseEnter={(e) => {
                 if (!isLoading) {
@@ -231,6 +239,21 @@ export function UrlInputCard({
           </div>
         )}
       </form>
+      {utilityMessage && !error && (
+        <p
+          aria-live="polite"
+          className="animate-fade-in"
+          style={{
+            marginTop: "8px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "var(--foreground-soft)",
+            textAlign: "left",
+          }}
+        >
+          {utilityMessage}
+        </p>
+      )}
     </div>
   );
 }

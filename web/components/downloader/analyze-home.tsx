@@ -49,6 +49,10 @@ export function AnalyzeHome() {
   const [cancelJobId, setCancelJobId] = useState<string | null>(null);
   const [retryJobId, setRetryJobId] = useState<string | null>(null);
   const [playlist, setPlaylist] = useState<PlaylistResponse | null>(null);
+  const [repeatDownload, setRepeatDownload] = useState<{
+    message: string;
+    request: DownloadCreateRequest;
+  } | null>(null);
 
   const settingsQuery = useQuery({ queryKey: ["settings"], queryFn: getSettings });
 
@@ -118,7 +122,10 @@ export function AnalyzeHome() {
 
   const createDownloadMutation = useMutation({
     mutationFn: createDownload,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["downloads"] }),
+    onSuccess: () => {
+      setRepeatDownload(null);
+      queryClient.invalidateQueries({ queryKey: ["downloads"] });
+    },
   });
 
   const createPlaylistMutation = useMutation({
@@ -168,6 +175,7 @@ export function AnalyzeHome() {
     setAnalysis(null);
     setSelectedQuality(null);
     setPlaylist(null);
+    setRepeatDownload(null);
     if (!trimmed) { setClientError("Paste a YouTube URL to get started."); return; }
     let parsedUrl: URL;
     try { parsedUrl = new URL(trimmed); } catch {
@@ -185,6 +193,7 @@ export function AnalyzeHome() {
     setAnalysis(null);
     setSelectedQuality(null);
     setPlaylist(null);
+    setRepeatDownload(null);
     setClientError(null);
     analyzeMutation.reset();
     createDownloadMutation.reset();
@@ -195,9 +204,18 @@ export function AnalyzeHome() {
 
   function handleDownload() {
     if (!analysis || !selectedQuality) return;
-    if (!confirmRepeatDownload(analysis, selectedQuality, downloadsQuery.data?.jobs ?? [])) return;
+    const request = toDownloadRequest(analysis.webpageUrl, selectedQuality);
+    const repeatMessage = getRepeatDownloadMessage(
+      analysis,
+      selectedQuality,
+      downloadsQuery.data?.jobs ?? [],
+    );
+    if (repeatMessage) {
+      setRepeatDownload({ message: repeatMessage, request });
+      return;
+    }
     createDownloadMutation.reset();
-    createDownloadMutation.mutate(toDownloadRequest(analysis.webpageUrl, selectedQuality));
+    createDownloadMutation.mutate(request);
   }
 
   function handlePlaylistStart(
@@ -238,10 +256,24 @@ export function AnalyzeHome() {
           isDownloadPending={createDownloadMutation.isPending}
           onBack={resetAnalysis}
           onDownload={handleDownload}
-          onSelectQuality={setSelectedQuality}
+          onSelectQuality={(quality) => {
+            setSelectedQuality(quality);
+            setRepeatDownload(null);
+          }}
           preview={analysis}
           selectedQuality={selectedQuality}
         />
+        {repeatDownload && (
+          <RepeatDownloadNotice
+            isPending={createDownloadMutation.isPending}
+            message={repeatDownload.message}
+            onCancel={() => setRepeatDownload(null)}
+            onConfirm={() => {
+              createDownloadMutation.reset();
+              createDownloadMutation.mutate(repeatDownload.request);
+            }}
+          />
+        )}
         <DownloadQueue
           cancelState={{ isPending: cancelMutation.isPending, jobId: cancelJobId }}
           error={queueError}
@@ -295,23 +327,6 @@ export function AnalyzeHome() {
         overflow: "hidden",
       }}
     >
-      {/* Ambient glow — top */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: "-180px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "700px",
-          height: "500px",
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse, var(--primary-glow) 0%, transparent 70%)",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-
       {/* Hero section */}
       <section
         className="animate-fade-up"
@@ -321,7 +336,7 @@ export function AnalyzeHome() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "80px 24px 48px",
+          padding: "72px 24px 56px",
           maxWidth: "860px",
           margin: "0 auto",
           width: "100%",
@@ -358,10 +373,10 @@ export function AnalyzeHome() {
           className="animate-fade-up stagger-2"
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: "clamp(36px, 6vw, 62px)",
+            fontSize: "clamp(34px, 5vw, 56px)",
             fontWeight: 800,
-            lineHeight: 1.08,
-            letterSpacing: "-0.04em",
+            lineHeight: 1.1,
+            letterSpacing: "-0.035em",
             color: "var(--foreground)",
             marginBottom: "20px",
             maxWidth: "700px",
@@ -389,8 +404,8 @@ export function AnalyzeHome() {
             fontWeight: 400,
           }}
         >
-          Paste a link, pick your quality, and archive videos, audio,
-          and playlists — offline, on your machine.
+          Paste a link, pick your quality, and archive permitted videos,
+          audio, and playlists offline on your machine.
         </p>
 
         {/* Input */}
@@ -440,103 +455,11 @@ export function AnalyzeHome() {
         </div>
       </section>
 
-      {/* Recent activity */}
-      <section
-        style={{
-          maxWidth: "860px",
-          margin: "0 auto",
-          width: "100%",
-          padding: "0 24px 64px",
-          position: "relative",
-          zIndex: 1,
-        }}
-        aria-label="Recent activity"
-      >
-        {/* Section header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "14px",
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "18px",
-              fontWeight: 700,
-              color: "var(--foreground)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Recent Activity
-          </h2>
-          <button
-            type="button"
-            aria-disabled="true"
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "var(--primary)",
-              background: "none",
-              border: "none",
-              cursor: "default",
-              opacity: 0.45,
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-            }}
-          >
-            View All
-          </button>
-        </div>
-
-        {/* Empty state */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "160px",
-            borderRadius: "16px",
-            background: "var(--surface)",
-            border: "1.5px dashed var(--border-strong)",
-            gap: "10px",
-            padding: "32px",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              background: "var(--surface-strong)",
-              border: "1px solid var(--border-strong)",
-            }}
-          >
-            <Archive size={20} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
-          </div>
-          <div>
-            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--foreground)", marginBottom: "4px" }}>
-              Vault is empty
-            </p>
-            <p style={{ fontSize: "13px", color: "var(--foreground-soft)", maxWidth: "280px", lineHeight: 1.5 }}>
-              Paste a YouTube link above to start archiving content.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer
         style={{
           textAlign: "center",
-          padding: "20px 24px 32px",
+          padding: "24px 24px 40px",
           borderTop: "1px solid var(--border-soft)",
           fontSize: "12px",
           color: "var(--foreground-subtle)",
@@ -557,20 +480,57 @@ function AnalyzeNotice({ message }: { message: string | null }) {
 
   return (
     <div
+      className="ui-notice ui-notice--info"
       role="status"
       style={{
-        padding: "11px 14px",
-        borderRadius: "10px",
-        background: "var(--accent-soft)",
-        border: "1px solid var(--accent-muted)",
-        color: "var(--accent-strong)",
-        fontSize: "13px",
-        fontWeight: 650,
-        lineHeight: 1.45,
         marginBottom: "14px",
       }}
     >
       {message}
+    </div>
+  );
+}
+
+function RepeatDownloadNotice({
+  isPending,
+  message,
+  onCancel,
+  onConfirm,
+}: {
+  isPending: boolean;
+  message: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div
+      className="ui-card animate-fade-up"
+      role="status"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "16px",
+        marginTop: "16px",
+        padding: "16px",
+      }}
+    >
+      <div>
+        <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--foreground)", marginBottom: "4px" }}>
+          Download already exists
+        </p>
+        <p style={{ fontSize: "13px", color: "var(--foreground-muted)", lineHeight: 1.5 }}>
+          {message}
+        </p>
+      </div>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <button className="ui-button" type="button" onClick={onCancel} disabled={isPending}>
+          Cancel
+        </button>
+        <button className="ui-button ui-button--primary" type="button" onClick={onConfirm} disabled={isPending}>
+          {isPending ? "Starting..." : "Download again"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -662,21 +622,21 @@ function selectDefaultQuality(
   return analysis.qualities[0]?.value ?? null;
 }
 
-function confirmRepeatDownload(
+function getRepeatDownloadMessage(
   analysis: AnalyzeResponse,
   selectedQuality: QualityValue,
   jobs: DownloadJob[],
-): boolean {
+): string | null {
   const matchingJobs = jobs.filter(
     (job) => job.url === analysis.webpageUrl && job.status !== "failed" && job.status !== "cancelled",
   );
-  if (matchingJobs.length === 0) return true;
+  if (matchingJobs.length === 0) return null;
   const sameQuality = matchingJobs.some((job) => job.selectedQuality === selectedQuality);
   if (sameQuality) {
-    return window.confirm(`You already have ${selectedQuality.replaceAll("_", " ")} for this video. Download again?`);
+    return `You already have ${selectedQuality.replaceAll("_", " ")} for this video.`;
   }
   const existing = Array.from(new Set(matchingJobs.map((j) => j.selectedQuality.replaceAll("_", " ")))).join(", ");
-  return window.confirm(`This video is in your queue as ${existing}. Download ${selectedQuality.replaceAll("_", " ")} too?`);
+  return `This video is already in your queue as ${existing}.`;
 }
 
 function upsertDownloadJob(

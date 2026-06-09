@@ -523,8 +523,8 @@ function PlaylistProgress({ playlist }: { playlist: PlaylistResponse | null }) {
   return (
     <div style={panelStyle}>
       <SectionTitle title="Progress" detail={playlist.status} />
-      <div style={progressTrackStyle}>
-        <div style={{ ...progressFillStyle, width: `${playlist.progress}%` }} />
+      <div className="ui-progress" style={{ marginTop: "12px" }}>
+        <div className="ui-progress__bar" style={{ ...progressFillStyle, width: `${playlist.progress}%` }} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginTop: "12px" }}>
         <Metric label="Done" value={playlist.completedItems} />
@@ -656,15 +656,14 @@ const eyebrowStyle = { fontSize: "10px", fontWeight: 700, letterSpacing: "0.10em
 const titleStyle = { fontFamily: "var(--font-display)", fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.2, color: "var(--foreground)", marginBottom: "10px", wordBreak: "break-word" as const };
 const badgeStyle = { display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "9999px", background: "var(--accent-soft)", border: "1px solid var(--accent-muted)", color: "var(--accent-strong)", fontSize: "13px", fontWeight: 700 };
 const mutedTextStyle = { fontSize: "12px", color: "var(--foreground-muted)" };
-const smallButtonStyle = { padding: "7px 10px", borderRadius: "8px", border: "1px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--foreground-muted)", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" };
-const qualityButtonStyle = { display: "inline-flex", alignItems: "center", gap: "5px", padding: "7px 12px", borderRadius: "9999px", border: "1.5px solid var(--border-strong)", fontSize: "12px", fontWeight: 700, fontFamily: "var(--font-body)" };
+const smallButtonStyle = { minHeight: "44px", padding: "0 12px", borderRadius: "8px", border: "1px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--foreground-muted)", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" };
+const qualityButtonStyle = { minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "5px", padding: "7px 12px", borderRadius: "9999px", border: "1px solid var(--border-strong)", fontSize: "12px", fontWeight: 700, fontFamily: "var(--font-body)" };
 const checkLabelStyle = { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--foreground-muted)", fontWeight: 600, marginTop: "14px" };
 const primaryButtonStyle = { width: "100%", minHeight: "46px", borderRadius: "10px", border: "none", background: "var(--primary)", color: "var(--on-primary)", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "14px", fontWeight: 800, fontFamily: "var(--font-body)", boxShadow: "0 4px 14px var(--primary-glow)" };
-const secondaryButtonStyle = { ...smallButtonStyle, width: "100%", minHeight: "42px", marginTop: "10px" };
+const secondaryButtonStyle = { ...smallButtonStyle, width: "100%", minHeight: "44px", marginTop: "10px" };
 const errorStyle = { fontSize: "12px", fontWeight: 600, color: "var(--error)", marginTop: "10px", lineHeight: 1.45 };
-const numberInputStyle = { width: "70px", height: "34px", borderRadius: "8px", border: "1px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--foreground)", padding: "0 8px", fontSize: "13px", fontWeight: 700 };
-const progressTrackStyle = { height: "8px", borderRadius: "9999px", background: "var(--surface-raised)", border: "1px solid var(--border)", overflow: "hidden", marginTop: "12px" };
-const progressFillStyle = { height: "100%", borderRadius: "9999px", background: "linear-gradient(90deg, var(--primary), var(--accent))", transition: "width 0.2s var(--ease-out)" };
+const numberInputStyle = { width: "76px", height: "44px", borderRadius: "8px", border: "1px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--foreground)", padding: "0 8px", fontSize: "13px", fontWeight: 700 };
+const progressFillStyle = { background: "var(--primary)" };
 
 function checkboxStyle(checked: boolean) {
   return {

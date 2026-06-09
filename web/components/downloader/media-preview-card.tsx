@@ -7,7 +7,6 @@ import {
   Disc3,
   Download,
   FileAudio,
-  SlidersHorizontal,
 } from "lucide-react";
 import type { AnalyzeResponse, QualityValue, RawFormat } from "@/lib/types";
 
@@ -291,30 +290,6 @@ export function MediaPreviewCard({
                 {isDownloadPending ? "Starting…" : "Download Now"}
               </button>
 
-              <button
-                type="button"
-                disabled
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "7px",
-                  padding: "0 16px",
-                  minHeight: "46px",
-                  borderRadius: "10px",
-                  border: "1.5px solid var(--border-strong)",
-                  background: "var(--surface-raised)",
-                  color: "var(--foreground-muted)",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "not-allowed",
-                  opacity: 0.55,
-                  fontFamily: "var(--font-body)",
-                }}
-              >
-                <SlidersHorizontal size={14} aria-hidden="true" />
-                Advanced
-              </button>
             </div>
 
             {downloadError && (

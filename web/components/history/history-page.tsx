@@ -159,44 +159,34 @@ export function HistoryPage() {
             }}
           />
           <input
+            className="ui-field"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search title or URL…"
             style={{
               width: "100%",
-              height: "40px",
+              height: "44px",
               paddingLeft: "36px",
               paddingRight: "12px",
               borderRadius: "8px",
-              border: "1px solid var(--border-strong)",
-              background: "var(--surface-raised)",
-              color: "var(--foreground)",
               fontSize: "13px",
-              fontFamily: "var(--font-body)",
-              outline: "none",
             }}
-            onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--primary)"; }}
-            onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--border-strong)"; }}
           />
         </label>
 
         {/* Status */}
         <select
+          className="ui-field"
           aria-label="Status filter"
           value={status}
           onChange={(e) => setStatus(e.target.value as StatusFilter)}
           style={{
-            height: "40px",
+            height: "44px",
             padding: "0 12px",
             borderRadius: "8px",
-            border: "1px solid var(--border-strong)",
-            background: "var(--surface-raised)",
-            color: "var(--foreground)",
             fontSize: "13px",
             fontWeight: 600,
-            fontFamily: "var(--font-body)",
             cursor: "pointer",
-            outline: "none",
             minWidth: "130px",
           }}
         >
@@ -207,40 +197,32 @@ export function HistoryPage() {
 
         {/* From date */}
         <input
+          className="ui-field"
           aria-label="From date"
           type="date"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
           style={{
-            height: "40px",
+            height: "44px",
             padding: "0 12px",
             borderRadius: "8px",
-            border: "1px solid var(--border-strong)",
-            background: "var(--surface-raised)",
-            color: "var(--foreground)",
             fontSize: "13px",
-            fontFamily: "var(--font-body)",
-            outline: "none",
             minWidth: "0",
           }}
         />
 
         {/* To date */}
         <input
+          className="ui-field"
           aria-label="To date"
           type="date"
           value={to}
           onChange={(e) => setTo(e.target.value)}
           style={{
-            height: "40px",
+            height: "44px",
             padding: "0 12px",
             borderRadius: "8px",
-            border: "1px solid var(--border-strong)",
-            background: "var(--surface-raised)",
-            color: "var(--foreground)",
             fontSize: "13px",
-            fontFamily: "var(--font-body)",
-            outline: "none",
             minWidth: "0",
           }}
         />
@@ -499,7 +481,8 @@ function ActionBtn({
         alignItems: "center",
         justifyContent: "center",
         gap: "5px",
-        padding: "6px 12px",
+        minHeight: "44px",
+        padding: "0 12px",
         borderRadius: "8px",
         border: primary ? "none" : "1px solid var(--border-strong)",
         background: primary ? "var(--primary)" : "var(--surface-raised)",
@@ -544,20 +527,10 @@ function Notice({
 }) {
   return (
     <div
+      className={`ui-notice ${tone === "success" ? "ui-notice--success" : "ui-notice--error"}`}
       role={tone === "error" ? "alert" : "status"}
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "10px",
-        padding: "10px 14px",
-        borderRadius: "10px",
         marginBottom: "14px",
-        background: tone === "success" ? "var(--success-soft)" : "var(--error-soft)",
-        border: `1px solid ${tone === "success" ? "var(--success-border)" : "var(--error-border)"}`,
-        color: tone === "success" ? "var(--success)" : "var(--error)",
-        fontSize: "13px",
-        fontWeight: 600,
       }}
     >
       <span>{message}</span>
@@ -587,18 +560,9 @@ function EmptyState({
 }) {
   return (
     <div
+      className="ui-empty"
       style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
         minHeight: "260px",
-        borderRadius: "16px",
-        background: "var(--surface)",
-        border: "1.5px dashed var(--border-strong)",
-        color: "var(--foreground-muted)",
-        gap: "10px",
-        textAlign: "center",
         padding: "40px",
       }}
     >

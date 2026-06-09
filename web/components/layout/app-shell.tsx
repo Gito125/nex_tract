@@ -145,7 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <BackendHealthCard />
           </div>
           <div className="app-shell__divider app-shell__divider--bottom" />
-          <SidebarFooterBtn icon={HelpCircle} isCollapsed={isCollapsed} label="Help & Support" />
+          <SidebarFooterBtn icon={HelpCircle} isCollapsed={isCollapsed} label="Help coming soon" />
         </div>
       </aside>
 
@@ -273,6 +273,7 @@ function DesktopNavButton({
       <button
         aria-disabled="true"
         aria-label={item.label}
+        disabled
         style={baseStyle}
         title={isCollapsed ? `${item.label} coming soon` : undefined}
         type="button"
@@ -345,7 +346,7 @@ function MobileNavButton({
 
   if (!item.href) {
     return (
-      <button aria-disabled="true" style={style} type="button">
+      <button aria-disabled="true" disabled style={style} type="button">
         {content}
       </button>
     );
@@ -369,8 +370,10 @@ function SidebarFooterBtn({
 }) {
   return (
     <button
+      aria-disabled="true"
       aria-label={label}
       className="app-shell__footer-btn"
+      disabled
       title={isCollapsed ? label : undefined}
       type="button"
       style={{
@@ -384,19 +387,12 @@ function SidebarFooterBtn({
         border: "none",
         background: "transparent",
         color: "var(--sidebar-muted)",
-        cursor: "pointer",
+        cursor: "not-allowed",
         width: "100%",
         textAlign: "left",
         transition: "all 0.15s",
         minHeight: "44px",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.background = "var(--sidebar-hover)";
-        (e.currentTarget as HTMLButtonElement).style.color = "var(--sidebar-text)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-        (e.currentTarget as HTMLButtonElement).style.color = "var(--sidebar-muted)";
+        opacity: 0.58,
       }}
     >
       <Icon size={16} aria-hidden="true" />

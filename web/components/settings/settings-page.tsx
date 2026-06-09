@@ -158,12 +158,11 @@ export function SettingsPage() {
           {/* Download folder */}
           <FieldGroup label="Download folder" icon={Folder}>
             <input
+              className="ui-field"
               value={form.downloadFolder ?? ""}
               onChange={(e) => updateForm(setDraft, { downloadFolder: e.target.value })}
               placeholder="/Users/you/Downloads/Nextract"
               style={inputStyle}
-              onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--primary)"; (e.currentTarget as HTMLInputElement).style.boxShadow = "0 0 0 3px var(--primary-glow)"; }}
-              onBlur={(e)  => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--border-strong)"; (e.currentTarget as HTMLInputElement).style.boxShadow = "none"; }}
             />
           </FieldGroup>
 
@@ -174,12 +173,11 @@ export function SettingsPage() {
             hint={<>Use <code style={codeStyle}>{"{title}"}</code>, <code style={codeStyle}>{"{id}"}</code>, <code style={codeStyle}>{"{quality}"}</code>, <code style={codeStyle}>{"{platform}"}</code>.</>}
           >
             <input
+              className="ui-field"
               value={form.filenameTemplate ?? ""}
               onChange={(e) => updateForm(setDraft, { filenameTemplate: e.target.value })}
               placeholder="{title} [{quality}]"
               style={inputStyle}
-              onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--primary)"; (e.currentTarget as HTMLInputElement).style.boxShadow = "0 0 0 3px var(--primary-glow)"; }}
-              onBlur={(e)  => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--border-strong)"; (e.currentTarget as HTMLInputElement).style.boxShadow = "none"; }}
             />
           </FieldGroup>
 
@@ -272,36 +270,15 @@ export function SettingsPage() {
         {/* Save button */}
         <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "4px" }}>
           <button
+            className="ui-button ui-button--primary"
             type="submit"
             disabled={saveMutation.isPending}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
               padding: "0 28px",
               height: "48px",
-              borderRadius: "12px",
-              border: "none",
-              background: "var(--primary)",
-              color: "var(--on-primary)",
               fontSize: "14px",
-              fontWeight: 700,
               cursor: saveMutation.isPending ? "wait" : "pointer",
               opacity: saveMutation.isPending ? 0.7 : 1,
-              boxShadow: "0 4px 16px var(--primary-glow)",
-              fontFamily: "var(--font-body)",
-              transition: "all 0.2s var(--ease-out)",
-              letterSpacing: "-0.01em",
-            }}
-            onMouseEnter={(e) => {
-              if (!saveMutation.isPending) {
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 22px var(--primary-glow)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px var(--primary-glow)";
             }}
           >
             {saveMutation.isPending ? (
@@ -578,20 +555,10 @@ function Notice({
   const ok = tone === "success";
   return (
     <div
+      className={`ui-notice ${ok ? "ui-notice--success" : "ui-notice--error"}`}
       role={ok ? "status" : "alert"}
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "10px",
-        padding: "12px 16px",
-        borderRadius: "10px",
         marginBottom: "16px",
-        background: ok ? "var(--success-soft)" : "var(--error-soft)",
-        border: `1px solid ${ok ? "var(--success-border)" : "var(--error-border)"}`,
-        color: ok ? "var(--success)" : "var(--error)",
-        fontSize: "13px",
-        fontWeight: 600,
       }}
     >
       <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -615,18 +582,10 @@ function Notice({
 function LoadingState({ label, isError }: { label: string; isError?: boolean }) {
   return (
     <div
+      className="ui-empty"
       style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
         minHeight: "280px",
-        borderRadius: "18px",
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
         color: isError ? "var(--error)" : "var(--foreground-muted)",
-        gap: "10px",
-        textAlign: "center",
         padding: "40px",
       }}
     >
@@ -645,14 +604,7 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   height: "44px",
   padding: "0 14px",
-  borderRadius: "10px",
-  border: "1.5px solid var(--border-strong)",
-  background: "var(--surface-raised)",
-  color: "var(--foreground)",
   fontSize: "14px",
-  fontFamily: "var(--font-body)",
-  outline: "none",
-  transition: "border-color 0.2s, box-shadow 0.2s",
 };
 
 const fieldLabelStyle: React.CSSProperties = {

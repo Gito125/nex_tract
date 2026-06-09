@@ -25,14 +25,10 @@ export function DownloadQueue({
 }) {
   return (
     <section
-      className="animate-fade-up stagger-2"
+      className="ui-card animate-fade-up stagger-2"
       aria-label="Download queue"
       style={{
         marginTop: "24px",
-        borderRadius: "20px",
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-soft)",
         overflow: "hidden",
       }}
     >
@@ -49,15 +45,10 @@ export function DownloadQueue({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span
+            className="ui-icon-tile"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "30px",
-              height: "30px",
-              borderRadius: "8px",
-              background: "var(--primary-soft)",
-              border: "1px solid var(--border-primary)",
+              width: "32px",
+              height: "32px",
             }}
           >
             <Download size={14} style={{ color: "var(--primary-strong)" }} aria-hidden="true" />
@@ -128,18 +119,11 @@ export function DownloadQueue({
 
         {jobs.length === 0 ? (
           <div
+            className="ui-empty"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               minHeight: "80px",
-              borderRadius: "10px",
-              background: "var(--surface-raised)",
-              border: "1px dashed var(--border-strong)",
               fontSize: "13px",
-              color: "var(--foreground-soft)",
-              textAlign: "center",
-              padding: "20px",
+              padding: "24px",
             }}
           >
             Downloads you start from this preview will appear here.

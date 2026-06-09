@@ -155,13 +155,8 @@ export function DownloadProgressCard({
 
         {/* Progress bar */}
         <div
-          style={{
-            height: "6px",
-            borderRadius: "9999px",
-            background: "var(--surface-strong)",
-            overflow: "hidden",
-            marginBottom: "10px",
-          }}
+          className="ui-progress"
+          style={{ marginBottom: "10px" }}
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
@@ -169,12 +164,10 @@ export function DownloadProgressCard({
           aria-label={progressLabel}
         >
           <div
+            className="ui-progress__bar"
             style={{
-              height: "100%",
               width: `${progressPct}%`,
-              borderRadius: "9999px",
               background: pColor,
-              transition: "width 0.4s var(--ease-out)",
             }}
           />
         </div>
@@ -383,7 +376,8 @@ function ActionBtn({
         display: "inline-flex",
         alignItems: "center",
         gap: "6px",
-        padding: "6px 12px",
+        minHeight: "44px",
+        padding: "0 12px",
         borderRadius: "8px",
         border: primary ? "none" : "1px solid var(--border-strong)",
         background: primary ? "var(--primary)" : "var(--surface)",
@@ -395,7 +389,6 @@ function ActionBtn({
         fontFamily: "var(--font-body)",
         transition: "all 0.15s",
         boxShadow: primary ? "0 2px 8px var(--primary-glow)" : "none",
-        minHeight: "36px",
       }}
     >
       <Icon size={13} aria-hidden="true" />
