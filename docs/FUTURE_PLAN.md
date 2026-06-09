@@ -63,6 +63,28 @@ Potential future:
 
 ---
 
+# Typography & Visual Polish
+
+## Font Strategy
+
+Nextract would instantly feel more like a polished SaaS product with deliberate typography choices:
+
+- **Geist**: Primary font for body text, headings, UI labels, and general interface.
+  - Modern, clean, and cohesive visual language.
+  - Reinforces professional SaaS aesthetic.
+
+- **JetBrains Mono**: Monospace font for technical content only.
+  - URLs
+  - Terminal output
+  - Logs
+  - Commands
+  - Format IDs
+  - File paths
+
+This dual-font approach maintains visual clarity while signaling semantic distinctions between human-readable content and technical data.
+
+---
+
 # Future Cloud Features
 
 Potential cloud features should focus on metadata, not media storage.
