@@ -11,6 +11,8 @@ import type {
   AppSettings,
   PlaylistCreateRequest,
   PlaylistResponse,
+  PlaylistSizeEstimateRequest,
+  PlaylistSizeEstimateResponse,
   SettingsUpdateRequest,
 } from "@/lib/types";
 
@@ -19,9 +21,13 @@ const API_BASE_URL =
   "http://localhost:8000";
 const REQUEST_TIMEOUT_MS = 45_000; // 45 seconds timeout for API requests
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<T> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   let response: Response;
   try {
@@ -120,6 +126,15 @@ export function cancelPlaylist(playlistId: string): Promise<PlaylistResponse> {
 
 export function getPlaylistEventsUrl(playlistId: string): string {
   return `${API_BASE_URL}/api/playlists/${playlistId}/events`;
+}
+
+export function estimatePlaylistSizes(
+  body: PlaylistSizeEstimateRequest,
+): Promise<PlaylistSizeEstimateResponse> {
+  return request<PlaylistSizeEstimateResponse>("/api/playlists/size-estimate", {
+    method: "POST",
+    body: JSON.stringify(body),
+  }, 180_000);
 }
 
 export function listHistory(

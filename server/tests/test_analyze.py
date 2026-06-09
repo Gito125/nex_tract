@@ -90,6 +90,73 @@ def test_analyze_returns_friendly_ytdlp_error() -> None:
     }
 
 
+def test_analyze_returns_friendly_network_error() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        return_value=subprocess.CompletedProcess(
+            args=["yt-dlp"],
+            returncode=1,
+            stdout="null",
+            stderr=(
+                "ERROR: [youtube:tab] PL123: Unable to download API page: "
+                "HTTPSConnection(host='www.youtube.com', port=443): "
+                "Failed to resolve 'www.youtube.com' ([Errno -2] Name or service not known)"
+            ),
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.youtube.com/playlist?list=PL123"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "Could not reach YouTube. Check your internet connection and try again."
+    }
+
+
+def test_analyze_classifies_stdout_ytdlp_errors() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        return_value=subprocess.CompletedProcess(
+            args=["yt-dlp"],
+            returncode=1,
+            stdout="ERROR: [youtube:tab] PL123: The playlist does not exist.",
+            stderr="",
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.youtube.com/playlist?list=PL123"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "This playlist is unavailable or no longer exists."
+    }
+
+
+def test_analyze_rejects_null_playlist_payload() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        return_value=subprocess.CompletedProcess(
+            args=["yt-dlp"],
+            returncode=0,
+            stdout="null",
+            stderr="",
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.youtube.com/playlist?list=PL123"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "This playlist is unavailable or no longer exists."
+    }
+
+
 def test_analyze_playlist_returns_basic_summary() -> None:
     with patch(
         "app.platforms.youtube.subprocess.run",
@@ -142,6 +209,7 @@ def test_analyze_playlist_returns_basic_summary() -> None:
     }
     assert "--flat-playlist" in run.call_args.args[0]
     assert "--yes-playlist" in run.call_args.args[0]
+    assert "--ignore-errors" in run.call_args.args[0]
 
 
 def _completed_process(payload: dict) -> subprocess.CompletedProcess[str]:

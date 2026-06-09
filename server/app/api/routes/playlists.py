@@ -3,11 +3,17 @@ from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.db.database import get_session
-from app.schemas.playlist import PlaylistCreateRequest, PlaylistResponse
+from app.schemas.playlist import (
+    PlaylistCreateRequest,
+    PlaylistResponse,
+    PlaylistSizeEstimateRequest,
+    PlaylistSizeEstimateResponse,
+)
 from app.services.exceptions import PlaylistError
 from app.services.playlist_service import (
     cancel_playlist_download,
     create_playlist_download,
+    estimate_playlist_sizes,
     get_playlist,
     stream_playlist_events,
 )
@@ -24,6 +30,13 @@ async def create_playlist(
         return create_playlist_download(request, session)
     except PlaylistError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.post("/playlists/size-estimate", response_model=PlaylistSizeEstimateResponse)
+def estimate_playlist_size(
+    request: PlaylistSizeEstimateRequest,
+) -> PlaylistSizeEstimateResponse:
+    return estimate_playlist_sizes(request)
 
 
 @router.get("/playlists/{playlist_id}", response_model=PlaylistResponse)

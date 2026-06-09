@@ -18,9 +18,13 @@ from app.schemas.playlist import (
     PlaylistCreateRequest,
     PlaylistItemResponse,
     PlaylistItemStatusValue,
+    PlaylistQualitySizeEstimate,
     PlaylistResponse,
+    PlaylistSizeEstimateRequest,
+    PlaylistSizeEstimateResponse,
     PlaylistStatusValue,
 )
+from app.platforms.youtube import extract_youtube_metadata
 from app.services.analyze_service import analyze_url
 from app.services.download_service import AUDIO_QUALITY_FORMATS, QUALITY_FORMATS
 from app.services.exceptions import AnalyzeError, PlaylistError
@@ -137,6 +141,55 @@ def create_playlist_download(
 
 def get_playlist(playlist_id: str, session: Session) -> PlaylistResponse:
     return playlist_to_response(_get_playlist_or_raise(playlist_id, session), session)
+
+
+def estimate_playlist_sizes(
+    request: PlaylistSizeEstimateRequest,
+) -> PlaylistSizeEstimateResponse:
+    qualities = request.qualities or list(QUALITY_FORMATS.keys())
+    totals = {quality: 0 for quality in qualities}
+    estimated_items = {quality: 0 for quality in qualities}
+    unavailable_items = {quality: 0 for quality in qualities}
+    analyzed_items = 0
+    failed_items = 0
+
+    for item in request.items:
+        try:
+            platform = detect_platform(item.url)
+            if platform.platform != "youtube":
+                raise PlaylistError("Only YouTube links are supported in this version.")
+            metadata = extract_youtube_metadata(platform.url, "video")
+        except (AnalyzeError, PlatformValidationError, PlaylistError):
+            failed_items += 1
+            for quality in qualities:
+                unavailable_items[quality] += 1
+            continue
+
+        formats = _list_value(metadata.get("formats"))
+        analyzed_items += 1
+
+        for quality in qualities:
+            size = _estimate_quality_size(formats, quality)
+            if size is None:
+                unavailable_items[quality] += 1
+                continue
+            totals[quality] += size
+            estimated_items[quality] += 1
+
+    return PlaylistSizeEstimateResponse(
+        requestedItems=len(request.items),
+        analyzedItems=analyzed_items,
+        failedItems=failed_items,
+        estimates=[
+            PlaylistQualitySizeEstimate(
+                quality=quality,
+                totalBytes=totals[quality] if estimated_items[quality] > 0 else None,
+                estimatedItems=estimated_items[quality],
+                unavailableItems=unavailable_items[quality],
+            )
+            for quality in qualities
+        ],
+    )
 
 
 async def stream_playlist_events(playlist_id: str) -> AsyncIterator[str]:
@@ -473,6 +526,125 @@ def _selected_items(
         raise PlaylistError("Selected playlist items are outside the available range.")
 
     return [item_by_index[index] for index in indexes]
+
+
+def _estimate_quality_size(
+    formats: list[dict[str, Any]],
+    quality: QualityValue,
+) -> int | None:
+    if quality == "best":
+        return _best_video_size(formats)
+    if quality.startswith("audio_"):
+        return _audio_size(formats, quality)
+    return _video_size_for_height(formats, int(quality.removesuffix("p")))
+
+
+def _best_video_size(formats: list[dict[str, Any]]) -> int | None:
+    video_formats = sorted(
+        [item for item in formats if _has_video(item)],
+        key=lambda item: (
+            _int_or_none(item.get("height")) or 0,
+            _int_or_none(item.get("tbr")) or 0,
+            _format_size(item) or 0,
+        ),
+        reverse=True,
+    )
+    for item in video_formats:
+        size = _combined_video_audio_size(item, formats)
+        if size:
+            return size
+    return None
+
+
+def _video_size_for_height(
+    formats: list[dict[str, Any]],
+    height: int,
+) -> int | None:
+    video_formats = sorted(
+        [
+            item
+            for item in formats
+            if _has_video(item) and (_int_or_none(item.get("height")) or 0) <= height
+        ],
+        key=lambda item: (
+            _int_or_none(item.get("height")) or 0,
+            _int_or_none(item.get("tbr")) or 0,
+            _format_size(item) or 0,
+        ),
+        reverse=True,
+    )
+    for item in video_formats:
+        size = _combined_video_audio_size(item, formats)
+        if size:
+            return size
+    return None
+
+
+def _combined_video_audio_size(
+    video_format: dict[str, Any],
+    formats: list[dict[str, Any]],
+) -> int | None:
+    video_size = _format_size(video_format)
+    if video_size is None:
+        return None
+    if _has_audio(video_format):
+        return video_size
+    audio_size = _best_audio_size(formats)
+    return video_size + audio_size if audio_size is not None else video_size
+
+
+def _audio_size(formats: list[dict[str, Any]], quality: QualityValue) -> int | None:
+    ext = quality.removeprefix("audio_")
+    if ext == "mp3":
+        return _best_audio_size(formats)
+
+    preferred = [
+        item
+        for item in formats
+        if _has_audio(item) and not _has_video(item) and item.get("ext") == ext
+    ]
+    return _largest_known_size(preferred) or _best_audio_size(formats)
+
+
+def _best_audio_size(formats: list[dict[str, Any]]) -> int | None:
+    audio_formats = [
+        item for item in formats if _has_audio(item) and not _has_video(item)
+    ]
+    return _largest_known_size(audio_formats)
+
+
+def _largest_known_size(formats: list[dict[str, Any]]) -> int | None:
+    sizes = [_format_size(item) for item in formats]
+    known_sizes = [size for size in sizes if size is not None and size > 0]
+    return max(known_sizes) if known_sizes else None
+
+
+def _format_size(item: dict[str, Any]) -> int | None:
+    return _int_or_none(item.get("filesize") or item.get("filesize_approx"))
+
+
+def _has_video(item: dict[str, Any]) -> bool:
+    vcodec = item.get("vcodec")
+    return isinstance(vcodec, str) and vcodec != "none"
+
+
+def _has_audio(item: dict[str, Any]) -> bool:
+    acodec = item.get("acodec")
+    return isinstance(acodec, str) and acodec != "none"
+
+
+def _list_value(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _int_or_none(value: Any) -> int | None:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    return None
 
 
 def _validate_download_shape(

@@ -17,6 +17,8 @@ import type {
   PlaylistCreateRequest,
   PlaylistItem,
   PlaylistResponse,
+  PlaylistSizeEstimateRequest,
+  PlaylistSizeEstimateResponse,
   QualityValue,
 } from "@/lib/types";
 
@@ -30,26 +32,34 @@ type SelectionMode = "selected" | "range";
 export function PlaylistPreviewCard({
   defaultSkipExisting,
   isCancelPending,
+  isEstimatePending,
   isStartPending,
   onBack,
   onCancel,
+  onEstimateSizes,
   onSelectQuality,
   onStart,
   playlist,
   preview,
   selectedQuality,
+  sizeEstimate,
+  sizeEstimateError,
   startError,
 }: {
   defaultSkipExisting: boolean;
   isCancelPending: boolean;
+  isEstimatePending: boolean;
   isStartPending: boolean;
   onBack: () => void;
   onCancel: () => void;
+  onEstimateSizes: (request: PlaylistSizeEstimateRequest) => void;
   onSelectQuality: (quality: QualityValue) => void;
   onStart: (options: PlaylistStartOptions) => void;
   playlist: PlaylistResponse | null;
   preview: AnalyzeResponse;
   selectedQuality: QualityValue | null;
+  sizeEstimate: PlaylistSizeEstimateResponse | null;
+  sizeEstimateError: string | null;
   startError: string | null;
 }) {
   const items = useMemo(() => preview.playlist?.items ?? [], [preview.playlist]);
@@ -73,6 +83,20 @@ export function PlaylistPreviewCard({
     selectionMode === "range"
       ? rangeSelectionCount(Number(rangeStart), Number(rangeEnd), items.length)
       : selectedIndexes.length;
+  const selectedAvailableItems = selectedPlaylistItems(
+    items,
+    selectionMode,
+    selectedIndexes,
+    Number(rangeStart),
+    Number(rangeEnd),
+  );
+  const sizeEstimateByQuality = useMemo(() => {
+    const map = new Map<QualityValue, number | null>();
+    for (const estimate of sizeEstimate?.estimates ?? []) {
+      map.set(estimate.quality, estimate.totalBytes);
+    }
+    return map;
+  }, [sizeEstimate]);
   const isRunning = playlist?.status === "pending" || playlist?.status === "downloading";
   const canStart = Boolean(selectedQuality) && selectedCount > 0 && !isStartPending && !isRunning;
 
@@ -95,6 +119,17 @@ export function PlaylistPreviewCard({
       return;
     }
     onStart({ selectedIndexes, skipExisting });
+  }
+
+  function estimateSizes() {
+    if (selectedAvailableItems.length === 0) return;
+    onEstimateSizes({
+      items: selectedAvailableItems.map((item) => ({
+        index: item.index,
+        url: item.url,
+      })),
+      qualities: preview.qualities.map((option) => option.value),
+    });
   }
 
   return (
@@ -160,6 +195,7 @@ export function PlaylistPreviewCard({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
                   {preview.qualities.map((option) => {
                     const isSelected = option.value === selectedQuality;
+                    const estimatedSize = sizeEstimateByQuality.get(option.value);
                     return (
                       <button
                         key={option.value}
@@ -176,11 +212,45 @@ export function PlaylistPreviewCard({
                         }}
                       >
                         {option.kind === "audio" && <FileAudio size={12} aria-hidden="true" />}
-                        {option.label}
+                        <span style={{ display: "flex", flexDirection: "column", gap: "1px", alignItems: "flex-start" }}>
+                          <span>{option.label}</span>
+                          {sizeEstimate ? (
+                            <span style={{ fontSize: "10px", fontWeight: 800, opacity: 0.82 }}>
+                              {formatBytes(estimatedSize)}
+                            </span>
+                          ) : null}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
+                <button
+                  type="button"
+                  disabled={isEstimatePending || isRunning || selectedAvailableItems.length === 0}
+                  onClick={estimateSizes}
+                  style={{
+                    ...smallButtonStyle,
+                    marginTop: "12px",
+                    cursor:
+                      isEstimatePending || isRunning || selectedAvailableItems.length === 0
+                        ? "not-allowed"
+                        : "pointer",
+                    opacity:
+                      isEstimatePending || isRunning || selectedAvailableItems.length === 0
+                        ? 0.62
+                        : 1,
+                  }}
+                >
+                  {isEstimatePending
+                    ? "Calculating sizes..."
+                    : `Calculate sizes for ${selectedAvailableItems.length} selected`}
+                </button>
+                {sizeEstimate && (
+                  <p style={{ ...mutedTextStyle, marginTop: "8px", lineHeight: 1.45 }}>
+                    Estimated from {sizeEstimate.analyzedItems}/{sizeEstimate.requestedItems} selected videos.
+                  </p>
+                )}
+                {sizeEstimateError && <p role="alert" style={errorStyle}>{sizeEstimateError}</p>}
                 <label style={checkLabelStyle}>
                   <input
                     checked={skipExisting}
@@ -241,9 +311,7 @@ function PlaylistHeader({
 }) {
   return (
     <div style={{ display: "flex", gap: "18px", alignItems: "flex-start", flexWrap: "wrap" }}>
-      <div style={iconBoxStyle}>
-        <ListVideo size={26} style={{ color: "var(--primary-strong)" }} aria-hidden="true" />
-      </div>
+      <PlaylistArtwork thumbnail={preview.thumbnail} title={preview.title} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={eyebrowStyle}>YouTube Playlist</p>
         <h2 style={titleStyle}>{preview.title}</h2>
@@ -255,6 +323,28 @@ function PlaylistHeader({
           {preview.creator && <span style={mutedTextStyle}>{preview.creator}</span>}
         </div>
       </div>
+    </div>
+  );
+}
+
+function PlaylistArtwork({
+  thumbnail,
+  title,
+}: {
+  thumbnail: string | null;
+  title: string;
+}) {
+  return (
+    <div style={artworkStyle}>
+      {thumbnail ? (
+        <img
+          alt={`${title} playlist thumbnail`}
+          src={thumbnail}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        <ListVideo size={26} style={{ color: "var(--primary-strong)" }} aria-hidden="true" />
+      )}
     </div>
   );
 }
@@ -473,6 +563,27 @@ function rangeSelectionCount(start: number, end: number, total: number): number 
   return end - start + 1;
 }
 
+function selectedPlaylistItems(
+  items: PlaylistAnalyzeItem[],
+  mode: SelectionMode,
+  selectedIndexes: number[],
+  rangeStart: number,
+  rangeEnd: number,
+): PlaylistAnalyzeItem[] {
+  return items.filter((item) => {
+    if (!item.available || !item.url) return false;
+    if (mode === "range") {
+      return (
+        Number.isFinite(rangeStart) &&
+        Number.isFinite(rangeEnd) &&
+        item.index >= rangeStart &&
+        item.index <= rangeEnd
+      );
+    }
+    return selectedIndexes.includes(item.index);
+  });
+}
+
 function formatDuration(duration: number | null): string {
   if (!duration) return "Duration unavailable";
   const h = Math.floor(duration / 3600);
@@ -480,6 +591,20 @@ function formatDuration(duration: number | null): string {
   const s = duration % 60;
   if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function formatBytes(bytes: number | null | undefined): string {
+  if (!bytes || bytes <= 0) return "Size unknown";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toLocaleString(undefined, {
+    maximumFractionDigits: value >= 10 || unit === 0 ? 0 : 1,
+  })} ${units[unit]}`;
 }
 
 const backButtonStyle = {
@@ -501,7 +626,7 @@ const backButtonStyle = {
 const shellStyle = { borderRadius: "20px", overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lift)" };
 const accentStyle = { height: "3px", background: "linear-gradient(90deg, var(--primary), var(--accent))" };
 const panelStyle = { borderRadius: "14px", background: "var(--surface)", border: "1px solid var(--border)", padding: "16px", boxShadow: "var(--shadow-soft)" };
-const iconBoxStyle = { display: "flex", alignItems: "center", justifyContent: "center", width: "58px", height: "58px", borderRadius: "14px", background: "var(--primary-soft)", border: "1px solid var(--border-primary)", flexShrink: 0 };
+const artworkStyle = { display: "flex", alignItems: "center", justifyContent: "center", width: "72px", height: "54px", borderRadius: "12px", background: "var(--primary-soft)", border: "1px solid var(--border-primary)", flexShrink: 0, overflow: "hidden" };
 const eyebrowStyle = { fontSize: "10px", fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" as const, color: "var(--foreground-subtle)", marginBottom: "7px" };
 const titleStyle = { fontFamily: "var(--font-display)", fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.2, color: "var(--foreground)", marginBottom: "10px", wordBreak: "break-word" as const };
 const badgeStyle = { display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "9999px", background: "var(--accent-soft)", border: "1px solid var(--accent-muted)", color: "var(--accent-strong)", fontSize: "13px", fontWeight: 700 };

@@ -21,6 +21,7 @@ import {
   cancelPlaylist,
   createPlaylist,
   createDownload,
+  estimatePlaylistSizes,
   getSettings,
   getDownloadEventsUrl,
   getPlaylistEventsUrl,
@@ -34,6 +35,7 @@ import type {
   DownloadJob,
   DownloadQueueResponse,
   PlaylistCreateRequest,
+  PlaylistSizeEstimateRequest,
   PlaylistResponse,
   QualityValue,
 } from "@/lib/types";
@@ -147,6 +149,10 @@ export function AnalyzeHome() {
     onSuccess: (data) => setPlaylist(data),
   });
 
+  const estimatePlaylistSizesMutation = useMutation({
+    mutationFn: estimatePlaylistSizes,
+  });
+
   const visibleError =
     clientError ?? (analyzeMutation.error ? analyzeMutation.error.message : null);
   const queueError =
@@ -184,6 +190,7 @@ export function AnalyzeHome() {
     createDownloadMutation.reset();
     createPlaylistMutation.reset();
     cancelPlaylistMutation.reset();
+    estimatePlaylistSizesMutation.reset();
   }
 
   function handleDownload() {
@@ -206,6 +213,13 @@ export function AnalyzeHome() {
     createPlaylistMutation.mutate(
       toPlaylistRequest(analysis.webpageUrl, selectedQuality, options),
     );
+  }
+
+  function handlePlaylistSizeEstimate(
+    request: PlaylistSizeEstimateRequest,
+  ) {
+    estimatePlaylistSizesMutation.reset();
+    estimatePlaylistSizesMutation.mutate(request);
   }
 
   if (analysis?.type === "video") {
@@ -249,11 +263,15 @@ export function AnalyzeHome() {
         <PlaylistPreviewCard
           defaultSkipExisting={settingsQuery.data?.skipExisting ?? false}
           isCancelPending={cancelPlaylistMutation.isPending}
+          isEstimatePending={estimatePlaylistSizesMutation.isPending}
           isStartPending={createPlaylistMutation.isPending}
+          sizeEstimate={estimatePlaylistSizesMutation.data ?? null}
+          sizeEstimateError={estimatePlaylistSizesMutation.error?.message ?? null}
           onBack={resetAnalysis}
           onCancel={() => {
             if (playlist) cancelPlaylistMutation.mutate(playlist.id);
           }}
+          onEstimateSizes={handlePlaylistSizeEstimate}
           onSelectQuality={setSelectedQuality}
           onStart={handlePlaylistStart}
           playlist={playlist}

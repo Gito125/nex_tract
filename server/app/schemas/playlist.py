@@ -34,6 +34,35 @@ class PlaylistCreateRequest(BaseModel):
     range_end: int | None = Field(default=None, alias="rangeEnd")
     skip_existing: bool | None = Field(default=None, alias="skipExisting")
 
+
+class PlaylistSizeEstimateItem(BaseModel):
+    index: int
+    url: str = Field(min_length=1, max_length=2048)
+
+
+class PlaylistSizeEstimateRequest(BaseModel):
+    items: list[PlaylistSizeEstimateItem] = Field(min_length=1, max_length=100)
+    qualities: list[QualityValue] | None = None
+
+
+class PlaylistQualitySizeEstimate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    quality: QualityValue
+    total_bytes: int | None = Field(default=None, alias="totalBytes")
+    estimated_items: int = Field(alias="estimatedItems")
+    unavailable_items: int = Field(alias="unavailableItems")
+
+
+class PlaylistSizeEstimateResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    requested_items: int = Field(alias="requestedItems")
+    analyzed_items: int = Field(alias="analyzedItems")
+    failed_items: int = Field(alias="failedItems")
+    estimates: list[PlaylistQualitySizeEstimate]
+
+
 class PlaylistItemResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

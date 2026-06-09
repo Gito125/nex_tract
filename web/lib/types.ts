@@ -103,6 +103,14 @@ export type PlaylistCreateRequest = {
   skipExisting?: boolean;
 };
 
+export type PlaylistSizeEstimateRequest = {
+  items: Array<{
+    index: number;
+    url: string;
+  }>;
+  qualities?: QualityValue[];
+};
+
 export type DownloadJob = {
   id: string;
   url: string;
@@ -193,6 +201,20 @@ export type PlaylistResponse = {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+};
+
+export type PlaylistQualitySizeEstimate = {
+  quality: QualityValue;
+  totalBytes: number | null;
+  estimatedItems: number;
+  unavailableItems: number;
+};
+
+export type PlaylistSizeEstimateResponse = {
+  requestedItems: number;
+  analyzedItems: number;
+  failedItems: number;
+  estimates: PlaylistQualitySizeEstimate[];
 };
 
 export type HistoryStatus = "completed" | "failed";

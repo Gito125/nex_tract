@@ -243,6 +243,52 @@ def test_cancel_playlist_marks_remaining_items_cancelled() -> None:
     release.set()
 
 
+def test_playlist_size_estimate_sums_selected_video_formats() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        side_effect=[
+            _completed_process(_video_metadata(video_size=2_000, audio_size=200)),
+            _completed_process(_video_metadata(video_size=3_000, audio_size=300)),
+        ],
+    ):
+        response = client.post(
+            "/api/playlists/size-estimate",
+            json={
+                "items": [
+                    {"index": 1, "url": "https://www.youtube.com/watch?v=one"},
+                    {"index": 2, "url": "https://www.youtube.com/watch?v=two"},
+                ],
+                "qualities": ["best", "720p", "audio_m4a"],
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["requestedItems"] == 2
+    assert body["analyzedItems"] == 2
+    assert body["failedItems"] == 0
+    assert body["estimates"] == [
+        {
+            "quality": "best",
+            "totalBytes": 5_500,
+            "estimatedItems": 2,
+            "unavailableItems": 0,
+        },
+        {
+            "quality": "720p",
+            "totalBytes": 5_500,
+            "estimatedItems": 2,
+            "unavailableItems": 0,
+        },
+        {
+            "quality": "audio_m4a",
+            "totalBytes": 500,
+            "estimatedItems": 2,
+            "unavailableItems": 0,
+        },
+    ]
+
+
 def _wait_for_playlist_status(
     playlist_id: str,
     status: str,
@@ -298,6 +344,30 @@ def _playlist_metadata(item_count: int = 2) -> dict[str, Any]:
         "thumbnail": "https://img.youtube.com/playlist.jpg",
         "webpage_url": "https://www.youtube.com/playlist?list=PL123",
         "entries": entries[:item_count],
+    }
+
+
+def _video_metadata(video_size: int, audio_size: int) -> dict[str, Any]:
+    return {
+        "title": "Example Video",
+        "webpage_url": "https://www.youtube.com/watch?v=abc123",
+        "formats": [
+            {
+                "format_id": "136",
+                "ext": "mp4",
+                "height": 720,
+                "vcodec": "avc1",
+                "acodec": "none",
+                "filesize": video_size,
+            },
+            {
+                "format_id": "140",
+                "ext": "m4a",
+                "vcodec": "none",
+                "acodec": "mp4a",
+                "filesize": audio_size,
+            },
+        ],
     }
 
 
