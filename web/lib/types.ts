@@ -7,6 +7,8 @@ export type AnalyzeRequest = {
   url: string;
 };
 
+export type PlatformValue = "youtube" | "tiktok" | "instagram" | "x";
+
 export type QualityValue =
   | "best"
   | "1080p"
@@ -54,7 +56,7 @@ export type PlaylistSummary = {
 };
 
 export type AnalyzeResponse = {
-  platform: "youtube";
+  platform: PlatformValue;
   type: "video" | "playlist";
   title: string;
   thumbnail: string | null;
@@ -115,7 +117,7 @@ export type PlaylistSizeEstimateRequest = {
 export type DownloadJob = {
   id: string;
   url: string;
-  platform: "youtube";
+  platform: PlatformValue;
   mediaType: "video";
   title: string;
   thumbnail: string | null;
@@ -178,7 +180,7 @@ export type PlaylistItem = {
 export type PlaylistResponse = {
   id: string;
   url: string;
-  platform: "youtube";
+  platform: PlatformValue;
   title: string;
   thumbnail: string | null;
   totalItems: number;
@@ -225,7 +227,7 @@ export type HistoryItem = {
   id: string;
   jobId: string;
   url: string;
-  platform: "youtube";
+  platform: PlatformValue;
   mediaType: "video";
   title: string;
   thumbnail: string | null;

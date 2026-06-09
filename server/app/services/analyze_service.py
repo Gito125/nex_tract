@@ -1,7 +1,7 @@
 from typing import Any
 from urllib.parse import urlparse
 
-from app.platforms.youtube import extract_youtube_metadata
+from app.platforms.registry import get_adapter
 from app.schemas.analyze import AnalyzeResponse, PlaylistAnalyzeItem, PlaylistSummary
 from app.services.exceptions import AnalyzeError
 from app.services.format_service import (
@@ -18,15 +18,17 @@ def analyze_url(url: str) -> AnalyzeResponse:
     except PlatformValidationError as exc:
         raise AnalyzeError(exc.message, status_code=400) from exc
 
-    if platform.platform != "youtube":
-        raise AnalyzeError("Only YouTube links are supported in this version.")
-
-    metadata = extract_youtube_metadata(platform.url, platform.media_type)
+    adapter = get_adapter(platform.platform)
+    metadata = adapter.extract_metadata(platform.url, platform.media_type)
 
     if platform.media_type == "playlist":
+        if platform.platform != "youtube":
+            raise AnalyzeError(
+                "Playlist downloads are currently only available for YouTube."
+            )
         return _playlist_response(platform, metadata)
 
-    return _video_response(platform, metadata)
+    return _video_response(platform, metadata, fallback_title=f"Untitled {adapter.display_name} video")
 
 
 PLAYLIST_FALLBACK_NOTICE = (
@@ -38,19 +40,24 @@ def _video_response(
     platform: PlatformInfo,
     metadata: dict[str, Any],
     notice: str | None = None,
+    fallback_title: str | None = None,
 ) -> AnalyzeResponse:
     formats = _list_value(metadata.get("formats"))
+    adapter = get_adapter(platform.platform)
 
     return AnalyzeResponse(
-        platform="youtube",
+        platform=platform.platform,
         type="video",
-        title=_string_value(metadata.get("title"), "Untitled YouTube video"),
+        title=_string_value(
+            metadata.get("title"),
+            fallback_title or f"Untitled {adapter.display_name} video",
+        ),
         thumbnail=_thumbnail(metadata),
         duration=_int_or_none(metadata.get("duration")),
         creator=_creator(metadata),
         webpageUrl=_string_value(metadata.get("webpage_url"), platform.url),
         qualities=normalize_quality_options(formats),
-        rawFormats=sanitize_raw_formats(formats),
+        rawFormats=sanitize_raw_formats(formats, metadata),
         notice=notice,
     )
 
@@ -72,7 +79,7 @@ def _playlist_response(
     items = [_playlist_item(entry, index) for index, entry in enumerate(entries, start=1)]
 
     return AnalyzeResponse(
-        platform="youtube",
+        platform=platform.platform,
         type="playlist",
         title=title,
         thumbnail=_thumbnail(metadata),

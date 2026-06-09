@@ -16,8 +16,8 @@ Update it as you build.
 ## Current Focus
 
 ```txt
-Current Phase: Phase 7 — UI Polish
-Current Goal: Make the app feel clean, beautiful, and production-worthy.
+Current Phase: Phase 8 — Multi-Platform Expansion
+Current Goal: Add clean single-link support for public TikTok, Instagram, and X media.
 ```
 
 ---
@@ -344,6 +344,11 @@ Phase 7 is complete when:
 
 Add support for more platforms through adapters.
 
+## Phase 8 v1 Note
+
+Phase 8 v1 supports public single media links only for TikTok, Instagram, and X.com.
+It does not support cookies, authenticated downloads, private media, paid media, DRM bypassing, profiles, collections, or non-YouTube playlists.
+
 ## Platform Order
 
 Recommended order:
@@ -359,17 +364,17 @@ Recommended order:
 
 ## Tasks
 
-For each platform:
+For Phase 8 v1 platforms: TikTok, Instagram, and X.com.
 
-- [ ] Add adapter.
-- [ ] Add platform detection.
-- [ ] Add metadata extraction.
-- [ ] Normalize formats.
-- [ ] Test single download.
-- [ ] Test audio-only if supported.
-- [ ] Test error states.
-- [ ] Add platform badge.
-- [ ] Add platform-specific notes.
+- [x] Add adapter.
+- [x] Add platform detection.
+- [x] Add metadata extraction.
+- [x] Normalize formats.
+- [/] Test single download with mocked backend coverage.
+- [/] Test audio-only support with shared quality/download path.
+- [x] Test error states.
+- [x] Add platform badge.
+- [x] Add platform-specific notes.
 
 ## Exit Criteria
 

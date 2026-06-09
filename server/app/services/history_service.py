@@ -16,6 +16,7 @@ from app.db.models import (
     PlaylistItem,
     PlaylistItemStatus,
 )
+from app.platforms.base import PlatformValue
 from app.schemas.download import (
     AudioFormat,
     DownloadCreateRequest,
@@ -192,7 +193,7 @@ def history_to_response(item: DownloadHistoryItem) -> HistoryItemResponse:
         id=item.id,
         jobId=item.job_id,
         url=item.url,
-        platform="youtube",
+        platform=cast(PlatformValue, item.platform),
         mediaType="video",
         title=item.title,
         thumbnail=item.thumbnail,

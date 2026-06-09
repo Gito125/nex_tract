@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.platforms.base import PlatformValue
+
 
 class AnalyzeRequest(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
@@ -61,7 +63,7 @@ class PlaylistSummary(BaseModel):
 class AnalyzeResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    platform: Literal["youtube"]
+    platform: PlatformValue
     type: Literal["video", "playlist"]
     title: str
     thumbnail: str | None = None

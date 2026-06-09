@@ -65,7 +65,101 @@ def test_analyze_rejects_unsupported_platform() -> None:
 
     assert response.status_code == 400
     assert response.json() == {
-        "detail": "Only YouTube links are supported in this version."
+        "detail": "This platform is not supported yet. Try YouTube, TikTok, Instagram, or X."
+    }
+
+
+def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            _social_video_metadata(
+                "Example TikTok",
+                "TikTok Creator",
+                "https://www.tiktok.com/@creator/video/123",
+            )
+        ),
+    ) as run:
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.tiktok.com/@creator/video/123"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["platform"] == "tiktok"
+    assert body["type"] == "video"
+    assert body["title"] == "Example TikTok"
+    assert body["creator"] == "TikTok Creator"
+    assert body["webpageUrl"] == "https://www.tiktok.com/@creator/video/123"
+    assert [item["value"] for item in body["qualities"]] == ["best", "720p", "audio_mp3"]
+    assert "--no-playlist" in run.call_args.args[0]
+
+
+def test_analyze_instagram_video_returns_normalized_metadata() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            _social_video_metadata(
+                "Example Reel",
+                "Instagram Creator",
+                "https://www.instagram.com/reel/ABC123/",
+            )
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.instagram.com/reel/ABC123/"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["platform"] == "instagram"
+    assert body["type"] == "video"
+    assert body["title"] == "Example Reel"
+
+
+def test_analyze_x_video_returns_normalized_metadata() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            _social_video_metadata(
+                "Example X Post",
+                "X Creator",
+                "https://x.com/creator/status/123",
+            )
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://x.com/creator/status/123"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["platform"] == "x"
+    assert body["type"] == "video"
+    assert body["title"] == "Example X Post"
+
+
+def test_analyze_social_private_error_is_friendly() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=subprocess.CompletedProcess(
+            args=["yt-dlp"],
+            returncode=1,
+            stdout="",
+            stderr="ERROR: login required. Use cookies from browser.",
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.instagram.com/reel/private/"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "This media appears to be private or restricted."
     }
 
 
@@ -308,6 +402,27 @@ def _video_metadata() -> dict:
                 "vcodec": "none",
                 "acodec": "opus",
             },
+        ],
+    }
+
+
+def _social_video_metadata(title: str, creator: str, webpage_url: str) -> dict:
+    return {
+        "title": title,
+        "thumbnail": "https://cdn.example/thumb.jpg",
+        "duration": 42,
+        "uploader": creator,
+        "webpage_url": webpage_url,
+        "formats": [
+            {
+                "format_id": "h264",
+                "ext": "mp4",
+                "height": 720,
+                "width": 1280,
+                "fps": 30,
+                "vcodec": "avc1",
+                "acodec": "aac",
+            }
         ],
     }
 

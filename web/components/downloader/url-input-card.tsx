@@ -93,7 +93,7 @@ export function UrlInputCard({
           </div>
 
           {/* Input */}
-          <label htmlFor="media-url" className="sr-only">Paste YouTube URL</label>
+          <label htmlFor="media-url" className="sr-only">Paste media URL</label>
           <input
             id="media-url"
             className="url-input-main"
@@ -103,7 +103,7 @@ export function UrlInputCard({
             onChange={(e) => onUrlChange(e.target.value)}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder="Paste a YouTube URL…"
+            placeholder="Paste a YouTube, TikTok, Instagram, or X URL…"
             disabled={isLoading}
             autoComplete="off"
             style={{

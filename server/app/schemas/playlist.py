@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.platforms.base import PlatformValue
 from app.schemas.download import AudioFormat, DownloadType, QualityValue
 
 PlaylistStatusValue = Literal[
@@ -93,7 +94,7 @@ class PlaylistResponse(BaseModel):
 
     id: str
     url: str
-    platform: Literal["youtube"]
+    platform: PlatformValue
     title: str
     thumbnail: str | None = None
     total_items: int = Field(alias="totalItems")

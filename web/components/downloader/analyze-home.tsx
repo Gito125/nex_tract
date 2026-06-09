@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
+  Camera,
   CirclePlay,
   ClipboardList,
   FileAudio,
@@ -176,7 +177,7 @@ export function AnalyzeHome() {
     setSelectedQuality(null);
     setPlaylist(null);
     setRepeatDownload(null);
-    if (!trimmed) { setClientError("Paste a YouTube URL to get started."); return; }
+    if (!trimmed) { setClientError("Paste a supported media URL to get started."); return; }
     let parsedUrl: URL;
     try { parsedUrl = new URL(trimmed); } catch {
       setClientError("Enter a full URL — e.g. https://youtube.com/watch?v=…");
@@ -404,8 +405,8 @@ export function AnalyzeHome() {
             fontWeight: 400,
           }}
         >
-          Paste a link, pick your quality, and archive permitted videos,
-          audio, and playlists offline on your machine.
+          Paste a supported link, pick your quality, and archive permitted videos,
+          audio, and YouTube playlists offline on your machine.
         </p>
 
         {/* Input */}
@@ -538,9 +539,10 @@ function RepeatDownloadNotice({
 /* ── Platform chips ──────────────────────────────────────────────── */
 const CHIPS = [
   { icon: CirclePlay, label: "YouTube", color: "#FF4444" },
-  { icon: FileAudio, label: "Audio", color: "var(--success)" },
-  { icon: ClipboardList, label: "Playlists", color: "var(--accent)" },
-  { icon: Archive, label: "Archive", color: "var(--primary)" },
+  { icon: FileAudio, label: "TikTok", color: "var(--success)" },
+  { icon: Camera, label: "Instagram", color: "#B83280" },
+  { icon: Archive, label: "X", color: "var(--foreground)" },
+  { icon: ClipboardList, label: "YouTube playlists", color: "var(--accent)" },
 ];
 
 function PlatformChip({

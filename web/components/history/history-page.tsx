@@ -19,6 +19,7 @@ import {
   openHistoryFolder,
   redownloadHistoryItem,
 } from "@/lib/api";
+import { platformLabel } from "@/lib/platforms";
 import type { HistoryFilters, HistoryItem, HistoryStatus } from "@/lib/types";
 
 type StatusFilter = "all" | HistoryStatus;
@@ -326,7 +327,7 @@ function HistoryCard({
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
           <StatusBadge status={item.status} />
           <Pill value={formatQuality(item.selectedQuality)} />
-          <Pill value="YouTube" />
+          <Pill value={platformLabel(item.platform)} />
           {item.fileSize ? <Pill value={formatBytes(item.fileSize)} /> : null}
         </div>
 

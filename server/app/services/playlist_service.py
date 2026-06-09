@@ -12,6 +12,8 @@ from sqlmodel import Session, col, select
 
 from app.db.database import engine
 from app.db.models import Playlist, PlaylistItem, PlaylistItemStatus, PlaylistStatus
+from app.platforms.base import PlatformValue
+from app.platforms.youtube import extract_youtube_metadata
 from app.schemas.analyze import PlaylistAnalyzeItem
 from app.schemas.download import AudioFormat, DownloadType, QualityValue
 from app.schemas.playlist import (
@@ -24,7 +26,6 @@ from app.schemas.playlist import (
     PlaylistSizeEstimateResponse,
     PlaylistStatusValue,
 )
-from app.platforms.youtube import extract_youtube_metadata
 from app.services.analyze_service import analyze_url
 from app.services.download_service import AUDIO_QUALITY_FORMATS, QUALITY_FORMATS
 from app.services.exceptions import AnalyzeError, PlaylistError
@@ -77,7 +78,9 @@ def create_playlist_download(
         raise PlaylistError(exc.message, status_code=400) from exc
 
     if platform.platform != "youtube":
-        raise PlaylistError("Only YouTube links are supported in this version.")
+        raise PlaylistError(
+            "Playlist downloads are currently only available for YouTube."
+        )
     if platform.media_type != "playlist":
         raise PlaylistError("Paste a YouTube playlist link to start a playlist download.")
 
@@ -105,7 +108,7 @@ def create_playlist_download(
 
     playlist = Playlist(
         url=analysis.webpage_url,
-        platform="youtube",
+        platform=analysis.platform,
         title=analysis.title,
         thumbnail=analysis.thumbnail,
         total_items=len(selected_items),
@@ -336,7 +339,7 @@ def playlist_to_response(playlist: Playlist, session: Session) -> PlaylistRespon
     return PlaylistResponse(
         id=playlist.id,
         url=playlist.url,
-        platform="youtube",
+        platform=cast(PlatformValue, playlist.platform),
         title=playlist.title,
         thumbnail=playlist.thumbnail,
         totalItems=playlist.total_items,

@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.platforms.base import PlatformValue
+
 QualityValue = Literal[
     "best",
     "1080p",
@@ -47,7 +49,7 @@ class DownloadJobResponse(BaseModel):
 
     id: str
     url: str
-    platform: Literal["youtube"]
+    platform: PlatformValue
     media_type: Literal["video"] = Field(alias="mediaType")
     title: str
     thumbnail: str | None = None

@@ -73,8 +73,35 @@ def test_create_download_rejects_unsupported_platform() -> None:
 
     assert response.status_code == 400
     assert response.json() == {
-        "detail": "Only YouTube links are supported in this version."
+        "detail": "This platform is not supported yet. Try YouTube, TikTok, Instagram, or X."
     }
+
+
+def test_create_download_job_stores_social_platform() -> None:
+    with (
+        patch(
+            "app.platforms.base.subprocess.run",
+            return_value=_completed_process(
+                _video_metadata(
+                    webpage_url="https://www.tiktok.com/@creator/video/123",
+                )
+            ),
+        ),
+        patch("app.services.download_service._executor.submit"),
+    ):
+        response = client.post(
+            "/api/downloads",
+            json={
+                "url": "https://www.tiktok.com/@creator/video/123",
+                "quality": "720p",
+                "downloadType": "video",
+                "audioFormat": None,
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["platform"] == "tiktok"
 
 
 def test_create_download_rejects_playlist() -> None:
@@ -89,7 +116,9 @@ def test_create_download_rejects_playlist() -> None:
     )
 
     assert response.status_code == 400
-    assert response.json() == {"detail": "Playlist downloads are not available in Phase 3."}
+    assert response.json() == {
+        "detail": "Playlist downloads are currently only available for YouTube."
+    }
 
 
 def test_build_ytdlp_args_uses_argument_array() -> None:
@@ -387,13 +416,15 @@ def _completed_process(payload: dict[str, Any]) -> subprocess.CompletedProcess[s
     )
 
 
-def _video_metadata() -> dict[str, Any]:
+def _video_metadata(
+    webpage_url: str = "https://www.youtube.com/watch?v=abc123",
+) -> dict[str, Any]:
     return {
         "title": "Example Video",
         "thumbnail": "https://img.youtube.com/example.jpg",
         "duration": 615,
         "uploader": "Example Channel",
-        "webpage_url": "https://www.youtube.com/watch?v=abc123",
+        "webpage_url": webpage_url,
         "formats": [
             {
                 "format_id": "137",

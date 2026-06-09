@@ -12,6 +12,8 @@ from sqlmodel import Session, col, select
 
 from app.db.database import engine
 from app.db.models import AppSettings, DownloadJob, DownloadStatus
+from app.platforms.base import PlatformValue
+from app.platforms.registry import get_adapter
 from app.schemas.download import (
     AudioFormat,
     DownloadCreateRequest,
@@ -71,10 +73,10 @@ def create_download_job(
     except PlatformValidationError as exc:
         raise DownloadError(exc.message, status_code=400) from exc
 
-    if platform.platform != "youtube":
-        raise DownloadError("Only YouTube links are supported in this version.")
     if platform.media_type == "playlist":
-        raise DownloadError("Playlist downloads are not available in Phase 3.")
+        raise DownloadError(
+            "Playlist downloads are currently only available for YouTube."
+        )
 
     try:
         analysis = analyze_url(platform.url)
@@ -97,7 +99,7 @@ def create_download_job(
 
     job = DownloadJob(
         url=analysis.webpage_url,
-        platform="youtube",
+        platform=analysis.platform,
         media_type="video",
         title=analysis.title,
         thumbnail=analysis.thumbnail,
@@ -208,31 +210,14 @@ def build_ytdlp_args(job: DownloadJob) -> list[str]:
     q = cast(QualityValue, job.selected_quality)
     output_template = download_root / f"{_render_filename_template(job, q)}.%(ext)s"
 
-    args = [
-        "yt-dlp",
-        "--no-playlist",
-        "--no-warnings",
-        "--no-simulate",
-        "--no-overwrites",
-        "--progress",
-        "--newline",
-        "--paths",
-        str(download_root),
-        "--output",
-        str(output_template),
-        "--format",
-        QUALITY_FORMATS[q],
-        "--print",
-        "after_move:filepath",
-    ]
-
-    if q in AUDIO_QUALITY_FORMATS:
-        args.extend(["--extract-audio", "--audio-format", job.audio_format or "m4a"])
-    else:
-        args.extend(["--merge-output-format", "mp4"])
-
-    args.append(job.url)
-    return args
+    adapter = get_adapter(cast(PlatformValue, job.platform))
+    return adapter.build_download_args(
+        url=job.url,
+        output_root=str(download_root),
+        output_template=str(output_template),
+        quality_format=QUALITY_FORMATS[q],
+        audio_format=(job.audio_format or "m4a") if q in AUDIO_QUALITY_FORMATS else None,
+    )
 
 
 def job_to_response(job: DownloadJob) -> DownloadJobResponse:
@@ -244,7 +229,7 @@ def job_to_response(job: DownloadJob) -> DownloadJobResponse:
     return DownloadJobResponse(
         id=job.id,
         url=job.url,
-        platform="youtube",
+        platform=cast(PlatformValue, job.platform),
         mediaType="video",
         title=job.title,
         thumbnail=job.thumbnail,
@@ -476,7 +461,13 @@ def _mark_failed(job_id: str, message: str) -> None:
 def _friendly_ytdlp_error(stderr: str) -> str:
     message = stderr.lower()
 
-    if "private" in message or "sign in" in message:
+    if (
+        "private" in message
+        or "sign in" in message
+        or "login" in message
+        or "cookies" in message
+        or "restricted" in message
+    ):
         return "This media appears to be private or restricted."
     if "unavailable" in message:
         return "This media is unavailable."

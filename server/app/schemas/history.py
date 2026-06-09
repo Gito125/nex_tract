@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.platforms.base import PlatformValue
 from app.schemas.download import AudioFormat, QualityValue
 
 HistoryStatusValue = Literal["completed", "failed"]
@@ -14,7 +15,7 @@ class HistoryItemResponse(BaseModel):
     id: str
     job_id: str = Field(alias="jobId")
     url: str
-    platform: Literal["youtube"]
+    platform: PlatformValue
     media_type: Literal["video"] = Field(alias="mediaType")
     title: str
     thumbnail: str | None = None

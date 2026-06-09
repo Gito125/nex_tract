@@ -12,6 +12,7 @@ import {
   XCircle,
   FolderOpen,
 } from "lucide-react";
+import { platformLabel } from "@/lib/platforms";
 import type { LucideIcon } from "lucide-react";
 import type { DownloadJob, DownloadStatus } from "@/lib/types";
 
@@ -116,6 +117,21 @@ export function DownloadProgressCard({
               }}
             >
               {job.selectedQuality.replace("_", " ")}
+            </span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "4px 9px",
+                borderRadius: "9999px",
+                fontSize: "11px",
+                fontWeight: 700,
+                background: "var(--surface)",
+                border: "1px solid var(--border-strong)",
+                color: "var(--foreground-soft)",
+              }}
+            >
+              {platformLabel(job.platform)}
             </span>
           </div>
 

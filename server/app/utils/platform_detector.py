@@ -1,27 +1,7 @@
-from dataclasses import dataclass
-from typing import Literal
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
-SUPPORTED_YOUTUBE_HOSTS = {
-    "youtube.com",
-    "www.youtube.com",
-    "m.youtube.com",
-    "music.youtube.com",
-    "youtu.be",
-}
-
-
-@dataclass(frozen=True)
-class PlatformInfo:
-    platform: Literal["youtube"]
-    media_type: Literal["video", "playlist"]
-    url: str
-
-
-class PlatformValidationError(Exception):
-    def __init__(self, message: str) -> None:
-        self.message = message
-        super().__init__(message)
+from app.platforms.base import PlatformInfo, PlatformValidationError
+from app.platforms.registry import ADAPTERS
 
 
 def detect_platform(url: str) -> PlatformInfo:
@@ -30,17 +10,17 @@ def detect_platform(url: str) -> PlatformInfo:
     if parsed.scheme not in {"http", "https"}:
         raise PlatformValidationError("Only http and https links are supported.")
 
-    hostname = (parsed.hostname or "").lower()
+    for adapter in ADAPTERS:
+        if not adapter.can_handle(parsed):
+            continue
 
-    if hostname not in SUPPORTED_YOUTUBE_HOSTS:
-        raise PlatformValidationError("Only YouTube links are supported in this version.")
+        adapter.validate_public_single_link(parsed)
+        return PlatformInfo(
+            platform=adapter.name,
+            media_type=adapter.detect_media_type(parsed),
+            url=url.strip(),
+        )
 
-    query = parse_qs(parsed.query)
-    media_type: Literal["video", "playlist"] = "video"
-
-    if parsed.path == "/playlist" and query.get("list"):
-        media_type = "playlist"
-    elif query.get("list"):
-        media_type = "playlist"
-
-    return PlatformInfo(platform="youtube", media_type=media_type, url=url.strip())
+    raise PlatformValidationError(
+        "This platform is not supported yet. Try YouTube, TikTok, Instagram, or X."
+    )

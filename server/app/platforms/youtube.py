@@ -1,10 +1,37 @@
 import json
 import subprocess
 from typing import Any, Literal
+from urllib.parse import ParseResult, parse_qs
 
+from app.platforms.base import PlatformAdapter
 from app.services.exceptions import AnalyzeError
 
 MediaType = Literal["video", "playlist"]
+
+SUPPORTED_YOUTUBE_HOSTS = {
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "music.youtube.com",
+    "youtu.be",
+}
+
+
+class YouTubeAdapter(PlatformAdapter):
+    name = "youtube"
+    display_name = "YouTube"
+    hosts = SUPPORTED_YOUTUBE_HOSTS
+
+    def detect_media_type(self, parsed: ParseResult) -> MediaType:
+        query = parse_qs(parsed.query)
+        if parsed.path == "/playlist" and query.get("list"):
+            return "playlist"
+        if query.get("list"):
+            return "playlist"
+        return "video"
+
+    def extract_metadata(self, url: str, media_type: MediaType) -> dict[str, Any]:
+        return extract_youtube_metadata(url, media_type)
 
 
 def extract_youtube_metadata(

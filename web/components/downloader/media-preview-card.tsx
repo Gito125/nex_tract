@@ -8,6 +8,7 @@ import {
   Download,
   FileAudio,
 } from "lucide-react";
+import { PLATFORM_META } from "@/lib/platforms";
 import type { AnalyzeResponse, QualityValue, RawFormat } from "@/lib/types";
 
 const YoutubeLogo = ({ size = 14 }: { size?: number }) => (
@@ -35,6 +36,7 @@ export function MediaPreviewCard({
 }) {
   const selectedSize = estimateSelectedSize(preview.rawFormats, selectedQuality);
   const isAudioSelection = selectedQuality?.startsWith("audio_") ?? false;
+  const platformMeta = PLATFORM_META[preview.platform];
 
   return (
     <section className="animate-fade-up" aria-label="Media preview">
@@ -130,17 +132,21 @@ export function MediaPreviewCard({
                   gap: "5px",
                   padding: "4px 10px",
                   borderRadius: "6px",
-                  background: "oklch(96% 0.02 22)",
-                  border: "1px solid oklch(88% 0.06 22)",
-                  color: "#CC2020",
+                  background: platformMeta.background,
+                  border: `1px solid ${platformMeta.border}`,
+                  color: platformMeta.color,
                   fontSize: "11px",
                   fontWeight: 700,
                   letterSpacing: "0.02em",
                   marginBottom: "12px",
                 }}
               >
-                <YoutubeLogo size={11} />
-                YouTube
+                {preview.platform === "youtube" ? (
+                  <YoutubeLogo size={11} />
+                ) : (
+                  <CirclePlay size={11} aria-hidden="true" />
+                )}
+                {platformMeta.label}
               </span>
 
               <h2
@@ -166,7 +172,7 @@ export function MediaPreviewCard({
                   whiteSpace: "nowrap",
                 }}
               >
-                {preview.creator ?? "YouTube"}
+                {preview.creator ?? platformMeta.fallbackCreator}
               </p>
             </div>
 
