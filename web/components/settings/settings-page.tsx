@@ -87,6 +87,11 @@ export function SettingsPage() {
 
   const saveError = saveMutation.error?.message ?? null;
 
+  function handleThemeChange(theme: ThemeValue) {
+    updateForm(setDraft, { theme });
+    applyTheme(theme);
+  }
+
   return (
     <PageFrame>
       <header className="mb-7 flex flex-col gap-3">
@@ -199,7 +204,7 @@ export function SettingsPage() {
                   <button
                     className="flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition-all active:scale-95"
                     key={option.value}
-                    onClick={() => updateForm(setDraft, { theme: option.value })}
+                    onClick={() => handleThemeChange(option.value)}
                     style={{
                       background: active ? "var(--primary)" : "var(--surface-raised)",
                       borderColor: active ? "var(--primary)" : "var(--border-strong)",

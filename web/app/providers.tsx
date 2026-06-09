@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { getSettings } from "@/lib/api";
 import type { ThemeValue } from "@/lib/types";
 
+let cleanupSystemThemeListener: (() => void) | undefined;
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -49,11 +51,21 @@ function ThemeSync() {
 
 export function applyTheme(theme: ThemeValue) {
   const root = document.documentElement;
+  cleanupSystemThemeListener?.();
+  cleanupSystemThemeListener = undefined;
 
-  if (theme === "system") {
-    root.removeAttribute("data-theme");
+  if (theme !== "system") {
+    root.dataset.theme = theme;
     return;
   }
 
-  root.dataset.theme = theme;
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+  const applySystemTheme = () => {
+    root.dataset.theme = mediaQuery.matches ? "light" : "dark";
+  };
+
+  applySystemTheme();
+  mediaQuery.addEventListener("change", applySystemTheme);
+  cleanupSystemThemeListener = () =>
+    mediaQuery.removeEventListener("change", applySystemTheme);
 }
