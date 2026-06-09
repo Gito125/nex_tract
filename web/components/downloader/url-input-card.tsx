@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { Link2, LoaderCircle, Zap } from "lucide-react";
+import { Clipboard, Link2, LoaderCircle, X, Zap } from "lucide-react";
 
 export function UrlInputCard({
   error,
@@ -18,10 +18,32 @@ export function UrlInputCard({
 }) {
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasUrl = url.trim().length > 0;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSubmit(url);
+  }
+
+  async function handleUtilityClick() {
+    if (isLoading) return;
+
+    if (hasUrl) {
+      onUrlChange("");
+      inputRef.current?.focus();
+      return;
+    }
+
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (clipboardText) {
+        onUrlChange(clipboardText);
+      }
+    } catch {
+      // Clipboard access can be blocked by browser permissions.
+    } finally {
+      inputRef.current?.focus();
+    }
   }
 
   return (
@@ -70,6 +92,28 @@ export function UrlInputCard({
                 caretColor: "var(--primary)",
               }}
             />
+            <button
+              aria-label={hasUrl ? "Clear URL input" : "Paste URL from clipboard"}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors"
+              disabled={isLoading}
+              onClick={handleUtilityClick}
+              type="button"
+              style={{
+                background: "var(--surface-strong)",
+                border: "1px solid var(--border)",
+                color: "var(--foreground-muted)",
+                cursor: isLoading ? "wait" : "pointer",
+                opacity: isLoading ? 0.6 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {hasUrl ? (
+                <X size={13} aria-hidden="true" />
+              ) : (
+                <Clipboard size={13} aria-hidden="true" />
+              )}
+              {hasUrl ? "Clear" : "Paste"}
+            </button>
           </div>
 
           {/* Divider */}
