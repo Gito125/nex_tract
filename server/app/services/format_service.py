@@ -67,7 +67,10 @@ def standard_playlist_quality_options() -> list[QualityOption]:
     ]
 
 
-def sanitize_raw_formats(formats: list[dict[str, Any]]) -> list[RawFormat]:
+def sanitize_raw_formats(
+    formats: list[dict[str, Any]],
+    metadata: dict[str, Any] | None = None,
+) -> list[RawFormat]:
     return [
         RawFormat(
             formatId=_string_or_none(item.get("format_id")),
@@ -77,7 +80,7 @@ def sanitize_raw_formats(formats: list[dict[str, Any]]) -> list[RawFormat]:
             fps=_float_or_none(item.get("fps")),
             vcodec=_string_or_none(item.get("vcodec")),
             acodec=_string_or_none(item.get("acodec")),
-            filesize=_int_or_none(item.get("filesize") or item.get("filesize_approx")),
+            filesize=_format_size(item, metadata or {}),
             tbr=_float_or_none(item.get("tbr")),
         )
         for item in formats
@@ -124,4 +127,21 @@ def _int_or_none(value: Any) -> int | None:
 def _float_or_none(value: Any) -> float | None:
     if isinstance(value, int | float):
         return float(value)
+    return None
+
+
+def _format_size(item: dict[str, Any], metadata: dict[str, Any]) -> int | None:
+    filesize = _int_or_none(item.get("filesize"))
+    if filesize and filesize > 0:
+        return filesize
+
+    approximate_size = _int_or_none(item.get("filesize_approx"))
+    if approximate_size and approximate_size > 0:
+        return approximate_size
+
+    bitrate = _float_or_none(item.get("tbr"))
+    duration = _float_or_none(metadata.get("duration"))
+    if bitrate and bitrate > 0 and duration and duration > 0:
+        return int((bitrate * 1000 / 8) * duration)
+
     return None

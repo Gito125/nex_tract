@@ -93,6 +93,7 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     assert body["creator"] == "TikTok Creator"
     assert body["webpageUrl"] == "https://www.tiktok.com/@creator/video/123"
     assert [item["value"] for item in body["qualities"]] == ["best", "720p", "audio_mp3"]
+    assert body["rawFormats"][0]["filesize"] == 7_875_000
     assert "--no-playlist" in run.call_args.args[0]
 
 
@@ -117,6 +118,7 @@ def test_analyze_instagram_video_returns_normalized_metadata() -> None:
     assert body["platform"] == "instagram"
     assert body["type"] == "video"
     assert body["title"] == "Example Reel"
+    assert body["rawFormats"][0]["filesize"] == 7_875_000
 
 
 def test_analyze_x_video_returns_normalized_metadata() -> None:
@@ -140,6 +142,7 @@ def test_analyze_x_video_returns_normalized_metadata() -> None:
     assert body["platform"] == "x"
     assert body["type"] == "video"
     assert body["title"] == "Example X Post"
+    assert body["rawFormats"][0]["filesize"] == 7_875_000
 
 
 def test_analyze_social_private_error_is_friendly() -> None:
@@ -422,6 +425,7 @@ def _social_video_metadata(title: str, creator: str, webpage_url: str) -> dict:
                 "fps": 30,
                 "vcodec": "avc1",
                 "acodec": "aac",
+                "tbr": 1500,
             }
         ],
     }

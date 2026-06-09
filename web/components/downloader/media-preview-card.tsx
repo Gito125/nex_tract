@@ -193,6 +193,7 @@ export function MediaPreviewCard({
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {preview.qualities.map((option) => {
                   const isSelected = option.value === selectedQuality;
+                  const optionSize = estimateSelectedSize(preview.rawFormats, option.value);
                   return (
                     <button
                       key={option.value}
@@ -220,7 +221,19 @@ export function MediaPreviewCard({
                       {option.kind === "audio" && (
                         <FileAudio size={12} className="shrink-0" aria-hidden="true" />
                       )}
-                      {option.label}
+                      <span>{option.label}</span>
+                      {optionSize ? (
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            opacity: 0.75,
+                            fontVariantNumeric: "tabular-nums",
+                          }}
+                        >
+                          {formatBytes(optionSize)}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
