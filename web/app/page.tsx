@@ -1,3 +1,5 @@
+import { BackendHealthCard } from "@/components/common/backend-health-card";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#f8f9fa] px-4 py-8 text-[#191c1d] dark:bg-[#0f172a] dark:text-[#f0f1f2] sm:px-6 lg:px-10">
@@ -72,6 +74,8 @@ export default function Home() {
             </div>
           ))}
         </section>
+
+        <BackendHealthCard />
       </div>
     </main>
   );

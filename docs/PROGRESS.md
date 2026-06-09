@@ -16,8 +16,8 @@ Update it as you build.
 ## Current Focus
 
 ```txt
-Current Phase: Phase 0 — Planning and Design
-Current Goal: Finalize docs, generate UI direction in Google Stitch, then start the project skeleton.
+Current Phase: Phase 2 — YouTube Link Analysis
+Current Goal: Add URL analysis, YouTube platform detection, yt-dlp metadata extraction, and media preview UI.
 ```
 
 ---
@@ -65,32 +65,32 @@ Create the actual project skeleton.
 
 ## Root Setup
 
-- [ ] Create `nextract/` root folder.
-- [ ] Initialize Git.
-- [ ] Add `.gitignore`.
-- [ ] Add `.env.example`.
-- [ ] Add `README.md`.
-- [ ] Add `docs/` folder.
+- [x] Create `nextract/` root folder.
+- [x] Initialize Git.
+- [x] Add `.gitignore`.
+- [x] Add `.env.example`.
+- [x] Add `README.md`.
+- [x] Add `docs/` folder.
 
 ## Backend Setup
 
-- [ ] Create `server/` folder.
-- [ ] Run `uv init`.
-- [ ] Install backend dependencies with uv.
-- [ ] Pin Python version with uv.
-- [ ] Create FastAPI app.
-- [ ] Add `/api/health` endpoint.
-- [ ] Add basic config file.
-- [ ] Add basic error handling.
+- [x] Create `server/` folder.
+- [x] Run `uv init`.
+- [x] Install backend dependencies with uv.
+- [x] Pin Python version with uv.
+- [x] Create FastAPI app.
+- [x] Add `/api/health` endpoint.
+- [x] Add basic config file.
+- [x] Add basic error handling.
 
 ## Frontend Setup
 
-- [ ] Create `web/` Next.js app.
-- [ ] Install Tailwind CSS.
-- [ ] Install UI dependencies.
-- [ ] Create base layout.
-- [ ] Create home page.
-- [ ] Connect frontend to backend health endpoint.
+- [x] Create `web/` Next.js app.
+- [x] Install Tailwind CSS.
+- [x] Install UI dependencies.
+- [x] Create base layout.
+- [x] Create home page.
+- [x] Connect frontend to backend health endpoint.
 
 ## Exit Criteria
 
