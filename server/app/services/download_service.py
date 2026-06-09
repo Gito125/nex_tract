@@ -191,9 +191,9 @@ def build_ytdlp_args(job: DownloadJob) -> list[str]:
     settings = get_settings()
     download_root = settings.download_root.resolve()
     safe_title = sanitize_filename(job.title)
-    output_template = download_root / f"{safe_title}-%(id)s.%(ext)s"
 
     q = cast(QualityValue, job.selected_quality)
+    output_template = download_root / f"{safe_title}-%(id)s-{q}.%(ext)s"
 
     args = [
         "yt-dlp",
@@ -392,7 +392,7 @@ def _wait_for_process(process: subprocess.Popen[str]) -> str:
 
     communicate = getattr(process, "communicate", None)
     if callable(communicate):
-        stdout, stderr = communicate()
+        stdout, stderr = cast(tuple[str, str], communicate())
         return "\n".join(part for part in [stdout, stderr] if part)
 
     return ""

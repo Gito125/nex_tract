@@ -99,7 +99,7 @@ def test_build_ytdlp_args_uses_argument_array() -> None:
     assert "--no-simulate" in args
     assert "--progress" in args
     assert "--newline" in args
-    assert any("Bad File Name-%(id)s.%(ext)s" in item for item in args)
+    assert any("Bad File Name-%(id)s-audio_mp3.%(ext)s" in item for item in args)
 
 
 def test_download_progress_output_updates_metrics() -> None:

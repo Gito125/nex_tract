@@ -162,6 +162,10 @@ export function AnalyzeHome() {
   function handleDownload() {
     if (!analysis || !selectedQuality) return;
 
+    if (!confirmRepeatDownload(analysis, selectedQuality, downloadsQuery.data?.jobs ?? [])) {
+      return;
+    }
+
     createDownloadMutation.reset();
     createDownloadMutation.mutate(
       toDownloadRequest(analysis.webpageUrl, selectedQuality),
@@ -391,6 +395,43 @@ function audioFormatForQuality(quality: QualityValue): AudioFormat | null {
   if (quality === "audio_mp3") return "mp3";
   if (quality === "audio_opus") return "opus";
   return null;
+}
+
+function confirmRepeatDownload(
+  analysis: AnalyzeResponse,
+  selectedQuality: QualityValue,
+  jobs: DownloadJob[],
+): boolean {
+  const matchingJobs = jobs.filter(
+    (job) =>
+      job.url === analysis.webpageUrl &&
+      job.status !== "failed" &&
+      job.status !== "cancelled",
+  );
+
+  if (matchingJobs.length === 0) return true;
+
+  const sameQuality = matchingJobs.some(
+    (job) => job.selectedQuality === selectedQuality,
+  );
+
+  if (sameQuality) {
+    return window.confirm(
+      `You already have ${formatQualityLabel(selectedQuality)} for this video. Download it again?`,
+    );
+  }
+
+  const existingQualities = Array.from(
+    new Set(matchingJobs.map((job) => formatQualityLabel(job.selectedQuality))),
+  ).join(", ");
+
+  return window.confirm(
+    `This video is already in your queue or vault as ${existingQualities}. Download ${formatQualityLabel(selectedQuality)} too?`,
+  );
+}
+
+function formatQualityLabel(quality: QualityValue): string {
+  return quality.replaceAll("_", " ");
 }
 
 function upsertDownloadJob(
