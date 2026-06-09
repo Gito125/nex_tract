@@ -1,11 +1,14 @@
+"use client";
+
 import {
-  Bell,
-  CircleHelp,
   Clock3,
   Download,
+  FolderArchive,
+  HelpCircle,
   Home,
   LogOut,
   Settings,
+  Bell,
   UserCircle,
 } from "lucide-react";
 
@@ -20,106 +23,241 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <aside className="fixed inset-y-0 left-0 hidden w-80 border-r border-[var(--border-soft)] bg-[var(--surface-muted)] px-5 py-7 lg:flex lg:flex-col">
-        <div>
-          <p className="text-3xl font-bold tracking-tight text-[var(--primary)]">
-            Nextract
-          </p>
-          <p className="mt-2 text-base font-medium text-[var(--foreground-muted)]">
-            Personal Archive
-          </p>
+    <div
+      className="min-h-screen"
+      style={{ background: "var(--background)", color: "var(--foreground)" }}
+    >
+      {/* Desktop sidebar */}
+      <aside
+        className="fixed inset-y-0 left-0 hidden w-72 lg:flex lg:flex-col"
+        style={{
+          background: "var(--surface)",
+          borderRight: "1px solid var(--border)",
+        }}
+      >
+        {/* Logo */}
+        <div className="px-6 pt-8 pb-6">
+          <div className="flex items-center gap-3">
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-lg"
+              style={{
+                background: "var(--primary-soft)",
+                border: "1px solid var(--border-primary)",
+              }}
+            >
+              <FolderArchive
+                size={18}
+                style={{ color: "var(--primary-strong)" }}
+                aria-hidden="true"
+              />
+            </span>
+            <div>
+              <p
+                className="text-xl font-bold tracking-tight"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--foreground)" }}
+              >
+                Nextract
+              </p>
+              <p className="text-xs font-medium" style={{ color: "var(--foreground-soft)" }}>
+                Personal Archive
+              </p>
+            </div>
+          </div>
         </div>
 
-        <nav aria-label="Primary navigation" className="mt-12 flex flex-col gap-3">
+        {/* Divider */}
+        <div style={{ height: "1px", background: "var(--border-soft)", margin: "0 24px" }} />
+
+        {/* Nav */}
+        <nav aria-label="Primary navigation" className="mt-6 flex flex-col gap-1 px-3">
           {navItems.map((item) => (
-            <NavButton key={item.label} item={item} variant="desktop" />
+            <DesktopNavButton key={item.label} item={item} />
           ))}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-5 border-t border-[var(--border)] pt-5">
-          <BackendHealthCard />
-          <div className="flex flex-col gap-3 text-[var(--foreground)]">
-            <button className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition hover:bg-[var(--surface-strong)]">
-              <CircleHelp size={21} aria-hidden="true" />
-              Help
-            </button>
-            <button className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition hover:bg-[var(--surface-strong)]">
-              <LogOut size={21} aria-hidden="true" />
-              Logout
-            </button>
+        {/* Bottom */}
+        <div className="mt-auto px-3 pb-6 flex flex-col gap-3">
+          <div className="px-3 pb-3">
+            <BackendHealthCard />
           </div>
+          <div
+            style={{
+              height: "1px",
+              background: "var(--border-soft)",
+              margin: "0 12px 12px",
+            }}
+          />
+          <button
+            className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors"
+            style={{ color: "var(--foreground-muted)" }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
+            }}
+            type="button"
+          >
+            <HelpCircle size={18} aria-hidden="true" />
+            Help & Support
+          </button>
+          <button
+            className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors"
+            style={{ color: "var(--foreground-muted)" }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--error-soft)";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--error)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
+            }}
+            type="button"
+          >
+            <LogOut size={18} aria-hidden="true" />
+            Sign Out
+          </button>
         </div>
       </aside>
 
-      <header className="sticky top-0 z-20 flex min-h-20 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-6 shadow-[var(--shadow-soft)] lg:hidden">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary-soft)] text-[var(--primary)]">
-            <Download size={20} aria-hidden="true" />
+      {/* Mobile header */}
+      <header
+        className="sticky top-0 z-20 flex min-h-16 items-center justify-between px-5 lg:hidden"
+        style={{
+          background: "var(--surface)",
+          borderBottom: "1px solid var(--border)",
+          boxShadow: "var(--shadow-soft)",
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg"
+            style={{ background: "var(--primary-soft)", border: "1px solid var(--border-primary)" }}
+          >
+            <FolderArchive size={16} style={{ color: "var(--primary-strong)" }} aria-hidden="true" />
           </span>
-          <span className="text-3xl font-bold tracking-tight text-[var(--primary)]">
+          <span
+            className="text-lg font-bold tracking-tight"
+            style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--foreground)" }}
+          >
             Nextract
           </span>
         </div>
-        <div className="flex items-center gap-4 text-[var(--foreground-muted)]">
-          <Bell size={24} aria-hidden="true" />
-          <UserCircle size={28} aria-hidden="true" />
+        <div className="flex items-center gap-3" style={{ color: "var(--foreground-muted)" }}>
+          <button type="button" aria-label="Notifications">
+            <Bell size={20} aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="Account">
+            <UserCircle size={24} aria-hidden="true" />
+          </button>
         </div>
       </header>
 
-      <main className="pb-28 lg:ml-80 lg:pb-0">{children}</main>
+      {/* Main */}
+      <main className="pb-24 lg:ml-72 lg:pb-0">{children}</main>
 
+      {/* Mobile bottom nav */}
       <nav
         aria-label="Mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-[var(--border-soft)] bg-[var(--surface)] px-3 py-3 shadow-[0_-8px_24px_rgba(25,28,29,0.08)] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 px-2 py-2 lg:hidden"
+        style={{
+          background: "var(--surface)",
+          borderTop: "1px solid var(--border)",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
+        }}
       >
         {navItems.map((item) => (
-          <NavButton key={item.label} item={item} variant="mobile" />
+          <MobileNavButton key={item.label} item={item} />
         ))}
       </nav>
     </div>
   );
 }
 
-function NavButton({
-  item,
-  variant,
-}: {
-  item: (typeof navItems)[number];
-  variant: "desktop" | "mobile";
-}) {
+function DesktopNavButton({ item }: { item: (typeof navItems)[number] }) {
   const Icon = item.icon;
-
-  if (variant === "mobile") {
-    return (
-      <button
-        aria-current={item.active ? "page" : undefined}
-        aria-disabled={!item.active}
-        className={`mx-auto flex min-h-14 w-full max-w-24 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-semibold transition ${
-          item.active
-            ? "bg-[var(--primary-soft)] text-[var(--primary)]"
-            : "text-[var(--foreground-muted)]"
-        }`}
-        type="button"
-      >
-        <Icon size={23} aria-hidden="true" />
-        {item.label}
-      </button>
-    );
-  }
 
   return (
     <button
       aria-current={item.active ? "page" : undefined}
       aria-disabled={!item.active}
-      className={`flex min-h-15 items-center gap-4 rounded-lg px-5 text-left text-base font-semibold transition ${
-        item.active
-          ? "bg-[var(--primary)] text-white shadow-[var(--shadow-soft)]"
-          : "text-[var(--foreground)] hover:bg-[var(--surface-strong)]"
-      }`}
+      className="relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-all"
+      style={{
+        background: item.active ? "var(--primary-soft)" : "transparent",
+        color: item.active ? "var(--primary-strong)" : "var(--foreground-muted)",
+        border: item.active ? "1px solid var(--border-primary)" : "1px solid transparent",
+      }}
       type="button"
     >
-      <Icon size={23} aria-hidden="true" />
+      {/* Amber tape marker — the signature element */}
+      {item.active && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "3px",
+            height: "60%",
+            borderRadius: "0 2px 2px 0",
+            background: "var(--accent)",
+            boxShadow: "0 0 8px var(--accent)",
+          }}
+        />
+      )}
+      <Icon size={18} aria-hidden="true" />
+      {item.label}
+      {!item.active && (
+        <span
+          className="ml-auto text-xs font-bold uppercase tracking-wider rounded px-1.5 py-0.5"
+          style={{
+            background: "var(--surface-strong)",
+            color: "var(--foreground-subtle)",
+            fontSize: "9px",
+            letterSpacing: "0.1em",
+          }}
+        >
+          Soon
+        </span>
+      )}
+    </button>
+  );
+}
+
+function MobileNavButton({ item }: { item: (typeof navItems)[number] }) {
+  const Icon = item.icon;
+  return (
+    <button
+      aria-current={item.active ? "page" : undefined}
+      aria-disabled={!item.active}
+      className="flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs font-semibold transition-all"
+      style={{
+        color: item.active ? "var(--primary-strong)" : "var(--foreground-muted)",
+        background: item.active ? "var(--primary-muted)" : "transparent",
+        position: "relative",
+      }}
+      type="button"
+    >
+      {item.active && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "20px",
+            height: "2px",
+            borderRadius: "0 0 2px 2px",
+            background: "var(--accent)",
+            boxShadow: "0 0 6px var(--accent)",
+          }}
+        />
+      )}
+      <Icon size={20} aria-hidden="true" />
       {item.label}
     </button>
   );
