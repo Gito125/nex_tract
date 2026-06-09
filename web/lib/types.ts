@@ -64,6 +64,7 @@ export type AnalyzeResponse = {
   qualities: QualityOption[];
   rawFormats: RawFormat[];
   playlist: PlaylistSummary | null;
+  notice: string | null;
 };
 
 export type DownloadStatus =
@@ -208,6 +209,7 @@ export type PlaylistQualitySizeEstimate = {
   totalBytes: number | null;
   estimatedItems: number;
   unavailableItems: number;
+  estimateKind: "exact" | "approximate" | "unknown";
 };
 
 export type PlaylistSizeEstimateResponse = {

@@ -157,6 +157,51 @@ def test_analyze_rejects_null_playlist_payload() -> None:
     }
 
 
+def test_analyze_watch_playlist_falls_back_to_current_video() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        return_value=_completed_process(_video_metadata()),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={
+                "url": "https://www.youtube.com/watch?v=abc123&list=PLMissing"
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["type"] == "video"
+    assert body["title"] == "Example Video"
+    assert body["playlist"] is None
+    assert body["notice"] == (
+        "This list is not available as a public playlist, so Nextract loaded the current video instead."
+    )
+
+
+def test_analyze_strict_playlist_rejects_empty_entries() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        return_value=_completed_process(
+            {
+                "id": "PL123",
+                "title": "Empty Playlist",
+                "webpage_url": "https://www.youtube.com/playlist?list=PL123",
+                "entries": [],
+            }
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.youtube.com/playlist?list=PL123"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "This playlist is unavailable or has no public videos."
+    }
+
+
 def test_analyze_playlist_returns_basic_summary() -> None:
     with patch(
         "app.platforms.youtube.subprocess.run",
@@ -170,6 +215,7 @@ def test_analyze_playlist_returns_basic_summary() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["type"] == "playlist"
+    assert body["notice"] is None
     assert body["title"] == "Example Playlist"
     assert [item["value"] for item in body["qualities"]] == [
         "best",

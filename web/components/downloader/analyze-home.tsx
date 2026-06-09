@@ -232,6 +232,7 @@ export function AnalyzeHome() {
           padding: "32px 24px 48px",
         }}
       >
+        <AnalyzeNotice message={analysis.notice} />
         <MediaPreviewCard
           downloadError={createDownloadMutation.error?.message ?? null}
           isDownloadPending={createDownloadMutation.isPending}
@@ -260,6 +261,7 @@ export function AnalyzeHome() {
         className="animate-fade-up"
         style={{ maxWidth: "1180px", margin: "0 auto", padding: "32px 24px 48px" }}
       >
+        <AnalyzeNotice message={analysis.notice} />
         <PlaylistPreviewCard
           defaultSkipExisting={settingsQuery.data?.skipExisting ?? false}
           isCancelPending={cancelPlaylistMutation.isPending}
@@ -546,6 +548,29 @@ export function AnalyzeHome() {
         Nextract is for archiving personal or permitted content.
         Download only media you own or have the right to save. Respect copyright.
       </footer>
+    </div>
+  );
+}
+
+function AnalyzeNotice({ message }: { message: string | null }) {
+  if (!message) return null;
+
+  return (
+    <div
+      role="status"
+      style={{
+        padding: "11px 14px",
+        borderRadius: "10px",
+        background: "var(--accent-soft)",
+        border: "1px solid var(--accent-muted)",
+        color: "var(--accent-strong)",
+        fontSize: "13px",
+        fontWeight: 650,
+        lineHeight: 1.45,
+        marginBottom: "14px",
+      }}
+    >
+      {message}
     </div>
   );
 }

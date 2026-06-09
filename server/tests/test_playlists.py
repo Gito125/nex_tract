@@ -238,7 +238,7 @@ def test_cancel_playlist_marks_remaining_items_cancelled() -> None:
     assert cancel_response.status_code == 200
     body = cancel_response.json()
     assert body["status"] == "cancelled"
-    assert fake_process.terminated is True
+    _wait_for_process_terminated(fake_process)
     assert all(item["status"] == "cancelled" for item in body["items"])
     release.set()
 
@@ -273,19 +273,83 @@ def test_playlist_size_estimate_sums_selected_video_formats() -> None:
             "totalBytes": 5_500,
             "estimatedItems": 2,
             "unavailableItems": 0,
+            "estimateKind": "exact",
         },
         {
             "quality": "720p",
             "totalBytes": 5_500,
             "estimatedItems": 2,
             "unavailableItems": 0,
+            "estimateKind": "exact",
         },
         {
             "quality": "audio_m4a",
             "totalBytes": 500,
             "estimatedItems": 2,
             "unavailableItems": 0,
+            "estimateKind": "exact",
         },
+    ]
+
+
+def test_playlist_size_estimate_falls_back_to_bitrate_duration() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        return_value=_completed_process(_video_metadata_with_bitrate()),
+    ):
+        response = client.post(
+            "/api/playlists/size-estimate",
+            json={
+                "items": [
+                    {"index": 1, "url": "https://www.youtube.com/watch?v=one"},
+                ],
+                "qualities": ["720p", "audio_m4a"],
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["estimates"] == [
+        {
+            "quality": "720p",
+            "totalBytes": 1_500_000,
+            "estimatedItems": 1,
+            "unavailableItems": 0,
+            "estimateKind": "approximate",
+        },
+        {
+            "quality": "audio_m4a",
+            "totalBytes": 250_000,
+            "estimatedItems": 1,
+            "unavailableItems": 0,
+            "estimateKind": "approximate",
+        },
+    ]
+
+
+def test_playlist_size_estimate_returns_unknown_for_missing_sizes() -> None:
+    with patch(
+        "app.platforms.youtube.subprocess.run",
+        return_value=_completed_process(_video_metadata_without_sizes()),
+    ):
+        response = client.post(
+            "/api/playlists/size-estimate",
+            json={
+                "items": [
+                    {"index": 1, "url": "https://www.youtube.com/watch?v=one"},
+                ],
+                "qualities": ["720p"],
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["estimates"] == [
+        {
+            "quality": "720p",
+            "totalBytes": None,
+            "estimatedItems": 0,
+            "unavailableItems": 1,
+            "estimateKind": "unknown",
+        }
     ]
 
 
@@ -306,6 +370,18 @@ def _wait_for_playlist_status(
         time.sleep(0.02)
 
     raise AssertionError(f"Playlist did not reach {status}. Last body: {last_body}")
+
+
+def _wait_for_process_terminated(
+    process: "FakeProcess",
+    timeout: float = 2.0,
+) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if process.terminated:
+            return
+        time.sleep(0.02)
+    raise AssertionError("Process was not terminated.")
 
 
 def _completed_process(payload: dict[str, Any]) -> subprocess.CompletedProcess[str]:
@@ -367,6 +443,47 @@ def _video_metadata(video_size: int, audio_size: int) -> dict[str, Any]:
                 "acodec": "mp4a",
                 "filesize": audio_size,
             },
+        ],
+    }
+
+
+def _video_metadata_with_bitrate() -> dict[str, Any]:
+    return {
+        "title": "Example Video",
+        "duration": 10,
+        "webpage_url": "https://www.youtube.com/watch?v=abc123",
+        "formats": [
+            {
+                "format_id": "136",
+                "ext": "mp4",
+                "height": 720,
+                "vcodec": "avc1",
+                "acodec": "none",
+                "tbr": 1_000,
+            },
+            {
+                "format_id": "140",
+                "ext": "m4a",
+                "vcodec": "none",
+                "acodec": "mp4a",
+                "tbr": 200,
+            },
+        ],
+    }
+
+
+def _video_metadata_without_sizes() -> dict[str, Any]:
+    return {
+        "title": "Example Video",
+        "webpage_url": "https://www.youtube.com/watch?v=abc123",
+        "formats": [
+            {
+                "format_id": "136",
+                "ext": "mp4",
+                "height": 720,
+                "vcodec": "avc1",
+                "acodec": "none",
+            }
         ],
     }
 

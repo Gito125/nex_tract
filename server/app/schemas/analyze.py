@@ -71,3 +71,4 @@ class AnalyzeResponse(BaseModel):
     qualities: list[QualityOption]
     raw_formats: list[RawFormat] = Field(default_factory=list, alias="rawFormats")
     playlist: PlaylistSummary | None = None
+    notice: str | None = None

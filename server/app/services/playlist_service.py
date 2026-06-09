@@ -6,7 +6,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, AsyncIterator, Iterator, cast
+from typing import Any, AsyncIterator, Iterator, Literal, NamedTuple, cast
 
 from sqlmodel import Session, col, select
 
@@ -54,6 +54,13 @@ TERMINAL_ITEM_STATUSES = {
 _executor = ThreadPoolExecutor(max_workers=1)
 _process_lock = threading.Lock()
 _active_processes: dict[str, subprocess.Popen[str]] = {}
+
+EstimateKind = Literal["exact", "approximate", "unknown"]
+
+
+class SizeEstimate(NamedTuple):
+    bytes: int
+    kind: EstimateKind
 
 
 def create_playlist_download(
@@ -150,6 +157,9 @@ def estimate_playlist_sizes(
     totals = {quality: 0 for quality in qualities}
     estimated_items = {quality: 0 for quality in qualities}
     unavailable_items = {quality: 0 for quality in qualities}
+    estimate_kinds: dict[QualityValue, EstimateKind] = {
+        quality: "unknown" for quality in qualities
+    }
     analyzed_items = 0
     failed_items = 0
 
@@ -169,12 +179,16 @@ def estimate_playlist_sizes(
         analyzed_items += 1
 
         for quality in qualities:
-            size = _estimate_quality_size(formats, quality)
-            if size is None:
+            estimate = _estimate_quality_size(formats, quality, metadata)
+            if estimate is None:
                 unavailable_items[quality] += 1
                 continue
-            totals[quality] += size
+            totals[quality] += estimate.bytes
             estimated_items[quality] += 1
+            estimate_kinds[quality] = _merge_estimate_kind(
+                estimate_kinds[quality],
+                estimate.kind,
+            )
 
     return PlaylistSizeEstimateResponse(
         requestedItems=len(request.items),
@@ -186,6 +200,11 @@ def estimate_playlist_sizes(
                 totalBytes=totals[quality] if estimated_items[quality] > 0 else None,
                 estimatedItems=estimated_items[quality],
                 unavailableItems=unavailable_items[quality],
+                estimateKind=(
+                    estimate_kinds[quality]
+                    if estimated_items[quality] > 0
+                    else "unknown"
+                ),
             )
             for quality in qualities
         ],
@@ -421,6 +440,11 @@ def _run_playlist_item_process(
     with _process_lock:
         _active_processes[playlist_id] = process
 
+    with Session(engine) as session:
+        playlist = session.get(Playlist, playlist_id)
+        if playlist and playlist.status == PlaylistStatus.CANCELLED.value:
+            process.terminate()
+
     output = _collect_process_output(process, playlist_id, item_id)
 
     with _process_lock:
@@ -531,35 +555,44 @@ def _selected_items(
 def _estimate_quality_size(
     formats: list[dict[str, Any]],
     quality: QualityValue,
-) -> int | None:
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
     if quality == "best":
-        return _best_video_size(formats)
+        return _best_video_size(formats, metadata)
     if quality.startswith("audio_"):
-        return _audio_size(formats, quality)
-    return _video_size_for_height(formats, int(quality.removesuffix("p")))
+        return _audio_size(formats, quality, metadata)
+    return _video_size_for_height(
+        formats,
+        int(quality.removesuffix("p")),
+        metadata,
+    )
 
 
-def _best_video_size(formats: list[dict[str, Any]]) -> int | None:
+def _best_video_size(
+    formats: list[dict[str, Any]],
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
     video_formats = sorted(
         [item for item in formats if _has_video(item)],
         key=lambda item: (
             _int_or_none(item.get("height")) or 0,
             _int_or_none(item.get("tbr")) or 0,
-            _format_size(item) or 0,
+            _raw_format_size(item) or 0,
         ),
         reverse=True,
     )
     for item in video_formats:
-        size = _combined_video_audio_size(item, formats)
-        if size:
-            return size
+        estimate = _combined_video_audio_size(item, formats, metadata)
+        if estimate:
+            return estimate
     return None
 
 
 def _video_size_for_height(
     formats: list[dict[str, Any]],
     height: int,
-) -> int | None:
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
     video_formats = sorted(
         [
             item
@@ -569,58 +602,119 @@ def _video_size_for_height(
         key=lambda item: (
             _int_or_none(item.get("height")) or 0,
             _int_or_none(item.get("tbr")) or 0,
-            _format_size(item) or 0,
+            _raw_format_size(item) or 0,
         ),
         reverse=True,
     )
     for item in video_formats:
-        size = _combined_video_audio_size(item, formats)
-        if size:
-            return size
+        estimate = _combined_video_audio_size(item, formats, metadata)
+        if estimate:
+            return estimate
     return None
 
 
 def _combined_video_audio_size(
     video_format: dict[str, Any],
     formats: list[dict[str, Any]],
-) -> int | None:
-    video_size = _format_size(video_format)
-    if video_size is None:
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
+    video_estimate = _format_size(video_format, metadata)
+    if video_estimate is None:
         return None
     if _has_audio(video_format):
-        return video_size
-    audio_size = _best_audio_size(formats)
-    return video_size + audio_size if audio_size is not None else video_size
+        return video_estimate
+    audio_estimate = _best_audio_size(formats, metadata)
+    if audio_estimate is None:
+        return SizeEstimate(video_estimate.bytes, "approximate")
+    return SizeEstimate(
+        video_estimate.bytes + audio_estimate.bytes,
+        _merge_estimate_kind(video_estimate.kind, audio_estimate.kind),
+    )
 
 
-def _audio_size(formats: list[dict[str, Any]], quality: QualityValue) -> int | None:
+def _audio_size(
+    formats: list[dict[str, Any]],
+    quality: QualityValue,
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
     ext = quality.removeprefix("audio_")
     if ext == "mp3":
-        return _best_audio_size(formats)
+        estimate = _best_audio_size(formats, metadata)
+        if estimate is None:
+            return None
+        return SizeEstimate(estimate.bytes, "approximate")
 
     preferred = [
         item
         for item in formats
         if _has_audio(item) and not _has_video(item) and item.get("ext") == ext
     ]
-    return _largest_known_size(preferred) or _best_audio_size(formats)
+    return _largest_known_size(preferred, metadata) or _best_audio_size(
+        formats,
+        metadata,
+    )
 
 
-def _best_audio_size(formats: list[dict[str, Any]]) -> int | None:
+def _best_audio_size(
+    formats: list[dict[str, Any]],
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
     audio_formats = [
         item for item in formats if _has_audio(item) and not _has_video(item)
     ]
-    return _largest_known_size(audio_formats)
+    return _largest_known_size(audio_formats, metadata)
 
 
-def _largest_known_size(formats: list[dict[str, Any]]) -> int | None:
-    sizes = [_format_size(item) for item in formats]
-    known_sizes = [size for size in sizes if size is not None and size > 0]
-    return max(known_sizes) if known_sizes else None
+def _largest_known_size(
+    formats: list[dict[str, Any]],
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
+    estimates = [
+        estimate
+        for item in formats
+        if (estimate := _format_size(item, metadata)) is not None
+        and estimate.bytes > 0
+    ]
+    if not estimates:
+        return None
+    return max(estimates, key=lambda estimate: estimate.bytes)
 
 
-def _format_size(item: dict[str, Any]) -> int | None:
+def _format_size(
+    item: dict[str, Any],
+    metadata: dict[str, Any],
+) -> SizeEstimate | None:
+    filesize = _int_or_none(item.get("filesize"))
+    if filesize and filesize > 0:
+        return SizeEstimate(filesize, "exact")
+
+    approximate_size = _int_or_none(item.get("filesize_approx"))
+    if approximate_size and approximate_size > 0:
+        return SizeEstimate(approximate_size, "approximate")
+
+    bitrate = _float_or_none(item.get("tbr"))
+    duration = _float_or_none(metadata.get("duration"))
+    if bitrate and bitrate > 0 and duration and duration > 0:
+        return SizeEstimate(int((bitrate * 1000 / 8) * duration), "approximate")
+
+    return None
+
+
+def _raw_format_size(item: dict[str, Any]) -> int | None:
     return _int_or_none(item.get("filesize") or item.get("filesize_approx"))
+
+
+def _merge_estimate_kind(
+    current: EstimateKind,
+    incoming: EstimateKind,
+) -> EstimateKind:
+    if current == "unknown":
+        return incoming
+    if current == "approximate" or incoming == "approximate":
+        return "approximate"
+    if current == "unknown" or incoming == "unknown":
+        return "unknown"
+    return "exact"
 
 
 def _has_video(item: dict[str, Any]) -> bool:
@@ -644,6 +738,12 @@ def _int_or_none(value: Any) -> int | None:
         return value
     if isinstance(value, float):
         return int(value)
+    return None
+
+
+def _float_or_none(value: Any) -> float | None:
+    if isinstance(value, int | float):
+        return float(value)
     return None
 
 

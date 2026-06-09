@@ -1,4 +1,5 @@
 from typing import Any
+from urllib.parse import urlparse
 
 from app.platforms.youtube import extract_youtube_metadata
 from app.schemas.analyze import AnalyzeResponse, PlaylistAnalyzeItem, PlaylistSummary
@@ -28,7 +29,16 @@ def analyze_url(url: str) -> AnalyzeResponse:
     return _video_response(platform, metadata)
 
 
-def _video_response(platform: PlatformInfo, metadata: dict[str, Any]) -> AnalyzeResponse:
+PLAYLIST_FALLBACK_NOTICE = (
+    "This list is not available as a public playlist, so Nextract loaded the current video instead."
+)
+
+
+def _video_response(
+    platform: PlatformInfo,
+    metadata: dict[str, Any],
+    notice: str | None = None,
+) -> AnalyzeResponse:
     formats = _list_value(metadata.get("formats"))
 
     return AnalyzeResponse(
@@ -41,6 +51,7 @@ def _video_response(platform: PlatformInfo, metadata: dict[str, Any]) -> Analyze
         webpageUrl=_string_value(metadata.get("webpage_url"), platform.url),
         qualities=normalize_quality_options(formats),
         rawFormats=sanitize_raw_formats(formats),
+        notice=notice,
     )
 
 
@@ -48,6 +59,15 @@ def _playlist_response(
     platform: PlatformInfo, metadata: dict[str, Any]
 ) -> AnalyzeResponse:
     entries = _list_value(metadata.get("entries"))
+    if not entries:
+        if _is_watch_url(platform.url) and _looks_like_video_metadata(metadata):
+            return _video_response(
+                platform,
+                metadata,
+                notice=PLAYLIST_FALLBACK_NOTICE,
+            )
+        raise AnalyzeError("This playlist is unavailable or has no public videos.")
+
     title = _string_value(metadata.get("title"), "YouTube playlist")
     items = [_playlist_item(entry, index) for index, entry in enumerate(entries, start=1)]
 
@@ -68,6 +88,14 @@ def _playlist_response(
             items=items,
         ),
     )
+
+
+def _is_watch_url(url: str) -> bool:
+    return urlparse(url).path == "/watch"
+
+
+def _looks_like_video_metadata(metadata: dict[str, Any]) -> bool:
+    return bool(_list_value(metadata.get("formats"))) or _string_or_none(metadata.get("id")) is not None
 
 
 def _playlist_item(entry: dict[str, Any], index: int) -> PlaylistAnalyzeItem:

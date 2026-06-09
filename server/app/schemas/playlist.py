@@ -20,6 +20,7 @@ PlaylistItemStatusValue = Literal[
     "skipped",
     "cancelled",
 ]
+PlaylistEstimateKind = Literal["exact", "approximate", "unknown"]
 
 
 class PlaylistCreateRequest(BaseModel):
@@ -52,6 +53,7 @@ class PlaylistQualitySizeEstimate(BaseModel):
     total_bytes: int | None = Field(default=None, alias="totalBytes")
     estimated_items: int = Field(alias="estimatedItems")
     unavailable_items: int = Field(alias="unavailableItems")
+    estimate_kind: PlaylistEstimateKind = Field(alias="estimateKind")
 
 
 class PlaylistSizeEstimateResponse(BaseModel):

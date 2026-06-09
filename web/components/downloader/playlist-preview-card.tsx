@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Ban,
@@ -28,6 +28,7 @@ type PlaylistStartOptions = Pick<
 >;
 
 type SelectionMode = "selected" | "range";
+const AUTO_ESTIMATE_LIMIT = 10;
 
 export function PlaylistPreviewCard({
   defaultSkipExisting,
@@ -83,22 +84,60 @@ export function PlaylistPreviewCard({
     selectionMode === "range"
       ? rangeSelectionCount(Number(rangeStart), Number(rangeEnd), items.length)
       : selectedIndexes.length;
-  const selectedAvailableItems = selectedPlaylistItems(
-    items,
-    selectionMode,
-    selectedIndexes,
-    Number(rangeStart),
-    Number(rangeEnd),
+  const selectedAvailableItems = useMemo(
+    () =>
+      selectedPlaylistItems(
+        items,
+        selectionMode,
+        selectedIndexes,
+        Number(rangeStart),
+        Number(rangeEnd),
+      ),
+    [items, rangeEnd, rangeStart, selectedIndexes, selectionMode],
   );
-  const sizeEstimateByQuality = useMemo(() => {
-    const map = new Map<QualityValue, number | null>();
-    for (const estimate of sizeEstimate?.estimates ?? []) {
-      map.set(estimate.quality, estimate.totalBytes);
-    }
-    return map;
-  }, [sizeEstimate]);
+  const selectedEstimateKey = useMemo(
+    () => selectedAvailableItems.map((item) => item.url).join("|"),
+    [selectedAvailableItems],
+  );
+  const lastAutoEstimateKey = useRef<string | null>(null);
   const isRunning = playlist?.status === "pending" || playlist?.status === "downloading";
   const canStart = Boolean(selectedQuality) && selectedCount > 0 && !isStartPending && !isRunning;
+
+  const estimateSizes = useCallback(() => {
+    if (selectedAvailableItems.length === 0) return;
+    onEstimateSizes({
+      items: selectedAvailableItems.map((item) => ({
+        index: item.index,
+        url: item.url,
+      })),
+      qualities: preview.qualities.map((option) => option.value),
+    });
+  }, [onEstimateSizes, preview.qualities, selectedAvailableItems]);
+
+  useEffect(() => {
+    if (
+      isRunning ||
+      isEstimatePending ||
+      selectedAvailableItems.length === 0 ||
+      selectedAvailableItems.length > AUTO_ESTIMATE_LIMIT ||
+      selectedEstimateKey === lastAutoEstimateKey.current
+    ) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      lastAutoEstimateKey.current = selectedEstimateKey;
+      estimateSizes();
+    }, 450);
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    isEstimatePending,
+    isRunning,
+    selectedAvailableItems,
+    selectedEstimateKey,
+    estimateSizes,
+  ]);
 
   function toggleIndex(index: number) {
     setSelectedIndexes((current) =>
@@ -119,17 +158,6 @@ export function PlaylistPreviewCard({
       return;
     }
     onStart({ selectedIndexes, skipExisting });
-  }
-
-  function estimateSizes() {
-    if (selectedAvailableItems.length === 0) return;
-    onEstimateSizes({
-      items: selectedAvailableItems.map((item) => ({
-        index: item.index,
-        url: item.url,
-      })),
-      qualities: preview.qualities.map((option) => option.value),
-    });
   }
 
   return (
@@ -195,7 +223,9 @@ export function PlaylistPreviewCard({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
                   {preview.qualities.map((option) => {
                     const isSelected = option.value === selectedQuality;
-                    const estimatedSize = sizeEstimateByQuality.get(option.value);
+                    const estimate = sizeEstimate?.estimates.find(
+                      (item) => item.quality === option.value,
+                    );
                     return (
                       <button
                         key={option.value}
@@ -216,7 +246,7 @@ export function PlaylistPreviewCard({
                           <span>{option.label}</span>
                           {sizeEstimate ? (
                             <span style={{ fontSize: "10px", fontWeight: 800, opacity: 0.82 }}>
-                              {formatBytes(estimatedSize)}
+                              {formatEstimate(estimate)}
                             </span>
                           ) : null}
                         </span>
@@ -243,11 +273,17 @@ export function PlaylistPreviewCard({
                 >
                   {isEstimatePending
                     ? "Calculating sizes..."
-                    : `Calculate sizes for ${selectedAvailableItems.length} selected`}
+                    : sizeEstimate
+                      ? `Refresh sizes for ${selectedAvailableItems.length} selected`
+                      : `Calculate sizes for ${selectedAvailableItems.length} selected`}
                 </button>
                 {sizeEstimate && (
                   <p style={{ ...mutedTextStyle, marginTop: "8px", lineHeight: 1.45 }}>
                     Estimated from {sizeEstimate.analyzedItems}/{sizeEstimate.requestedItems} selected videos.
+                    {" "}
+                    {selectedAvailableItems.length > AUTO_ESTIMATE_LIMIT
+                      ? "Large selections use manual refresh to avoid rate limits."
+                      : "Small selections refresh automatically."}
                   </p>
                 )}
                 {sizeEstimateError && <p role="alert" style={errorStyle}>{sizeEstimateError}</p>}
@@ -605,6 +641,20 @@ function formatBytes(bytes: number | null | undefined): string {
   return `${value.toLocaleString(undefined, {
     maximumFractionDigits: value >= 10 || unit === 0 ? 0 : 1,
   })} ${units[unit]}`;
+}
+
+function formatEstimate(
+  estimate:
+    | PlaylistSizeEstimateResponse["estimates"][number]
+    | undefined,
+): string {
+  if (!estimate || estimate.totalBytes === null || estimate.estimateKind === "unknown") {
+    return "Size unknown";
+  }
+  if (estimate.estimateKind === "approximate") {
+    return `~${formatBytes(estimate.totalBytes)} approx`;
+  }
+  return `${formatBytes(estimate.totalBytes)} exact`;
 }
 
 const backButtonStyle = {
