@@ -1,82 +1,81 @@
-import { BackendHealthCard } from "@/components/common/backend-health-card";
+import { Archive, CirclePlay, ClipboardList, FileVideo } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+import { UrlInputCard } from "@/components/downloader/url-input-card";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#f8f9fa] px-4 py-8 text-[#191c1d] dark:bg-[#0f172a] dark:text-[#f0f1f2] sm:px-6 lg:px-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <header className="flex flex-col gap-4 border-b border-[#c7c4d8] pb-6 dark:border-[#334155] sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[#3525cd] dark:text-[#c3c0ff]">
-              Nextract
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Local-first media extraction
+    <AppShell>
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-7xl flex-col px-6 py-12 sm:px-8 lg:min-h-screen lg:px-12 lg:py-16">
+        <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-8 text-center">
+          <div className="flex flex-col items-center gap-5">
+            <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--foreground-muted)] shadow-[var(--shadow-soft)]">
+              Local-first YouTube archive
+            </span>
+            <h1 className="max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-6xl">
+              Extract allowed media into your personal vault.
             </h1>
-          </div>
-          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-[#464555] shadow-sm dark:bg-[#1e293b] dark:text-[#c3c0ff]">
-            web/ Next.js
-          </div>
-        </header>
-
-        <section className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-          <div className="rounded-2xl bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] dark:bg-[#1e293b]">
-            <label
-              htmlFor="media-url"
-              className="text-sm font-semibold text-[#464555] dark:text-[#c3c0ff]"
-            >
-              Paste a media link
-            </label>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-              <input
-                id="media-url"
-                type="url"
-                placeholder="https://youtube.com/watch?v=..."
-                className="min-h-16 flex-1 rounded-xl border border-[#c7c4d8] bg-[#f8f9fa] px-4 text-base outline-none transition focus:border-[#4f46e5] focus:ring-4 focus:ring-[#4f46e5]/20 dark:border-[#334155] dark:bg-[#0f172a]"
-              />
-              <button className="min-h-16 rounded-xl bg-[#3525cd] px-6 font-semibold text-white transition hover:bg-[#2f21b8]">
-                Analyze
-              </button>
-            </div>
-            <div className="mt-6 grid gap-3 text-sm text-[#464555] dark:text-[#c3c0ff] sm:grid-cols-3">
-              <span>Analyze metadata</span>
-              <span>Choose quality</span>
-              <span>Save to downloads/</span>
-            </div>
+            <p className="max-w-2xl text-lg leading-8 text-[var(--foreground-muted)] sm:text-xl">
+              Paste a link, choose your quality, and save videos, audio, and playlists in one clean space.
+            </p>
           </div>
 
-          <aside className="rounded-2xl bg-[#1e293b] p-6 text-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-            <h2 className="text-lg font-semibold">Project layout</h2>
-            <pre className="mt-4 overflow-auto rounded-xl bg-[#0f172a] p-4 text-sm leading-7 text-[#c3c0ff]">
-{`nextract/
-  web/        Next.js
-  server/     FastAPI
-  downloads/  saved files
-  data/       SQLite`}
-            </pre>
-          </aside>
+          <UrlInputCard />
+
+          <section className="flex flex-col items-center gap-5" aria-label="Supported capabilities">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--foreground-soft)]">
+              Supported in this MVP
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-[var(--foreground-soft)]">
+              <CapabilityChip icon={CirclePlay} label="YouTube" />
+              <CapabilityChip icon={FileVideo} label="Video" />
+              <CapabilityChip icon={Archive} label="Audio" />
+              <CapabilityChip icon={ClipboardList} label="Playlists" />
+            </div>
+          </section>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            ["web/", "Next.js app and UI"],
-            ["server/", "FastAPI analysis and jobs"],
-            ["downloads/", "Organized saved files"],
-            ["data/", "SQLite local database"],
-          ].map(([title, body]) => (
-            <div
-              key={title}
-              className="rounded-xl border border-[#c7c4d8] bg-white p-5 dark:border-[#334155] dark:bg-[#1e293b]"
+        <section className="mx-auto mt-16 w-full max-w-4xl lg:mt-6" aria-label="Recent activity">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Recent Activity
+            </h2>
+            <button
+              aria-disabled="true"
+              className="text-sm font-bold text-[var(--primary)] opacity-70"
+              type="button"
             >
-              <h2 className="font-semibold">{title}</h2>
-              <p className="mt-2 text-sm text-[#464555] dark:text-[#c3c0ff]">
-                {body}
-              </p>
-            </div>
-          ))}
+              View All
+            </button>
+          </div>
+          <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 py-8 text-center shadow-[var(--shadow-soft)]">
+            <Archive size={36} className="text-[var(--foreground-soft)]" aria-hidden="true" />
+            <p className="mt-4 max-w-md text-base leading-7 text-[var(--foreground-muted)]">
+              Your vault is empty. Paste a YouTube link to start preparing your first archive item.
+            </p>
+          </div>
         </section>
 
-        <BackendHealthCard />
+        <footer className="mx-auto mt-10 max-w-2xl border-t border-[var(--border-soft)] px-2 pt-8 text-center text-sm font-semibold leading-6 text-[var(--foreground-muted)]">
+          Nextract is intended for archiving personal or permitted content. Respect copyright laws and platform terms of service.
+        </footer>
       </div>
-    </main>
+    </AppShell>
+  );
+}
+
+function CapabilityChip({
+  icon: Icon,
+  label,
+}: {
+  icon: LucideIcon;
+  label: string;
+}) {
+  return (
+    <span className="flex min-h-11 items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-4 text-sm font-bold text-[var(--foreground-muted)] shadow-[var(--shadow-soft)]">
+      <Icon size={19} aria-hidden={true} />
+      {label}
+    </span>
   );
 }
