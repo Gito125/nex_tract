@@ -104,12 +104,41 @@ def test_analyze_playlist_returns_basic_summary() -> None:
     body = response.json()
     assert body["type"] == "playlist"
     assert body["title"] == "Example Playlist"
-    assert body["qualities"] == []
+    assert [item["value"] for item in body["qualities"]] == [
+        "best",
+        "1080p",
+        "720p",
+        "480p",
+        "360p",
+        "audio_m4a",
+        "audio_mp3",
+        "audio_opus",
+    ]
     assert body["rawFormats"] == []
     assert body["playlist"] == {
         "id": "PL123",
         "title": "Example Playlist",
         "itemCount": 2,
+        "items": [
+            {
+                "index": 1,
+                "title": "One",
+                "url": "https://www.youtube.com/watch?v=one",
+                "thumbnail": None,
+                "duration": 101,
+                "available": True,
+                "errorMessage": None,
+            },
+            {
+                "index": 2,
+                "title": "Two",
+                "url": "https://www.youtube.com/watch?v=two",
+                "thumbnail": None,
+                "duration": None,
+                "available": True,
+                "errorMessage": None,
+            },
+        ],
     }
     assert "--flat-playlist" in run.call_args.args[0]
     assert "--yes-playlist" in run.call_args.args[0]
@@ -175,5 +204,8 @@ def _playlist_metadata() -> dict:
         "title": "Example Playlist",
         "thumbnail": "https://img.youtube.com/playlist.jpg",
         "webpage_url": "https://www.youtube.com/playlist?list=PL123",
-        "entries": [{"id": "one"}, {"id": "two"}],
+        "entries": [
+            {"id": "one", "title": "One", "duration": 101},
+            {"id": "two", "title": "Two"},
+        ],
     }

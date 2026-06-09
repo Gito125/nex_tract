@@ -9,13 +9,15 @@ import type {
   HistoryFilters,
   HistoryListResponse,
   AppSettings,
+  PlaylistCreateRequest,
+  PlaylistResponse,
   SettingsUpdateRequest,
 } from "@/lib/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
   "http://localhost:8000";
-const REQUEST_TIMEOUT_MS = 30_000; // 30 seconds timeout for API requests
+const REQUEST_TIMEOUT_MS = 45_000; // 45 seconds timeout for API requests
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
@@ -95,6 +97,29 @@ export function retryDownload(jobId: string): Promise<DownloadJob> {
 
 export function getDownloadEventsUrl(jobId: string): string {
   return `${API_BASE_URL}/api/downloads/${jobId}/events`;
+}
+
+export function createPlaylist(
+  body: PlaylistCreateRequest,
+): Promise<PlaylistResponse> {
+  return request<PlaylistResponse>("/api/playlists", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function getPlaylist(playlistId: string): Promise<PlaylistResponse> {
+  return request<PlaylistResponse>(`/api/playlists/${playlistId}`);
+}
+
+export function cancelPlaylist(playlistId: string): Promise<PlaylistResponse> {
+  return request<PlaylistResponse>(`/api/playlists/${playlistId}/cancel`, {
+    method: "POST",
+  });
+}
+
+export function getPlaylistEventsUrl(playlistId: string): string {
+  return `${API_BASE_URL}/api/playlists/${playlistId}/events`;
 }
 
 export function listHistory(

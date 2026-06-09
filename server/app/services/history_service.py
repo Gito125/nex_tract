@@ -8,7 +8,14 @@ from typing import cast
 from sqlalchemy import func, or_
 from sqlmodel import Session, col, select
 
-from app.db.models import DownloadHistoryItem, DownloadJob, DownloadStatus
+from app.db.models import (
+    DownloadHistoryItem,
+    DownloadJob,
+    DownloadStatus,
+    Playlist,
+    PlaylistItem,
+    PlaylistItemStatus,
+)
 from app.schemas.download import (
     AudioFormat,
     DownloadCreateRequest,
@@ -57,6 +64,43 @@ def record_download_history(job: DownloadJob, session: Session) -> None:
         completed_at=completed_at,
     )
     session.add(item)
+
+
+def record_playlist_item_history(
+    playlist: Playlist,
+    item: PlaylistItem,
+    session: Session,
+) -> None:
+    if item.status not in {
+        PlaylistItemStatus.COMPLETED.value,
+        PlaylistItemStatus.FAILED.value,
+    }:
+        return
+
+    item_history = DownloadHistoryItem(
+        job_id=item.id,
+        url=item.url,
+        platform=playlist.platform,
+        media_type="video",
+        title=item.title,
+        thumbnail=item.thumbnail,
+        duration=item.duration,
+        selected_quality=playlist.selected_quality,
+        audio_format=playlist.audio_format,
+        status=(
+            DownloadStatus.COMPLETED.value
+            if item.status == PlaylistItemStatus.COMPLETED.value
+            else DownloadStatus.FAILED.value
+        ),
+        output_path=item.output_path,
+        download_folder=playlist.output_path,
+        file_size=item.file_size,
+        error_message=item.error_message,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+        completed_at=item.completed_at or item.updated_at,
+    )
+    session.add(item_history)
 
 
 def list_history_items(

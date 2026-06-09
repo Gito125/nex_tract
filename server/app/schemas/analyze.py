@@ -37,12 +37,25 @@ class RawFormat(BaseModel):
     tbr: float | None = None
 
 
+class PlaylistAnalyzeItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    index: int
+    title: str
+    url: str
+    thumbnail: str | None = None
+    duration: int | None = None
+    available: bool = True
+    error_message: str | None = Field(default=None, alias="errorMessage")
+
+
 class PlaylistSummary(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str | None = None
     title: str | None = None
     item_count: int = Field(default=0, alias="itemCount")
+    items: list[PlaylistAnalyzeItem] = Field(default_factory=list)
 
 
 class AnalyzeResponse(BaseModel):

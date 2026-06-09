@@ -18,9 +18,12 @@ import { UrlInputCard } from "@/components/downloader/url-input-card";
 import {
   analyzeUrl,
   cancelDownload,
+  cancelPlaylist,
+  createPlaylist,
   createDownload,
   getSettings,
   getDownloadEventsUrl,
+  getPlaylistEventsUrl,
   listDownloads,
   retryDownload,
 } from "@/lib/api";
@@ -30,6 +33,8 @@ import type {
   DownloadCreateRequest,
   DownloadJob,
   DownloadQueueResponse,
+  PlaylistCreateRequest,
+  PlaylistResponse,
   QualityValue,
 } from "@/lib/types";
 
@@ -41,6 +46,7 @@ export function AnalyzeHome() {
   const [selectedQuality, setSelectedQuality] = useState<QualityValue | null>(null);
   const [cancelJobId, setCancelJobId] = useState<string | null>(null);
   const [retryJobId, setRetryJobId] = useState<string | null>(null);
+  const [playlist, setPlaylist] = useState<PlaylistResponse | null>(null);
 
   const settingsQuery = useQuery({ queryKey: ["settings"], queryFn: getSettings });
 
@@ -62,6 +68,10 @@ export function AnalyzeHome() {
     .filter((job) => job.status === "downloading")
     .map((job) => job.id)
     .join("|");
+  const activePlaylistId =
+    playlist && ["pending", "downloading"].includes(playlist.status)
+      ? playlist.id
+      : null;
 
   useEffect(() => {
     if (!activeJobIds) return;
@@ -87,9 +97,31 @@ export function AnalyzeHome() {
     return () => sources.forEach((s) => s.close());
   }, [activeJobIds, queryClient]);
 
+  useEffect(() => {
+    if (!activePlaylistId) return;
+
+    const source = new EventSource(getPlaylistEventsUrl(activePlaylistId));
+    source.onmessage = (event) => {
+      try {
+        setPlaylist(JSON.parse(event.data) as PlaylistResponse);
+      } catch {
+        source.close();
+      }
+    };
+    source.onerror = () => {
+      source.close();
+    };
+    return () => source.close();
+  }, [activePlaylistId]);
+
   const createDownloadMutation = useMutation({
     mutationFn: createDownload,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["downloads"] }),
+  });
+
+  const createPlaylistMutation = useMutation({
+    mutationFn: createPlaylist,
+    onSuccess: (data) => setPlaylist(data),
   });
 
   const cancelMutation = useMutation({
@@ -110,12 +142,18 @@ export function AnalyzeHome() {
     },
   });
 
+  const cancelPlaylistMutation = useMutation({
+    mutationFn: cancelPlaylist,
+    onSuccess: (data) => setPlaylist(data),
+  });
+
   const visibleError =
     clientError ?? (analyzeMutation.error ? analyzeMutation.error.message : null);
   const queueError =
     createDownloadMutation.error?.message ??
     cancelMutation.error?.message ??
     retryMutation.error?.message ??
+    cancelPlaylistMutation.error?.message ??
     (downloadsQuery.error ? downloadsQuery.error.message : null);
 
   function handleSubmit(value: string) {
@@ -123,6 +161,7 @@ export function AnalyzeHome() {
     setClientError(null);
     setAnalysis(null);
     setSelectedQuality(null);
+    setPlaylist(null);
     if (!trimmed) { setClientError("Paste a YouTube URL to get started."); return; }
     let parsedUrl: URL;
     try { parsedUrl = new URL(trimmed); } catch {
@@ -139,9 +178,12 @@ export function AnalyzeHome() {
   function resetAnalysis() {
     setAnalysis(null);
     setSelectedQuality(null);
+    setPlaylist(null);
     setClientError(null);
     analyzeMutation.reset();
     createDownloadMutation.reset();
+    createPlaylistMutation.reset();
+    cancelPlaylistMutation.reset();
   }
 
   function handleDownload() {
@@ -149,6 +191,21 @@ export function AnalyzeHome() {
     if (!confirmRepeatDownload(analysis, selectedQuality, downloadsQuery.data?.jobs ?? [])) return;
     createDownloadMutation.reset();
     createDownloadMutation.mutate(toDownloadRequest(analysis.webpageUrl, selectedQuality));
+  }
+
+  function handlePlaylistStart(
+    options: Pick<
+      PlaylistCreateRequest,
+      "selectedIndexes" | "rangeStart" | "rangeEnd" | "skipExisting"
+    >,
+  ) {
+    if (!analysis || !selectedQuality) return;
+    setPlaylist(null);
+    createPlaylistMutation.reset();
+    cancelPlaylistMutation.reset();
+    createPlaylistMutation.mutate(
+      toPlaylistRequest(analysis.webpageUrl, selectedQuality, options),
+    );
   }
 
   if (analysis?.type === "video") {
@@ -187,9 +244,23 @@ export function AnalyzeHome() {
     return (
       <div
         className="animate-fade-up"
-        style={{ maxWidth: "900px", margin: "0 auto", padding: "32px 24px 48px" }}
+        style={{ maxWidth: "1180px", margin: "0 auto", padding: "32px 24px 48px" }}
       >
-        <PlaylistPreviewCard onBack={resetAnalysis} preview={analysis} />
+        <PlaylistPreviewCard
+          defaultSkipExisting={settingsQuery.data?.skipExisting ?? false}
+          isCancelPending={cancelPlaylistMutation.isPending}
+          isStartPending={createPlaylistMutation.isPending}
+          onBack={resetAnalysis}
+          onCancel={() => {
+            if (playlist) cancelPlaylistMutation.mutate(playlist.id);
+          }}
+          onSelectQuality={setSelectedQuality}
+          onStart={handlePlaylistStart}
+          playlist={playlist}
+          preview={analysis}
+          selectedQuality={selectedQuality}
+          startError={createPlaylistMutation.error?.message ?? null}
+        />
       </div>
     );
   }
@@ -508,6 +579,24 @@ function toDownloadRequest(url: string, quality: QualityValue): DownloadCreateRe
   const audioFormat = audioFormatForQuality(quality);
   if (audioFormat) return { url, quality, downloadType: "audio", audioFormat };
   return { url, quality, downloadType: "video", audioFormat: null };
+}
+
+function toPlaylistRequest(
+  url: string,
+  quality: QualityValue,
+  options: Pick<
+    PlaylistCreateRequest,
+    "selectedIndexes" | "rangeStart" | "rangeEnd" | "skipExisting"
+  >,
+): PlaylistCreateRequest {
+  const audioFormat = audioFormatForQuality(quality);
+  return {
+    url,
+    quality,
+    downloadType: audioFormat ? "audio" : "video",
+    audioFormat,
+    ...options,
+  };
 }
 
 function audioFormatForQuality(quality: QualityValue): AudioFormat | null {

@@ -36,10 +36,21 @@ export type RawFormat = {
   tbr: number | null;
 };
 
+export type PlaylistAnalyzeItem = {
+  index: number;
+  title: string;
+  url: string;
+  thumbnail: string | null;
+  duration: number | null;
+  available: boolean;
+  errorMessage: string | null;
+};
+
 export type PlaylistSummary = {
   id: string | null;
   title: string | null;
   itemCount: number;
+  items: PlaylistAnalyzeItem[];
 };
 
 export type AnalyzeResponse = {
@@ -81,6 +92,17 @@ export type DownloadCreateRequest = {
   audioFormat: AudioFormat | null;
 };
 
+export type PlaylistCreateRequest = {
+  url: string;
+  quality: QualityValue;
+  downloadType: DownloadType;
+  audioFormat: AudioFormat | null;
+  selectedIndexes?: number[];
+  rangeStart?: number;
+  rangeEnd?: number;
+  skipExisting?: boolean;
+};
+
 export type DownloadJob = {
   id: string;
   url: string;
@@ -106,6 +128,71 @@ export type DownloadJob = {
 
 export type DownloadQueueResponse = {
   jobs: DownloadJob[];
+};
+
+export type PlaylistStatus =
+  | "pending"
+  | "downloading"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type PlaylistItemStatus =
+  | "queued"
+  | "downloading"
+  | "completed"
+  | "failed"
+  | "skipped"
+  | "cancelled";
+
+export type PlaylistItem = {
+  id: string;
+  playlistId: string;
+  url: string;
+  title: string;
+  thumbnail: string | null;
+  duration: number | null;
+  itemIndex: number;
+  status: PlaylistItemStatus;
+  progress: number;
+  speed: string | null;
+  eta: string | null;
+  progressStatus: ProgressStatus;
+  outputPath: string | null;
+  fileSize: number | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+};
+
+export type PlaylistResponse = {
+  id: string;
+  url: string;
+  platform: "youtube";
+  title: string;
+  thumbnail: string | null;
+  totalItems: number;
+  completedItems: number;
+  failedItems: number;
+  skippedItems: number;
+  cancelledItems: number;
+  selectedQuality: QualityValue;
+  audioFormat: AudioFormat | null;
+  skipExisting: boolean;
+  status: PlaylistStatus;
+  progress: number;
+  currentItemIndex: number | null;
+  currentItemTitle: string | null;
+  currentItemProgress: number | null;
+  speed: string | null;
+  eta: string | null;
+  outputPath: string | null;
+  errorMessage: string | null;
+  items: PlaylistItem[];
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
 };
 
 export type HistoryStatus = "completed" | "failed";

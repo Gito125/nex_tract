@@ -16,8 +16,8 @@ Update it as you build.
 ## Current Focus
 
 ```txt
-Current Phase: Phase 6 — Playlist Support
-Current Goal: Support full YouTube playlist downloads.
+Current Phase: Phase 7 — UI Polish
+Current Goal: Make the app feel clean, beautiful, and production-worthy.
 ```
 
 ---
@@ -275,27 +275,27 @@ Support full YouTube playlist downloads.
 
 ## Backend
 
-- [ ] Detect playlist URLs.
-- [ ] Extract playlist metadata.
-- [ ] Extract playlist items.
-- [ ] Create playlist database model.
-- [ ] Create playlist item model.
-- [ ] Support full playlist download.
-- [ ] Support selected items.
-- [ ] Support range downloads.
-- [ ] Support skip existing.
-- [ ] Save playlist in its own folder.
-- [ ] Number playlist files by index.
+- [x] Detect playlist URLs.
+- [x] Extract playlist metadata.
+- [x] Extract playlist items.
+- [x] Create playlist database model.
+- [x] Create playlist item model.
+- [x] Support full playlist download.
+- [x] Support selected items.
+- [x] Support range downloads.
+- [x] Support skip existing.
+- [x] Save playlist in its own folder.
+- [x] Number playlist files by index.
 
 ## Frontend
 
-- [ ] Build playlist summary card.
-- [ ] Build playlist item list.
-- [ ] Add select all.
-- [ ] Add selected item download.
-- [ ] Add range selector.
-- [ ] Add skip existing toggle.
-- [ ] Show playlist progress.
+- [x] Build playlist summary card.
+- [x] Build playlist item list.
+- [x] Add select all.
+- [x] Add selected item download.
+- [x] Add range selector.
+- [x] Add skip existing toggle.
+- [x] Show playlist progress.
 
 ## Exit Criteria
 
@@ -349,11 +349,11 @@ Add support for more platforms through adapters.
 Recommended order:
 
 1. YouTube.
-2. Vimeo.
-3. Reddit.
-4. TikTok.
-5. X.com.
-6. Instagram.
+2. TikTok.
+3. Instagram.
+4. X.com.
+5. Vimeo.
+6. Reddit.
 7. Facebook.
 8. SoundCloud.
 

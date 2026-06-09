@@ -54,6 +54,19 @@ def normalize_quality_options(formats: list[dict[str, Any]]) -> list[QualityOpti
     return options
 
 
+def standard_playlist_quality_options() -> list[QualityOption]:
+    return [
+        QualityOption(label="Best quality", value="best", kind="video"),
+        QualityOption(label="1080p", value="1080p", kind="video"),
+        QualityOption(label="720p", value="720p", kind="video"),
+        QualityOption(label="480p", value="480p", kind="video"),
+        QualityOption(label="360p", value="360p", kind="video"),
+        QualityOption(label="Audio only (M4A)", value="audio_m4a", kind="audio"),
+        QualityOption(label="Audio only (MP3)", value="audio_mp3", kind="audio"),
+        QualityOption(label="Audio only (OPUS)", value="audio_opus", kind="audio"),
+    ]
+
+
 def sanitize_raw_formats(formats: list[dict[str, Any]]) -> list[RawFormat]:
     return [
         RawFormat(

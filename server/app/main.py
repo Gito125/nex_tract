@@ -5,6 +5,7 @@ from app.api.routes.analyze import router as analyze_router
 from app.api.routes.downloads import router as downloads_router
 from app.api.routes.history import router as history_router
 from app.api.routes.health import router as health_router
+from app.api.routes.playlists import router as playlists_router
 from app.api.routes.settings import router as settings_router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
@@ -27,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router, prefix="/api")
     app.include_router(analyze_router, prefix="/api")
     app.include_router(downloads_router, prefix="/api")
+    app.include_router(playlists_router, prefix="/api")
     app.include_router(history_router, prefix="/api")
     app.include_router(settings_router, prefix="/api")
     register_error_handlers(app)
