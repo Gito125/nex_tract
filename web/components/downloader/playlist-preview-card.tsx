@@ -161,7 +161,7 @@ export function PlaylistPreviewCard({
                 borderRadius: "10px",
                 border: "none",
                 background: "var(--primary)",
-                color: "#fff",
+                color: "var(--on-primary)",
                 fontSize: "14px",
                 fontWeight: 700,
                 cursor: "not-allowed",

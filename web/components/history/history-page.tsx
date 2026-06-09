@@ -6,7 +6,6 @@ import {
   Archive,
   CheckCircle2,
   ExternalLink,
-  Filter,
   FolderOpen,
   LoaderCircle,
   RotateCcw,
@@ -132,9 +131,8 @@ export function HistoryPage() {
 
       {/* Filters */}
       <div
+        className="history-filter-grid"
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto auto auto",
           gap: "10px",
           padding: "14px",
           borderRadius: "14px",
@@ -143,7 +141,6 @@ export function HistoryPage() {
           boxShadow: "var(--shadow-soft)",
           marginBottom: "20px",
         }}
-        className="lg:grid-cols-[1fr_180px_150px_150px] grid-cols-1"
         aria-label="History filters"
       >
         {/* Search */}
@@ -295,21 +292,19 @@ function HistoryCard({
 
   return (
     <article
+      className="history-card"
       style={{
-        display: "grid",
-        gridTemplateColumns: "100px 1fr auto",
         gap: "16px",
         padding: "16px",
         borderRadius: "16px",
         background: "var(--surface)",
         border: isCompleted
           ? "1px solid var(--border)"
-          : "1px solid oklch(66% 0.22 22 / 0.2)",
+          : "1px solid var(--error-border)",
         boxShadow: "var(--shadow-soft)",
         transition: "border 0.2s",
         alignItems: "start",
       }}
-      className="sm:grid-cols-[100px_1fr_auto]"
     >
       {/* Thumbnail */}
       <div
@@ -422,7 +417,7 @@ function HistoryCard({
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <div className="history-card-actions">
         <ActionBtn disabled={!item.outputPath} icon={ExternalLink} label="Open file"   onClick={() => onOpenFile(item.id)} />
         <ActionBtn disabled={!item.outputPath} icon={FolderOpen}   label="Open folder" onClick={() => onOpenFolder(item.id)} />
         <ActionBtn icon={RotateCcw} label="Re-download" onClick={() => onRedownload(item.id)} primary />
@@ -447,7 +442,7 @@ function StatusBadge({ status }: { status: HistoryStatus }) {
         fontWeight: 700,
         textTransform: "capitalize",
         background:  ok ? "var(--success-soft)" : "var(--error-soft)",
-        border: `1px solid ${ok ? "oklch(64% 0.17 155 / 0.4)" : "oklch(66% 0.22 22 / 0.4)"}`,
+        border: `1px solid ${ok ? "var(--success-border)" : "var(--error-border)"}`,
         color: ok ? "var(--success)" : "var(--error)",
       }}
     >
@@ -508,7 +503,7 @@ function ActionBtn({
         borderRadius: "8px",
         border: primary ? "none" : "1px solid var(--border-strong)",
         background: primary ? "var(--primary)" : "var(--surface-raised)",
-        color: primary ? "#fff" : "var(--foreground-muted)",
+        color: primary ? "var(--on-primary)" : "var(--foreground-muted)",
         fontSize: "12px",
         fontWeight: 700,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -559,7 +554,7 @@ function Notice({
         borderRadius: "10px",
         marginBottom: "14px",
         background: tone === "success" ? "var(--success-soft)" : "var(--error-soft)",
-        border: `1px solid ${tone === "success" ? "oklch(64% 0.17 155 / 0.4)" : "oklch(66% 0.22 22 / 0.4)"}`,
+        border: `1px solid ${tone === "success" ? "var(--success-border)" : "var(--error-border)"}`,
         color: tone === "success" ? "var(--success)" : "var(--error)",
         fontSize: "13px",
         fontWeight: 600,

@@ -221,7 +221,7 @@ export function SettingsPage() {
         >
           <div>
             <p style={fieldLabelStyle}>Theme</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginTop: "8px" }}>
+            <div className="settings-theme-grid">
               {themeOptions.map((opt) => {
                 const Icon = opt.icon;
                 const active = form.theme === opt.value;
@@ -283,7 +283,7 @@ export function SettingsPage() {
               borderRadius: "12px",
               border: "none",
               background: "var(--primary)",
-              color: "#fff",
+              color: "var(--on-primary)",
               fontSize: "14px",
               fontWeight: 700,
               cursor: saveMutation.isPending ? "wait" : "pointer",
@@ -536,7 +536,7 @@ function SegmentedControl<T extends string>({
                 borderRadius: "9999px",
                 border: active ? "1.5px solid var(--primary)" : "1.5px solid var(--border-strong)",
                 background: active ? "var(--primary)" : "var(--surface-raised)",
-                color: active ? "#fff" : "var(--foreground-muted)",
+                color: active ? "var(--on-primary)" : "var(--foreground-muted)",
                 fontSize: "13px",
                 fontWeight: 700,
                 cursor: "pointer",
@@ -588,7 +588,7 @@ function Notice({
         borderRadius: "10px",
         marginBottom: "16px",
         background: ok ? "var(--success-soft)" : "var(--error-soft)",
-        border: `1px solid ${ok ? "oklch(64% 0.17 155 / 0.4)" : "oklch(66% 0.22 22 / 0.4)"}`,
+        border: `1px solid ${ok ? "var(--success-border)" : "var(--error-border)"}`,
         color: ok ? "var(--success)" : "var(--error)",
         fontSize: "13px",
         fontWeight: 600,

@@ -59,12 +59,12 @@ export function UrlInputCard({
           boxShadow: focused
             ? "0 0 0 4px var(--primary-glow), var(--shadow-lift)"
             : error
-            ? "0 0 0 3px oklch(52% 0.22 22 / 0.10)"
+            ? "0 0 0 3px var(--error-border)"
             : "var(--shadow-soft)",
           transition: "all 0.2s var(--ease-out)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "stretch" }}>
+        <div className="url-input-form-row">
           {/* Left icon */}
           <div
             style={{
@@ -89,6 +89,7 @@ export function UrlInputCard({
           <label htmlFor="media-url" className="sr-only">Paste YouTube URL</label>
           <input
             id="media-url"
+            className="url-input-main"
             ref={inputRef}
             type="url"
             value={url}
@@ -116,6 +117,7 @@ export function UrlInputCard({
           {/* Utility button */}
           <button
             aria-label={hasUrl ? "Clear input" : "Paste from clipboard"}
+            className="url-input-utility"
             type="button"
             disabled={isLoading}
             onClick={handleUtilityClick}
@@ -152,11 +154,12 @@ export function UrlInputCard({
           </button>
 
           {/* Divider */}
-          <div style={{ width: "1px", background: "var(--border-soft)", margin: "10px 0", flexShrink: 0 }} aria-hidden="true" />
+          <div className="url-input-divider" style={{ width: "1px", background: "var(--border-soft)", margin: "10px 0", flexShrink: 0 }} aria-hidden="true" />
 
           {/* Analyze button */}
-          <div style={{ padding: "8px" }}>
+          <div className="url-input-action-wrap">
             <button
+              className="url-input-submit"
               type="submit"
               disabled={isLoading}
               style={{
@@ -168,7 +171,7 @@ export function UrlInputCard({
                 borderRadius: "8px",
                 border: "none",
                 background: isLoading ? "var(--primary-dim)" : "var(--primary)",
-                color: "#fff",
+                color: "var(--on-primary)",
                 fontSize: "13px",
                 fontWeight: 700,
                 fontFamily: "var(--font-body)",

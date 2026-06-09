@@ -7,7 +7,6 @@ import {
   CirclePlay,
   ClipboardList,
   FileAudio,
-  Layers,
   Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";

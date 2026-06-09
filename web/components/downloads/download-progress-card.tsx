@@ -45,16 +45,15 @@ export function DownloadProgressCard({
 
   /* card border accent */
   const borderStyle =
-    job.status === "failed"    ? "1px solid oklch(66% 0.22 22 / 0.35)" :
-    job.status === "completed" ? "1px solid oklch(64% 0.17 155 / 0.35)" :
+    job.status === "failed"    ? "1px solid var(--error-border)" :
+    job.status === "completed" ? "1px solid var(--success-border)" :
     job.status === "downloading" ? "1px solid var(--border-primary)" :
     "1px solid var(--border)";
 
   return (
     <article
+      className="download-progress-card"
       style={{
-        display: "grid",
-        gridTemplateColumns: "auto 1fr",
         gap: "14px",
         padding: "16px",
         borderRadius: "14px",
@@ -219,7 +218,7 @@ export function DownloadProgressCard({
         )}
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
+        <div className="download-progress-actions">
           {canCancel && (
             <ActionBtn
               disabled={cancelState.isPending && cancelState.jobId === job.id}
@@ -271,7 +270,7 @@ function MediaThumb({
 
   if (isAudio) {
     return (
-      <div style={{ ...base, background: "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))" }} role="img" aria-label={`${title} audio`}>
+      <div className="download-thumb" style={{ ...base, background: "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))" }} role="img" aria-label={`${title} audio`}>
         {thumbnail && (
           <img
             src={thumbnail}
@@ -291,8 +290,8 @@ function MediaThumb({
             position: "absolute",
             bottom: "4px",
             right: "4px",
-            background: "rgba(0,0,0,0.72)",
-            color: "#fff",
+            background: "var(--overlay-soft)",
+            color: "var(--on-primary)",
             borderRadius: "4px",
             padding: "2px 5px",
             fontSize: "9px",
@@ -309,7 +308,7 @@ function MediaThumb({
   }
 
   return (
-    <div style={base} role="img" aria-label={`${title} thumbnail`}>
+    <div className="download-thumb" style={base} role="img" aria-label={`${title} thumbnail`}>
       {thumbnail ? (
         <img src={thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
@@ -321,8 +320,8 @@ function MediaThumb({
             position: "absolute",
             bottom: "4px",
             right: "4px",
-            background: "rgba(0,0,0,0.82)",
-            color: "#fff",
+            background: "var(--overlay-strong)",
+            color: "var(--on-primary)",
             borderRadius: "4px",
             padding: "2px 5px",
             fontSize: "10px",
@@ -388,7 +387,7 @@ function ActionBtn({
         borderRadius: "8px",
         border: primary ? "none" : "1px solid var(--border-strong)",
         background: primary ? "var(--primary)" : "var(--surface)",
-        color: primary ? "#fff" : "var(--foreground-muted)",
+        color: primary ? "var(--on-primary)" : "var(--foreground-muted)",
         fontSize: "12px",
         fontWeight: 700,
         cursor: disabled ? "wait" : "pointer",
@@ -396,6 +395,7 @@ function ActionBtn({
         fontFamily: "var(--font-body)",
         transition: "all 0.15s",
         boxShadow: primary ? "0 2px 8px var(--primary-glow)" : "none",
+        minHeight: "36px",
       }}
     >
       <Icon size={13} aria-hidden="true" />
@@ -455,13 +455,13 @@ const STATUS_META: Record<DownloadStatus, { icon: LucideIcon; color: string; bac
     icon: CheckCircle2,
     color: "var(--success)",
     background: "var(--success-soft)",
-    border: "oklch(64% 0.17 155 / 0.4)",
+    border: "var(--success-border)",
   },
   failed: {
     icon: XCircle,
     color: "var(--error)",
     background: "var(--error-soft)",
-    border: "oklch(66% 0.22 22 / 0.4)",
+    border: "var(--error-border)",
   },
   cancelled: {
     icon: Square,

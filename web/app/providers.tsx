@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getSettings } from "@/lib/api";
 import type { ThemeValue } from "@/lib/types";
 
+export const THEME_STORAGE_KEY = "nextract-theme";
 let cleanupSystemThemeListener: (() => void) | undefined;
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -53,6 +54,12 @@ export function applyTheme(theme: ThemeValue) {
   const root = document.documentElement;
   cleanupSystemThemeListener?.();
   cleanupSystemThemeListener = undefined;
+
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Storage can be unavailable in private or restricted contexts.
+  }
 
   if (theme !== "system") {
     root.dataset.theme = theme;

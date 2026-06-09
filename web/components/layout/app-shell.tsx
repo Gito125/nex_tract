@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Clock3,
+  ChevronsLeft,
+  ChevronsRight,
   Download,
-  FolderArchive,
   HelpCircle,
   Home,
-  Settings,
-  Bell,
-  UserCircle,
   Layers,
+  Settings,
 } from "lucide-react";
 
 import { BackendHealthCard } from "@/components/common/backend-health-card";
@@ -25,24 +25,31 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div
-      className="min-h-screen"
+      className="app-shell"
+      data-sidebar={isCollapsed ? "collapsed" : "expanded"}
       style={{ background: "var(--background)", color: "var(--foreground)" }}
     >
       {/* ── Desktop sidebar ───────────────────────────────────── */}
       <aside
-        className="fixed inset-y-0 left-0 hidden lg:flex lg:flex-col"
+        className="app-shell__sidebar"
         style={{
-          width: "260px",
           background: "var(--sidebar-bg)",
           borderRight: "1px solid var(--sidebar-border)",
         }}
       >
         {/* Logo */}
-        <div style={{ padding: "32px 20px 24px" }}>
-          <Link href="/" className="flex items-center gap-3 group" style={{ textDecoration: "none" }}>
+        <div className="app-shell__brand">
+          <Link
+            aria-label="Nextract home"
+            className="app-shell__brand-link"
+            href="/"
+            style={{ textDecoration: "none" }}
+            title={isCollapsed ? "Nextract" : undefined}
+          >
             <span
               style={{
                 display: "flex",
@@ -56,9 +63,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 flexShrink: 0,
               }}
             >
-              <Layers size={18} color="#fff" aria-hidden="true" />
+              <Layers size={18} color="var(--on-primary)" aria-hidden="true" />
             </span>
-            <div>
+            <div className="app-shell__brand-text">
               <p
                 style={{
                   fontFamily: "var(--font-display)",
@@ -85,20 +92,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
           </Link>
+          <button
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="app-shell__collapse-btn"
+            onClick={() => setIsCollapsed((value) => !value)}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            type="button"
+          >
+            {isCollapsed ? (
+              <ChevronsRight size={16} aria-hidden="true" />
+            ) : (
+              <ChevronsLeft size={16} aria-hidden="true" />
+            )}
+          </button>
         </div>
 
         {/* Divider */}
-        <div style={{ height: "1px", background: "var(--sidebar-border)", margin: "0 20px" }} />
+        <div className="app-shell__divider" />
 
         {/* Nav label */}
         <p
+          className="app-shell__section-label"
           style={{
             fontSize: "10px",
             fontWeight: 600,
             color: "var(--sidebar-muted)",
             letterSpacing: "0.10em",
             textTransform: "uppercase",
-            padding: "20px 24px 8px",
           }}
         >
           Navigation
@@ -107,10 +127,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Nav items */}
         <nav
           aria-label="Primary navigation"
-          style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: "2px" }}
+          className="app-shell__nav"
         >
           {navItems.map((item) => (
             <DesktopNavButton
+              isCollapsed={isCollapsed}
               isActive={isActivePath(pathname, item.href)}
               item={item}
               key={item.label}
@@ -119,30 +140,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Bottom section */}
-        <div style={{ padding: "0 12px 24px", display: "flex", flexDirection: "column", gap: "2px" }}>
-          <div style={{ padding: "12px", marginBottom: "8px" }}>
+        <div className="app-shell__sidebar-bottom">
+          <div className="app-shell__health">
             <BackendHealthCard />
           </div>
-          <div style={{ height: "1px", background: "var(--sidebar-border)", margin: "0 12px 8px" }} />
-          <SidebarFooterBtn icon={HelpCircle} label="Help & Support" />
-          <SidebarFooterBtn icon={UserCircle} label="Account" danger={false} />
+          <div className="app-shell__divider app-shell__divider--bottom" />
+          <SidebarFooterBtn icon={HelpCircle} isCollapsed={isCollapsed} label="Help & Support" />
         </div>
       </aside>
 
       {/* ── Mobile header ─────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-20 lg:hidden"
+        className="app-shell__mobile-header"
         style={{
           background: "var(--sidebar-bg)",
           borderBottom: "1px solid var(--sidebar-border)",
-          height: "60px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 20px",
         }}
       >
-        <Link href="/" className="flex items-center gap-2.5" style={{ textDecoration: "none" }}>
+        <Link href="/" className="app-shell__mobile-brand" style={{ textDecoration: "none" }}>
           <span
             style={{
               display: "flex",
@@ -155,7 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               flexShrink: 0,
             }}
           >
-            <Layers size={14} color="#fff" aria-hidden="true" />
+            <Layers size={14} color="var(--on-primary)" aria-hidden="true" />
           </span>
           <span
             style={{
@@ -169,39 +184,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Nextract
           </span>
         </Link>
-        <div className="flex items-center gap-3" style={{ color: "var(--sidebar-muted)" }}>
-          <button
-            type="button"
-            aria-label="Notifications"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sidebar-muted)", display: "flex" }}
-          >
-            <Bell size={19} />
-          </button>
-          <button
-            type="button"
-            aria-label="Account"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sidebar-muted)", display: "flex" }}
-          >
-            <UserCircle size={22} />
-          </button>
-        </div>
       </header>
 
       {/* ── Main content ──────────────────────────────────────── */}
-      <main style={{ paddingLeft: "260px", paddingBottom: "0" }} className="lg:pl-[260px] pl-0 pb-24 lg:pb-0">
+      <main className="app-shell__main">
         {children}
       </main>
 
       {/* ── Mobile bottom nav ─────────────────────────────────── */}
       <nav
         aria-label="Mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-20 lg:hidden"
+        className="app-shell__mobile-nav"
         style={{
           background: "var(--sidebar-bg)",
           borderTop: "1px solid var(--sidebar-border)",
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          padding: "8px 4px 12px",
         }}
       >
         {navItems.map((item) => (
@@ -217,9 +213,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function DesktopNavButton({
+  isCollapsed,
   isActive,
   item,
 }: {
+  isCollapsed: boolean;
   isActive: boolean;
   item: (typeof navItems)[number];
 }) {
@@ -243,14 +241,16 @@ function DesktopNavButton({
     background: isActive ? "var(--sidebar-active-bg)" : "transparent",
     color: isActive ? "var(--sidebar-active-text)" : "var(--sidebar-muted)",
     opacity: !item.href ? 0.55 : 1,
+    minHeight: "44px",
   };
 
   const content = (
     <>
       <Icon size={17} aria-hidden="true" style={{ flexShrink: 0 }} />
-      <span style={{ flex: 1 }}>{item.label}</span>
+      <span className="app-shell__nav-label" style={{ flex: 1 }}>{item.label}</span>
       {!item.href && (
         <span
+          className="app-shell__soon-badge"
           style={{
             fontSize: "9px",
             fontWeight: 700,
@@ -270,7 +270,13 @@ function DesktopNavButton({
 
   if (!item.href) {
     return (
-      <button aria-disabled="true" style={baseStyle} type="button">
+      <button
+        aria-disabled="true"
+        aria-label={item.label}
+        style={baseStyle}
+        title={isCollapsed ? `${item.label} coming soon` : undefined}
+        type="button"
+      >
         {content}
       </button>
     );
@@ -279,8 +285,10 @@ function DesktopNavButton({
   return (
     <Link
       aria-current={isActive ? "page" : undefined}
+      aria-label={item.label}
       href={item.href}
       style={baseStyle}
+      title={isCollapsed ? item.label : undefined}
       onMouseEnter={(e) => {
         if (!isActive) {
           (e.currentTarget as HTMLAnchorElement).style.background = "var(--sidebar-hover)";
@@ -325,6 +333,7 @@ function MobileNavButton({
     color: isActive ? "var(--sidebar-active-text)" : "var(--sidebar-muted)",
     opacity: !item.href ? 0.5 : 1,
     transition: "color 0.15s",
+    minHeight: "44px",
   };
 
   const content = (
@@ -351,15 +360,18 @@ function MobileNavButton({
 
 function SidebarFooterBtn({
   icon: Icon,
+  isCollapsed,
   label,
-  danger,
 }: {
   icon: React.ElementType;
+  isCollapsed: boolean;
   label: string;
-  danger?: boolean;
 }) {
   return (
     <button
+      aria-label={label}
+      className="app-shell__footer-btn"
+      title={isCollapsed ? label : undefined}
       type="button"
       style={{
         display: "flex",
@@ -376,6 +388,7 @@ function SidebarFooterBtn({
         width: "100%",
         textAlign: "left",
         transition: "all 0.15s",
+        minHeight: "44px",
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = "var(--sidebar-hover)";
@@ -387,7 +400,7 @@ function SidebarFooterBtn({
       }}
     >
       <Icon size={16} aria-hidden="true" />
-      {label}
+      <span className="app-shell__footer-label">{label}</span>
     </button>
   );
 }

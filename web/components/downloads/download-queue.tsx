@@ -115,7 +115,7 @@ export function DownloadQueue({
               padding: "10px 14px",
               borderRadius: "8px",
               background: "var(--error-soft)",
-              border: "1px solid oklch(66% 0.22 22 / 0.3)",
+              border: "1px solid var(--error-border)",
               color: "var(--error)",
               fontSize: "13px",
               fontWeight: 500,
