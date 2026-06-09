@@ -38,11 +38,11 @@ Clearly define the project before coding.
 - [x] Create Google Stitch design brief.
 - [x] Create folder structure document.
 - [x] Create progress tracker.
-- [ ] Generate UI ideas using Google Stitch.
-- [ ] Choose final UI direction.
-- [ ] Decide final color palette.
-- [ ] Decide final typography.
-- [ ] Decide logo direction.
+- [x] Generate UI ideas using Google Stitch.
+- [x] Choose final UI direction.
+- [x] Decide final color palette.
+- [x] Decide final typography.
+- [x] Decide logo direction.
 
 ## Exit Criteria
 
