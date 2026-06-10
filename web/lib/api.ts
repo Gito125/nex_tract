@@ -105,6 +105,12 @@ export function getDownloadEventsUrl(jobId: string): string {
   return `${API_BASE_URL}/api/downloads/${jobId}/events`;
 }
 
+export function getApiAssetUrl(url: string | null): string | null {
+  if (!url) return null;
+  if (url.startsWith("/api/")) return `${API_BASE_URL}${url}`;
+  return url;
+}
+
 export function createPlaylist(
   body: PlaylistCreateRequest,
 ): Promise<PlaylistResponse> {

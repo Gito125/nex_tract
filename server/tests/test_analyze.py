@@ -1,5 +1,6 @@
 import json
 import subprocess
+from urllib.error import URLError
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -71,8 +72,7 @@ def test_analyze_rejects_unsupported_platform() -> None:
 
 def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     noisy_url = (
-        "https://www.tiktok.com/@creator/video/123"
-        "?is_from_webapp=1&sender_device=pc"
+        "https://www.tiktok.com/@creator/video/123?is_from_webapp=1&sender_device=pc"
     )
     with patch(
         "app.platforms.base.subprocess.run",
@@ -96,7 +96,11 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     assert body["title"] == "Example TikTok"
     assert body["creator"] == "TikTok Creator"
     assert body["webpageUrl"] == "https://www.tiktok.com/@creator/video/123"
-    assert [item["value"] for item in body["qualities"]] == ["best", "720p", "audio_mp3"]
+    assert [item["value"] for item in body["qualities"]] == [
+        "best",
+        "720p",
+        "audio_mp3",
+    ]
     assert body["rawFormats"][0]["filesize"] == 7_875_000
     assert "--no-playlist" in run.call_args.args[0]
     assert run.call_args.args[0][-1] == "https://www.tiktok.com/@creator/video/123"
@@ -132,6 +136,27 @@ def test_analyze_clean_and_noisy_tiktok_urls_match() -> None:
     assert clean_response.json()["webpageUrl"] == noisy_response.json()["webpageUrl"]
 
 
+def test_analyze_tiktok_short_video_path_reaches_ytdlp() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            _social_video_metadata(
+                "Example TikTok",
+                "TikTok Creator",
+                "https://www.tiktok.com/video/123",
+            )
+        ),
+    ) as run:
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.tiktok.com/video/123?sender_device=pc"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["webpageUrl"] == "https://www.tiktok.com/video/123"
+    assert run.call_args.args[0][-1] == "https://www.tiktok.com/video/123"
+
+
 def test_analyze_instagram_video_returns_normalized_metadata() -> None:
     with patch(
         "app.platforms.base.subprocess.run",
@@ -154,6 +179,60 @@ def test_analyze_instagram_video_returns_normalized_metadata() -> None:
     assert body["type"] == "video"
     assert body["title"] == "Example Reel"
     assert body["rawFormats"][0]["filesize"] == 7_875_000
+
+
+def test_analyze_instagram_cdn_thumbnail_points_to_proxy_path() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            {
+                **_social_video_metadata(
+                    "Example Reel",
+                    "Instagram Creator",
+                    "https://www.instagram.com/reel/ABC123/",
+                ),
+                "thumbnail": "https://scontent-lax3-1.cdninstagram.com/v/t51/thumb.jpg?stp=dst-jpg",
+            }
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.instagram.com/reel/ABC123/"},
+        )
+
+    assert response.status_code == 200
+    thumbnail = response.json()["thumbnail"]
+    assert thumbnail.startswith("/api/proxy/thumbnail?url=")
+    assert "scontent-lax3-1.cdninstagram.com" in thumbnail
+
+
+def test_proxy_thumbnail_returns_image_bytes_and_content_type() -> None:
+    with patch(
+        "app.services.thumbnail_proxy_service.urlopen",
+        return_value=FakeThumbnailResponse(b"image-bytes", "image/jpeg"),
+    ):
+        response = client.get(
+            "/api/proxy/thumbnail",
+            params={"url": "https://scontent-lax3-1.cdninstagram.com/v/t51/thumb.jpg"},
+        )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/jpeg")
+    assert response.content == b"image-bytes"
+
+
+def test_proxy_thumbnail_returns_friendly_error_when_cdn_unreachable() -> None:
+    with patch(
+        "app.services.thumbnail_proxy_service.urlopen",
+        side_effect=URLError("network down"),
+    ):
+        response = client.get(
+            "/api/proxy/thumbnail",
+            params={"url": "https://scontent-lax3-1.cdninstagram.com/v/t51/thumb.jpg"},
+        )
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "Could not reach Instagram's thumbnail CDN."}
 
 
 def test_analyze_x_video_returns_normalized_metadata() -> None:
@@ -222,7 +301,12 @@ def test_analyze_image_only_metadata_returns_image_option() -> None:
     assert body["type"] == "image"
     assert body["imageCount"] is None
     assert body["qualities"] == [
-        {"label": "Original image", "value": "image_original", "available": True, "kind": "image"}
+        {
+            "label": "Original image",
+            "value": "image_original",
+            "available": True,
+            "kind": "image",
+        }
     ]
 
 
@@ -241,6 +325,27 @@ def test_analyze_multi_image_metadata_returns_gallery_option() -> None:
     assert body["type"] == "gallery"
     assert body["imageCount"] == 2
     assert body["qualities"][0]["value"] == "image_original"
+
+
+def test_analyze_x_post_with_no_media_returns_friendly_error() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            {
+                "title": "Text only post",
+                "webpage_url": "https://x.com/creator/status/123",
+            }
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://x.com/creator/status/123"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "This X post does not contain downloadable video or image media."
+    }
 
 
 def test_analyze_social_private_error_is_friendly() -> None:
@@ -359,9 +464,7 @@ def test_analyze_watch_playlist_falls_back_to_current_video() -> None:
     ):
         response = client.post(
             "/api/analyze",
-            json={
-                "url": "https://www.youtube.com/watch?v=abc123&list=PLMissing"
-            },
+            json={"url": "https://www.youtube.com/watch?v=abc123&list=PLMissing"},
         )
 
     assert response.status_code == 200
@@ -554,8 +657,16 @@ def _gallery_metadata() -> dict:
         "thumbnail": "https://cdn.example/gallery-preview.jpg",
         "webpage_url": "https://x.com/creator/status/123",
         "entries": [
-            {"id": "one", "title": "Image One", "thumbnail": "https://cdn.example/one.jpg"},
-            {"id": "two", "title": "Image Two", "thumbnail": "https://cdn.example/two.jpg"},
+            {
+                "id": "one",
+                "title": "Image One",
+                "thumbnail": "https://cdn.example/one.jpg",
+            },
+            {
+                "id": "two",
+                "title": "Image Two",
+                "thumbnail": "https://cdn.example/two.jpg",
+            },
         ],
     }
 
@@ -571,3 +682,18 @@ def _playlist_metadata() -> dict:
             {"id": "two", "title": "Two"},
         ],
     }
+
+
+class FakeThumbnailResponse:
+    def __init__(self, content: bytes, content_type: str) -> None:
+        self.content = content
+        self.headers = {"content-type": content_type}
+
+    def __enter__(self) -> "FakeThumbnailResponse":
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def read(self, _size: int) -> bytes:
+        return self.content

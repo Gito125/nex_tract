@@ -1,0 +1,96 @@
+from dataclasses import dataclass
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlparse
+from urllib.request import Request, urlopen
+
+from app.services.exceptions import AnalyzeError
+
+MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
+}
+
+
+@dataclass(frozen=True)
+class ProxiedThumbnail:
+    content: bytes
+    content_type: str
+
+
+class ThumbnailProxyError(Exception):
+    def __init__(self, message: str, status_code: int = 400) -> None:
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
+
+def proxied_thumbnail_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    if not is_instagram_cdn_url(url):
+        return url
+    return f"/api/proxy/thumbnail?url={quote(url, safe='')}"
+
+
+def fetch_proxied_thumbnail(url: str) -> ProxiedThumbnail:
+    if not is_instagram_cdn_url(url):
+        raise ThumbnailProxyError(
+            "This thumbnail URL cannot be proxied.", status_code=400
+        )
+
+    request = Request(
+        url,
+        headers={
+            "User-Agent": "Nextract/0.6.0",
+            "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8",
+        },
+    )
+
+    try:
+        with urlopen(request, timeout=15) as response:
+            content_type = (
+                response.headers.get("content-type", "").split(";")[0].lower()
+            )
+            if content_type not in ALLOWED_CONTENT_TYPES:
+                raise ThumbnailProxyError(
+                    "The thumbnail response was not an image.", status_code=502
+                )
+
+            content = response.read(MAX_THUMBNAIL_BYTES + 1)
+    except ThumbnailProxyError:
+        raise
+    except HTTPError as exc:
+        raise ThumbnailProxyError(
+            "Could not load this thumbnail from Instagram.",
+            status_code=exc.code if 400 <= exc.code < 500 else 502,
+        ) from exc
+    except (OSError, URLError) as exc:
+        raise ThumbnailProxyError(
+            "Could not reach Instagram's thumbnail CDN.",
+            status_code=502,
+        ) from exc
+
+    if len(content) > MAX_THUMBNAIL_BYTES:
+        raise ThumbnailProxyError("The thumbnail image is too large.", status_code=413)
+
+    return ProxiedThumbnail(content=content, content_type=content_type)
+
+
+def is_instagram_cdn_url(url: str) -> bool:
+    parsed = urlparse(url)
+    hostname = (parsed.hostname or "").lower()
+
+    return parsed.scheme == "https" and (
+        hostname == "cdninstagram.com" or hostname.endswith(".cdninstagram.com")
+    )
+
+
+def ensure_proxyable_instagram_thumbnail(url: str | None) -> str | None:
+    try:
+        return proxied_thumbnail_url(url)
+    except ValueError as exc:
+        raise AnalyzeError("Could not prepare this Instagram thumbnail.") from exc

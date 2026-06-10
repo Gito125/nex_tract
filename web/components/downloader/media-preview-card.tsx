@@ -9,6 +9,7 @@ import {
   Download,
   FileAudio,
 } from "lucide-react";
+import { getApiAssetUrl } from "@/lib/api";
 import { PLATFORM_META } from "@/lib/platforms";
 import type { AnalyzeResponse, QualityValue, RawFormat } from "@/lib/types";
 
@@ -38,6 +39,7 @@ export function MediaPreviewCard({
   const selectedSize = estimateSelectedSize(preview.rawFormats, selectedQuality);
   const isAudioSelection = selectedQuality?.startsWith("audio_") ?? false;
   const isImageMedia = preview.type === "image" || preview.type === "gallery";
+  const thumbnailUrl = getApiAssetUrl(preview.thumbnail);
   const platformMeta = PLATFORM_META[preview.platform];
 
   return (
@@ -113,7 +115,7 @@ export function MediaPreviewCard({
               duration={preview.duration}
               isAudio={isAudioSelection}
               isImage={isImageMedia}
-              thumbnail={preview.thumbnail}
+              thumbnail={thumbnailUrl}
               title={preview.title}
             />
           </div>

@@ -219,7 +219,9 @@ def build_ytdlp_args(job: DownloadJob) -> list[str]:
         output_root=str(output_root),
         output_template=str(output_template),
         quality_format=QUALITY_FORMATS.get(q),
-        audio_format=(job.audio_format or "m4a") if q in AUDIO_QUALITY_FORMATS else None,
+        audio_format=(job.audio_format or "m4a")
+        if q in AUDIO_QUALITY_FORMATS
+        else None,
         media_type=media_type,
     )
 
@@ -261,12 +263,8 @@ def _run_download_job(job_id: str) -> None:
             return
 
         app_settings = get_app_settings(session)
-        Path(app_settings.download_folder).mkdir(parents=True, exist_ok=True)
-        if job.media_type == "gallery":
-            (
-                Path(app_settings.download_folder).resolve()
-                / sanitize_filename(job.title, fallback="gallery")
-            ).mkdir(parents=True, exist_ok=True)
+        download_root = Path(app_settings.download_folder).resolve()
+        _output_root_for_job(job, download_root).mkdir(parents=True, exist_ok=True)
         args = build_ytdlp_args(job)
 
     try:
@@ -511,6 +509,9 @@ def _safe_output_path(stdout: str, job: DownloadJob) -> str | None:
             continue
         return str(path)
 
+    if job.media_type == "image":
+        return _latest_image_path(_output_root_for_job(job, download_root))
+
     return None
 
 
@@ -522,9 +523,7 @@ def _file_size(output_path: str | None) -> int | None:
         path = Path(output_path)
         if path.is_dir():
             return sum(
-                item.stat().st_size
-                for item in path.rglob("*")
-                if item.is_file()
+                item.stat().st_size for item in path.rglob("*") if item.is_file()
             )
         return path.stat().st_size
     except OSError:
@@ -559,7 +558,11 @@ def _render_filename_template(job: DownloadJob, quality: QualityValue) -> str:
 
 def _output_root_for_job(job: DownloadJob, download_root: Path) -> Path:
     if job.media_type == "gallery":
-        return download_root / sanitize_filename(job.title, fallback="gallery")
+        return (
+            download_root / "images" / sanitize_filename(job.title, fallback="gallery")
+        )
+    if job.media_type == "image":
+        return download_root / "images"
     return download_root
 
 
@@ -571,3 +574,15 @@ def _output_template_for_job(
     if job.media_type == "gallery":
         return output_root / "%(autonumber)03d - %(title).200B [%(id)s].%(ext)s"
     return output_root / f"{_render_filename_template(job, quality)}.%(ext)s"
+
+
+def _latest_image_path(output_root: Path) -> str | None:
+    try:
+        candidates = [item for item in output_root.glob("*.jpg") if item.is_file()]
+    except OSError:
+        return None
+
+    if not candidates:
+        return None
+
+    return str(max(candidates, key=lambda item: item.stat().st_mtime).resolve())

@@ -14,9 +14,18 @@ class TikTokAdapter(PlatformAdapter):
         if parsed.hostname == "vm.tiktok.com":
             if path_parts:
                 return
-            raise PlatformValidationError("Paste a TikTok video link, not a profile link.")
+            raise PlatformValidationError(
+                "Paste a TikTok video link, not a profile link."
+            )
 
-        if len(path_parts) >= 3 and path_parts[0].startswith("@") and path_parts[1] == "video":
+        if (
+            len(path_parts) >= 3
+            and path_parts[0].startswith("@")
+            and path_parts[1] == "video"
+        ):
+            return
+
+        if len(path_parts) >= 2 and path_parts[0] == "video":
             return
 
         raise PlatformValidationError("Paste a public TikTok video link.")

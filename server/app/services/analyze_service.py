@@ -10,7 +10,12 @@ from app.services.format_service import (
     sanitize_raw_formats,
     standard_playlist_quality_options,
 )
-from app.utils.platform_detector import PlatformInfo, PlatformValidationError, detect_platform
+from app.services.thumbnail_proxy_service import proxied_thumbnail_url
+from app.utils.platform_detector import (
+    PlatformInfo,
+    PlatformValidationError,
+    detect_platform,
+)
 
 
 def analyze_url(url: str) -> AnalyzeResponse:
@@ -29,12 +34,12 @@ def analyze_url(url: str) -> AnalyzeResponse:
             )
         return _playlist_response(platform, metadata)
 
-    return _video_response(platform, metadata, fallback_title=f"Untitled {adapter.display_name} video")
+    return _video_response(
+        platform, metadata, fallback_title=f"Untitled {adapter.display_name} video"
+    )
 
 
-PLAYLIST_FALLBACK_NOTICE = (
-    "This list is not available as a public playlist, so Nextract loaded the current video instead."
-)
+PLAYLIST_FALLBACK_NOTICE = "This list is not available as a public playlist, so Nextract loaded the current video instead."
 
 
 def _video_response(
@@ -46,6 +51,10 @@ def _video_response(
     formats = _list_value(metadata.get("formats"))
     adapter = get_adapter(platform.platform)
     response_type = _media_type_from_metadata(metadata, formats)
+    if platform.platform == "x" and response_type == "video" and not formats:
+        raise AnalyzeError(
+            "This X post does not contain downloadable video or image media."
+        )
 
     return AnalyzeResponse(
         platform=platform.platform,
@@ -54,7 +63,7 @@ def _video_response(
             metadata.get("title"),
             fallback_title or f"Untitled {adapter.display_name} video",
         ),
-        thumbnail=_thumbnail(metadata),
+        thumbnail=_response_thumbnail(platform, metadata),
         duration=_int_or_none(metadata.get("duration")),
         creator=_creator(metadata),
         webpageUrl=_webpage_url(platform, metadata),
@@ -83,13 +92,15 @@ def _playlist_response(
         raise AnalyzeError("This playlist is unavailable or has no public videos.")
 
     title = _string_value(metadata.get("title"), "YouTube playlist")
-    items = [_playlist_item(entry, index) for index, entry in enumerate(entries, start=1)]
+    items = [
+        _playlist_item(entry, index) for index, entry in enumerate(entries, start=1)
+    ]
 
     return AnalyzeResponse(
         platform=platform.platform,
         type="playlist",
         title=title,
-        thumbnail=_thumbnail(metadata),
+        thumbnail=_response_thumbnail(platform, metadata),
         duration=None,
         creator=_creator(metadata),
         webpageUrl=_string_value(metadata.get("webpage_url"), platform.url),
@@ -109,7 +120,10 @@ def _is_watch_url(url: str) -> bool:
 
 
 def _looks_like_video_metadata(metadata: dict[str, Any]) -> bool:
-    return bool(_list_value(metadata.get("formats"))) or _string_or_none(metadata.get("id")) is not None
+    return (
+        bool(_list_value(metadata.get("formats")))
+        or _string_or_none(metadata.get("id")) is not None
+    )
 
 
 def _playlist_item(entry: dict[str, Any], index: int) -> PlaylistAnalyzeItem:
@@ -209,7 +223,10 @@ def _looks_like_image_metadata(
     if ext and ext.lower() in {"jpg", "jpeg", "png", "webp", "avif"}:
         return True
 
-    return _thumbnail(metadata) is not None and _int_or_none(metadata.get("duration")) is None
+    return (
+        _thumbnail(metadata) is not None
+        and _int_or_none(metadata.get("duration")) is None
+    )
 
 
 def _is_image_format(item: dict[str, Any]) -> bool:
@@ -218,7 +235,12 @@ def _is_image_format(item: dict[str, Any]) -> bool:
         return True
 
     url = _string_or_none(item.get("url"))
-    return bool(url and url.lower().split("?")[0].endswith((".jpg", ".jpeg", ".png", ".webp", ".avif")))
+    return bool(
+        url
+        and url.lower()
+        .split("?")[0]
+        .endswith((".jpg", ".jpeg", ".png", ".webp", ".avif"))
+    )
 
 
 def _webpage_url(platform: PlatformInfo, metadata: dict[str, Any]) -> str:
@@ -241,6 +263,13 @@ def _thumbnail(metadata: dict[str, Any]) -> str | None:
         return thumbnail
 
     return None
+
+
+def _response_thumbnail(platform: PlatformInfo, metadata: dict[str, Any]) -> str | None:
+    thumbnail = _thumbnail(metadata)
+    if platform.platform == "instagram":
+        return proxied_thumbnail_url(thumbnail)
+    return thumbnail
 
 
 def _list_value(value: Any) -> list[dict[str, Any]]:
