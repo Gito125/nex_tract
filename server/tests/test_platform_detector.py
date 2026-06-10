@@ -7,19 +7,22 @@ from app.utils.platform_detector import PlatformValidationError, detect_platform
     ("url", "platform", "canonical_url"),
     [
         (
+            # Creator slug is preserved exactly as provided
             "https://www.tiktok.com/@creator/video/1234567890",
             "tiktok",
-            "https://www.tiktok.com/@_/video/1234567890",
+            "https://www.tiktok.com/@creator/video/1234567890",
         ),
         (
+            # Query string stripped, real username kept
             "https://www.tiktok.com/@creator/video/1234567890?is_from_webapp=1&sender_device=pc",
             "tiktok",
-            "https://www.tiktok.com/@_/video/1234567890",
+            "https://www.tiktok.com/@creator/video/1234567890",
         ),
         (
+            # Bare /video/ID path kept as-is (no creator to invent)
             "https://www.tiktok.com/video/1234567890?is_from_webapp=1&sender_device=pc",
             "tiktok",
-            "https://www.tiktok.com/@_/video/1234567890",
+            "https://www.tiktok.com/video/1234567890",
         ),
         (
             "https://vm.tiktok.com/ZMabc123/?share=1",

@@ -81,7 +81,8 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
             _social_video_metadata(
                 "Example TikTok",
                 "TikTok Creator",
-                "https://www.tiktok.com/@_/video/123",
+                # The canonical URL now preserves the real creator slug.
+                "https://www.tiktok.com/@creator/video/123",
             )
         ),
     ) as run:
@@ -96,7 +97,7 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     assert body["type"] == "video"
     assert body["title"] == "Example TikTok"
     assert body["creator"] == "TikTok Creator"
-    assert body["webpageUrl"] == "https://www.tiktok.com/@_/video/123"
+    assert body["webpageUrl"] == "https://www.tiktok.com/@creator/video/123"
     assert [item["value"] for item in body["qualities"]] == [
         "best",
         "720p",
@@ -105,7 +106,8 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     assert body["rawFormats"][0]["filesize"] == 7_875_000
     assert "--no-playlist" in run.call_args.args[0]
     assert "--add-header" in run.call_args.args[0]
-    assert run.call_args.args[0][-1] == "https://www.tiktok.com/@_/video/123"
+    # yt-dlp receives the real creator URL, not a @_ placeholder.
+    assert run.call_args.args[0][-1] == "https://www.tiktok.com/@creator/video/123"
 
 
 def test_analyze_clean_and_noisy_tiktok_urls_match() -> None:
@@ -115,7 +117,7 @@ def test_analyze_clean_and_noisy_tiktok_urls_match() -> None:
             _social_video_metadata(
                 "Example TikTok",
                 "TikTok Creator",
-                "https://www.tiktok.com/@_/video/123",
+                "https://www.tiktok.com/@creator/video/123",
             )
         ),
     ):
@@ -145,6 +147,7 @@ def test_analyze_tiktok_short_video_path_reaches_ytdlp() -> None:
             _social_video_metadata(
                 "Example TikTok",
                 "TikTok Creator",
+                # Bare /video/ID canonical — no creator to preserve.
                 "https://www.tiktok.com/video/123",
             )
         ),
@@ -155,9 +158,10 @@ def test_analyze_tiktok_short_video_path_reaches_ytdlp() -> None:
     )
 
     assert response.status_code == 200
-    assert response.json()["webpageUrl"] == "https://www.tiktok.com/@_/video/123"
+    # Bare /video/ID path is kept as-is — no synthetic creator injected.
+    assert response.json()["webpageUrl"] == "https://www.tiktok.com/video/123"
     assert "--add-header" in run.call_args.args[0]
-    assert run.call_args.args[0][-1] == "https://www.tiktok.com/@_/video/123"
+    assert run.call_args.args[0][-1] == "https://www.tiktok.com/video/123"
 
 
 def test_analyze_instagram_video_returns_normalized_metadata() -> None:

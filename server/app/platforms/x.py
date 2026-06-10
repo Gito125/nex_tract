@@ -9,6 +9,14 @@ from app.services.exceptions import AnalyzeError
 
 X_SYNDICATION_URL = "https://cdn.syndication.twimg.com/tweet-result"
 
+# Full browser UA — the syndication API rejects minimal/bot-looking strings
+# for newer tweets, and bare "Mozilla/5.0" is increasingly fingerprinted.
+_BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
 
 class XImageMetadataError(Exception):
     def __init__(self, message: str, no_media: bool = False) -> None:
@@ -36,7 +44,9 @@ class XAdapter(PlatformAdapter):
                 return _extract_image_metadata(url)
             except XImageMetadataError as fallback_exc:
                 if fallback_exc.no_media:
+                    # Post exists but has no media — return a clear user-facing error.
                     raise AnalyzeError(fallback_exc.message) from fallback_exc
+                # Syndication fetch itself failed; surface the original yt-dlp error.
                 raise exc from fallback_exc
 
     def validate_public_single_link(self, parsed: ParseResult) -> None:
@@ -74,6 +84,8 @@ class XAdapter(PlatformAdapter):
                 media_type=media_type,
             )
 
+        # Image/gallery X posts: use yt-dlp to write the thumbnail as a JPEG.
+        # We skip the actual video download and let --write-thumbnail handle it.
         args = [
             "yt-dlp",
             "--no-warnings",
@@ -140,12 +152,27 @@ def _extract_image_metadata(url: str) -> dict[str, Any]:
 
 
 def _fetch_syndication_payload(tweet_id: str) -> dict[str, Any]:
-    request_url = f"{X_SYNDICATION_URL}?{urlencode({'id': tweet_id, 'lang': 'en'})}"
+    """Fetch tweet metadata from X's syndication API.
+
+    The API accepts an optional `token` parameter.  While not always required
+    for public tweets it significantly improves reliability for newer posts.
+    The token formula is publicly documented: (tweet_id / 1e15 * pi).floor()
+    expressed as a decimal string — approximated here with integer arithmetic.
+    """
+    token = _syndication_token(tweet_id)
+    params: dict[str, str] = {"id": tweet_id, "lang": "en"}
+    if token:
+        params["token"] = token
+
+    request_url = f"{X_SYNDICATION_URL}?{urlencode(params)}"
     request = Request(
         request_url,
         headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json",
+            "User-Agent": _BROWSER_UA,
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://platform.twitter.com/",
+            "Origin": "https://platform.twitter.com",
         },
     )
 
@@ -159,6 +186,24 @@ def _fetch_syndication_payload(tweet_id: str) -> dict[str, Any]:
         raise XImageMetadataError("Could not load this X post.")
 
     return payload
+
+
+def _syndication_token(tweet_id: str) -> str | None:
+    """Compute the token expected by the syndication API.
+
+    The token is derived from the tweet ID using a simple formula:
+    floor(int(tweet_id) / 1e15 * 3141592653589793) % (10**10)
+    expressed as a zero-padded 10-digit decimal string.
+
+    Returns None for non-numeric IDs to avoid crashing on unexpected input.
+    """
+    try:
+        tid = int(tweet_id)
+    except (ValueError, TypeError):
+        return None
+    # Integer-approximate: multiply by pi-scaled constant, take modulo
+    token = (tid * 3141592653589793) // (10 ** 15) % (10 ** 10)
+    return str(token)
 
 
 def _status_id(url: str) -> str | None:

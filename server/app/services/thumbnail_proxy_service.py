@@ -14,6 +14,14 @@ ALLOWED_CONTENT_TYPES = {
     "image/avif",
 }
 
+# Instagram's CDN gates requests on recognisable browser User-Agents.
+# A bare "Nextract/…" UA results in 403s — use a real Chrome UA instead.
+_BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
 
 @dataclass(frozen=True)
 class ProxiedThumbnail:
@@ -29,6 +37,10 @@ class ThumbnailProxyError(Exception):
 
 
 def proxied_thumbnail_url(url: str | None) -> str | None:
+    """Rewrite an Instagram CDN URL to our proxy endpoint.
+
+    Any URL that is not an Instagram CDN URL is returned unchanged.
+    """
     if not url:
         return None
     if not is_instagram_cdn_url(url):
@@ -37,16 +49,24 @@ def proxied_thumbnail_url(url: str | None) -> str | None:
 
 
 def fetch_proxied_thumbnail(url: str) -> ProxiedThumbnail:
+    """Fetch an Instagram CDN image server-side and return its bytes.
+
+    Raises ThumbnailProxyError with an appropriate status code on failure.
+    Only Instagram CDN hostnames are accepted; all others are rejected with 400.
+    """
     if not is_instagram_cdn_url(url):
         raise ThumbnailProxyError(
             "This thumbnail URL cannot be proxied.", status_code=400
         )
 
+    # Send headers that Instagram's CDN expects from a real browser.
     request = Request(
         url,
         headers={
-            "User-Agent": "Nextract/0.6.0",
-            "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8",
+            "User-Agent": _BROWSER_UA,
+            "Referer": "https://www.instagram.com/",
+            "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5",
+            "Accept-Language": "en-US,en;q=0.9",
         },
     )
 
@@ -81,6 +101,7 @@ def fetch_proxied_thumbnail(url: str) -> ProxiedThumbnail:
 
 
 def is_instagram_cdn_url(url: str) -> bool:
+    """Return True for https://scontent-*.cdninstagram.com and cdninstagram.com URLs."""
     parsed = urlparse(url)
     hostname = (parsed.hostname or "").lower()
 
