@@ -7,6 +7,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, AsyncIterator, Iterator, cast
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from sqlmodel import Session, col, select
 
@@ -40,6 +43,7 @@ TERMINAL_STATUSES = {
     DownloadStatus.FAILED.value,
     DownloadStatus.CANCELLED.value,
 }
+MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
 QUALITY_FORMATS: dict[QualityValue, str] = {
     "best": "bv*+ba/b",
@@ -265,6 +269,9 @@ def _run_download_job(job_id: str) -> None:
         app_settings = get_app_settings(session)
         download_root = Path(app_settings.download_folder).resolve()
         _output_root_for_job(job, download_root).mkdir(parents=True, exist_ok=True)
+        if _uses_direct_image_download(job):
+            _run_direct_image_download(job_id)
+            return
         args = build_ytdlp_args(job)
 
     try:
@@ -489,6 +496,100 @@ def _friendly_ytdlp_error(stderr: str) -> str:
         return "Selected quality is not available for this media."
 
     return "Download failed. Please try again."
+
+
+def _uses_direct_image_download(job: DownloadJob) -> bool:
+    return job.platform == "x" and job.media_type == "image"
+
+
+def _run_direct_image_download(job_id: str) -> None:
+    with Session(engine) as session:
+        job = session.get(DownloadJob, job_id)
+        if not job or job.status == DownloadStatus.CANCELLED.value:
+            return
+
+        job.status = DownloadStatus.DOWNLOADING.value
+        job.progress_status = "downloading"
+        job.updated_at = _utc_now()
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+
+        try:
+            output_path = _download_direct_image(job)
+        except DownloadError as exc:
+            job.status = DownloadStatus.FAILED.value
+            job.progress_status = "failed"
+            job.speed = None
+            job.eta = None
+            job.error_message = exc.message
+            job.completed_at = _utc_now()
+            job.updated_at = _utc_now()
+            session.add(job)
+            record_download_history(job, session)
+            session.commit()
+            return
+
+        if not job or job.status == DownloadStatus.CANCELLED.value:
+            return
+
+        job.status = DownloadStatus.COMPLETED.value
+        job.progress = 100
+        job.speed = None
+        job.eta = None
+        job.progress_status = "completed"
+        job.output_path = output_path
+        job.file_size = _file_size(output_path)
+        job.error_message = None
+        job.completed_at = _utc_now()
+        job.updated_at = _utc_now()
+        session.add(job)
+        record_download_history(job, session)
+        session.commit()
+
+
+def _download_direct_image(job: DownloadJob) -> str:
+    image_url = job.thumbnail
+    if not image_url or urlparse(image_url).scheme != "https":
+        raise DownloadError("This X post does not include a downloadable image.")
+
+    request = Request(
+        image_url,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "image/jpeg,image/*;q=0.8",
+        },
+    )
+
+    try:
+        with urlopen(request, timeout=30) as response:
+            content = response.read(MAX_IMAGE_BYTES + 1)
+    except (HTTPError, URLError, OSError) as exc:
+        raise DownloadError("Could not download this X image.") from exc
+
+    if len(content) > MAX_IMAGE_BYTES:
+        raise DownloadError("This X image is too large to download.")
+
+    app_settings = _current_app_settings()
+    output_root = _output_root_for_job(job, Path(app_settings.download_folder).resolve())
+    output_root.mkdir(parents=True, exist_ok=True)
+    output_path = _direct_image_output_path(job, output_root)
+    output_path.write_bytes(content)
+    return str(output_path.resolve())
+
+
+def _direct_image_output_path(job: DownloadJob, output_root: Path) -> Path:
+    q = cast(QualityValue, job.selected_quality)
+    tweet_id = _x_status_id(job.url) or "image"
+    stem = _render_filename_template(job, q).replace("%(id)s", tweet_id)
+    return output_root / f"{stem}.jpg"
+
+
+def _x_status_id(url: str) -> str | None:
+    path_parts = [part for part in urlparse(url).path.split("/") if part]
+    if len(path_parts) >= 3 and path_parts[1] == "status":
+        return path_parts[2]
+    return None
 
 
 def _safe_output_path(stdout: str, job: DownloadJob) -> str | None:

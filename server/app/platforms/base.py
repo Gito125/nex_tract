@@ -8,6 +8,13 @@ from app.services.exceptions import AnalyzeError
 
 PlatformValue = Literal["youtube", "tiktok", "instagram", "x"]
 MediaType = Literal["video", "image", "gallery", "playlist"]
+YTDLP_BROWSER_HEADERS = [
+    "--add-header",
+    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+    "--add-header",
+    "Accept-Language: en-US,en;q=0.9",
+]
 
 
 @dataclass(frozen=True)
@@ -64,6 +71,7 @@ class PlatformAdapter:
             "--no-overwrites",
             "--progress",
             "--newline",
+            *YTDLP_BROWSER_HEADERS,
             "--paths",
             output_root,
             "--output",
@@ -96,7 +104,7 @@ def run_ytdlp_metadata(
     display_name: str,
     timeout: int = 45,
 ) -> dict[str, Any]:
-    args = ["yt-dlp", "--dump-single-json", "--no-warnings"]
+    args = ["yt-dlp", "--dump-single-json", "--no-warnings", *YTDLP_BROWSER_HEADERS]
 
     if media_type == "playlist":
         args.extend(["--flat-playlist", "--yes-playlist", "--ignore-errors"])

@@ -219,7 +219,7 @@ def test_full_analyze_to_download_flow_for_social_video_platforms(
 
 
 def test_x_image_download_completes_to_images_folder(tmp_path: Path) -> None:
-    output_path = tmp_path / "images" / "Example Image-img123-image_original.jpg"
+    output_path = tmp_path / "images" / "Example Image-123-image_original.jpg"
     original = client.get("/api/settings").json()
 
     try:
@@ -237,8 +237,8 @@ def test_x_image_download_completes_to_images_folder(tmp_path: Path) -> None:
                 ),
             ),
             patch(
-                "app.services.download_service.subprocess.Popen",
-                return_value=_fake_process(stdout=f"{output_path}\n"),
+                "app.services.download_service.urlopen",
+                return_value=FakeImageResponse(b"jpg-bytes"),
             ),
         ):
             analyze_response = client.post(
@@ -265,6 +265,7 @@ def test_x_image_download_completes_to_images_folder(tmp_path: Path) -> None:
         assert job["mediaType"] == "image"
         assert job["outputPath"] == str(output_path)
         assert Path(job["outputPath"]).parent == tmp_path / "images"
+        assert output_path.read_bytes() == b"jpg-bytes"
     finally:
         client.patch("/api/settings", json=original)
 
@@ -350,6 +351,7 @@ def test_build_ytdlp_args_uses_argument_array() -> None:
 
         assert isinstance(args, list)
         assert args[0] == "yt-dlp"
+        assert "--add-header" in args
         assert "--extract-audio" in args
         assert "--audio-format" in args
         assert "--no-simulate" in args
@@ -815,3 +817,17 @@ def _fake_process(
 
 def _blocking_process(release: threading.Event) -> FakeProcess:
     return FakeProcess(returncode=None, release=release)
+
+
+class FakeImageResponse:
+    def __init__(self, content: bytes) -> None:
+        self.content = content
+
+    def __enter__(self) -> "FakeImageResponse":
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def read(self, _size: int) -> bytes:
+        return self.content

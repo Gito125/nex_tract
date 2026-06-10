@@ -9,17 +9,17 @@ from app.utils.platform_detector import PlatformValidationError, detect_platform
         (
             "https://www.tiktok.com/@creator/video/1234567890",
             "tiktok",
-            "https://www.tiktok.com/@creator/video/1234567890",
+            "https://www.tiktok.com/@_/video/1234567890",
         ),
         (
             "https://www.tiktok.com/@creator/video/1234567890?is_from_webapp=1&sender_device=pc",
             "tiktok",
-            "https://www.tiktok.com/@creator/video/1234567890",
+            "https://www.tiktok.com/@_/video/1234567890",
         ),
         (
             "https://www.tiktok.com/video/1234567890?is_from_webapp=1&sender_device=pc",
             "tiktok",
-            "https://www.tiktok.com/video/1234567890",
+            "https://www.tiktok.com/@_/video/1234567890",
         ),
         (
             "https://vm.tiktok.com/ZMabc123/?share=1",

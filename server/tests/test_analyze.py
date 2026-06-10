@@ -3,6 +3,7 @@ import subprocess
 from urllib.error import URLError
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -80,7 +81,7 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
             _social_video_metadata(
                 "Example TikTok",
                 "TikTok Creator",
-                "https://www.tiktok.com/@creator/video/123",
+                "https://www.tiktok.com/@_/video/123",
             )
         ),
     ) as run:
@@ -95,7 +96,7 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     assert body["type"] == "video"
     assert body["title"] == "Example TikTok"
     assert body["creator"] == "TikTok Creator"
-    assert body["webpageUrl"] == "https://www.tiktok.com/@creator/video/123"
+    assert body["webpageUrl"] == "https://www.tiktok.com/@_/video/123"
     assert [item["value"] for item in body["qualities"]] == [
         "best",
         "720p",
@@ -103,7 +104,8 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     ]
     assert body["rawFormats"][0]["filesize"] == 7_875_000
     assert "--no-playlist" in run.call_args.args[0]
-    assert run.call_args.args[0][-1] == "https://www.tiktok.com/@creator/video/123"
+    assert "--add-header" in run.call_args.args[0]
+    assert run.call_args.args[0][-1] == "https://www.tiktok.com/@_/video/123"
 
 
 def test_analyze_clean_and_noisy_tiktok_urls_match() -> None:
@@ -113,7 +115,7 @@ def test_analyze_clean_and_noisy_tiktok_urls_match() -> None:
             _social_video_metadata(
                 "Example TikTok",
                 "TikTok Creator",
-                "https://www.tiktok.com/@creator/video/123",
+                "https://www.tiktok.com/@_/video/123",
             )
         ),
     ):
@@ -149,12 +151,13 @@ def test_analyze_tiktok_short_video_path_reaches_ytdlp() -> None:
     ) as run:
         response = client.post(
             "/api/analyze",
-            json={"url": "https://www.tiktok.com/video/123?sender_device=pc"},
-        )
+        json={"url": "https://www.tiktok.com/video/123?sender_device=pc"},
+    )
 
     assert response.status_code == 200
-    assert response.json()["webpageUrl"] == "https://www.tiktok.com/video/123"
-    assert run.call_args.args[0][-1] == "https://www.tiktok.com/video/123"
+    assert response.json()["webpageUrl"] == "https://www.tiktok.com/@_/video/123"
+    assert "--add-header" in run.call_args.args[0]
+    assert run.call_args.args[0][-1] == "https://www.tiktok.com/@_/video/123"
 
 
 def test_analyze_instagram_video_returns_normalized_metadata() -> None:
@@ -181,7 +184,15 @@ def test_analyze_instagram_video_returns_normalized_metadata() -> None:
     assert body["rawFormats"][0]["filesize"] == 7_875_000
 
 
-def test_analyze_instagram_cdn_thumbnail_points_to_proxy_path() -> None:
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.instagram.com/reel/DWyymafjsI6/",
+        "https://www.instagram.com/reel/DW52L0-kh2M/",
+        "https://www.instagram.com/reel/DW0r9ENE_Mi/",
+    ],
+)
+def test_analyze_instagram_cdn_thumbnail_points_to_proxy_path(url: str) -> None:
     with patch(
         "app.platforms.base.subprocess.run",
         return_value=_completed_process(
@@ -197,7 +208,7 @@ def test_analyze_instagram_cdn_thumbnail_points_to_proxy_path() -> None:
     ):
         response = client.post(
             "/api/analyze",
-            json={"url": "https://www.instagram.com/reel/ABC123/"},
+            json={"url": url},
         )
 
     assert response.status_code == 200
@@ -257,6 +268,47 @@ def test_analyze_x_video_returns_normalized_metadata() -> None:
     assert body["type"] == "video"
     assert body["title"] == "Example X Post"
     assert body["rawFormats"][0]["filesize"] == 7_875_000
+
+
+def test_analyze_x_image_only_post_uses_syndication_fallback() -> None:
+    with (
+        patch(
+            "app.platforms.base.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=["yt-dlp"],
+                returncode=1,
+                stdout="null",
+                stderr="ERROR: [twitter] 2044665313904779452: No video could be found in this tweet",
+            ),
+        ),
+        patch(
+            "app.platforms.x.urlopen",
+            return_value=FakeJsonResponse(
+                {
+                    "text": "Example image post",
+                    "user": {"name": "X Creator"},
+                    "mediaDetails": [
+                        {
+                            "type": "photo",
+                            "media_url_https": "https://pbs.twimg.com/media/example?format=png&name=small",
+                        }
+                    ],
+                }
+            ),
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://x.com/elonmusk/status/2044665313904779452"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["platform"] == "x"
+    assert body["type"] == "image"
+    assert body["title"] == "Example image post"
+    assert body["thumbnail"] == "https://pbs.twimg.com/media/example?format=jpg&name=small"
+    assert body["qualities"][0]["value"] == "image_original"
 
 
 def test_analyze_prefers_https_thumbnail_candidates() -> None:
@@ -697,3 +749,17 @@ class FakeThumbnailResponse:
 
     def read(self, _size: int) -> bytes:
         return self.content
+
+
+class FakeJsonResponse:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+
+    def __enter__(self) -> "FakeJsonResponse":
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return json.dumps(self.payload).encode("utf-8")
