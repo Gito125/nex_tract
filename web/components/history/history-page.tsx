@@ -236,7 +236,28 @@ export function HistoryPage() {
       {/* Results */}
       <section aria-label="History results">
         {historyQuery.isLoading ? (
-          <EmptyState icon={LoaderCircle} label="Loading your vault…" spinning />
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="history-card" style={{ gap: "16px", padding: "16px", borderRadius: "16px", background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-soft)", alignItems: "start" }}>
+                <div className="ui-skeleton" style={{ width: "100%", aspectRatio: "16/9", borderRadius: "8px" }} />
+                <div style={{ minWidth: 0, width: "100%" }}>
+                  <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+                    <div className="ui-skeleton" style={{ width: "60px", height: "20px", borderRadius: "9999px" }} />
+                    <div className="ui-skeleton" style={{ width: "50px", height: "20px", borderRadius: "9999px" }} />
+                    <div className="ui-skeleton" style={{ width: "70px", height: "20px", borderRadius: "9999px" }} />
+                  </div>
+                  <div className="ui-skeleton" style={{ width: "80%", height: "18px", marginBottom: "8px" }} />
+                  <div className="ui-skeleton" style={{ width: "60%", height: "12px", marginBottom: "8px" }} />
+                  <div className="ui-skeleton" style={{ width: "40%", height: "12px", marginBottom: "16px" }} />
+                  <div className="ui-skeleton" style={{ width: "90px", height: "12px" }} />
+                </div>
+                <div className="history-card-actions">
+                  <div className="ui-skeleton" style={{ width: "100%", height: "44px", borderRadius: "8px" }} />
+                  <div className="ui-skeleton" style={{ width: "100%", height: "44px", borderRadius: "8px" }} />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : historyQuery.error ? (
           <EmptyState icon={XCircle} label={historyQuery.error.message} />
         ) : historyQuery.data?.items.length === 0 ? (

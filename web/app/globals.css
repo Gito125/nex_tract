@@ -828,3 +828,10 @@ select option {
     gap: 6px;
   }
 }
+
+.ui-skeleton {
+  background: linear-gradient(90deg, var(--surface-raised) 25%, var(--surface-strong) 50%, var(--surface-raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--radius-sm);
+}

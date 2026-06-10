@@ -426,18 +426,14 @@ export function AnalyzeHome() {
 
         {/* Analyzing state */}
         {analyzeMutation.isPending && (
-          <p
-            className="animate-fade-in"
-            role="status"
-            style={{
-              marginTop: "16px",
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "var(--foreground-soft)",
-            }}
-          >
-            Fetching metadata and available formats…
-          </p>
+          <div className="animate-fade-in" style={{ marginTop: "32px", width: "100%", maxWidth: "680px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div className="ui-skeleton" style={{ width: "100%", height: "160px", borderRadius: "16px" }} />
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--foreground-soft)" }}>
+                Fetching metadata and available formats…
+              </p>
+            </div>
+          </div>
         )}
 
         {/* Platform chips */}

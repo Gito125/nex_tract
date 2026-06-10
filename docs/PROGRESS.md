@@ -316,17 +316,17 @@ Make the app feel clean, beautiful, and production-worthy.
 
 ## Tasks
 
-- [ ] Apply final visual style.
-- [ ] Improve spacing.
-- [ ] Improve typography.
-- [ ] Add empty states.
-- [ ] Add friendly error states.
-- [ ] Add dark mode.
-- [ ] Add responsive mobile layout.
-- [ ] Add subtle animations.
-- [ ] Improve button states.
-- [ ] Improve loading skeletons.
-- [ ] Improve settings layout.
+- [x] Apply final visual style.
+- [x] Improve spacing.
+- [x] Improve typography.
+- [x] Add empty states.
+- [x] Add friendly error states.
+- [x] Add dark mode.
+- [x] Add responsive mobile layout.
+- [x] Add subtle animations.
+- [x] Improve button states.
+- [x] Improve loading skeletons.
+- [x] Improve settings layout.
 
 ## Exit Criteria
 

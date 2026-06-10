@@ -580,21 +580,36 @@ function Notice({
 }
 
 function LoadingState({ label, isError }: { label: string; isError?: boolean }) {
+  if (isError) {
+    return (
+      <div
+        className="ui-empty"
+        style={{
+          minHeight: "280px",
+          color: "var(--error)",
+          padding: "40px",
+        }}
+      >
+        <LoaderCircle
+          size={26}
+          aria-hidden="true"
+          style={{ animation: "none" }}
+        />
+        <p style={{ fontSize: "13px", fontWeight: 600 }}>{label}</p>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="ui-empty"
-      style={{
-        minHeight: "280px",
-        color: isError ? "var(--error)" : "var(--foreground-muted)",
-        padding: "40px",
-      }}
-    >
-      <LoaderCircle
-        size={26}
-        aria-hidden="true"
-        style={{ animation: isError ? "none" : "spin 0.8s linear infinite" }}
-      />
-      <p style={{ fontSize: "13px", fontWeight: 600 }}>{label}</p>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ marginBottom: "16px" }}>
+        <div className="ui-skeleton" style={{ width: "80px", height: "20px", borderRadius: "9999px", marginBottom: "16px" }} />
+        <div className="ui-skeleton" style={{ width: "160px", height: "36px", marginBottom: "12px" }} />
+        <div className="ui-skeleton" style={{ width: "320px", height: "16px" }} />
+      </div>
+      <div className="ui-skeleton" style={{ width: "100%", height: "240px", borderRadius: "18px" }} />
+      <div className="ui-skeleton" style={{ width: "100%", height: "180px", borderRadius: "18px" }} />
+      <div className="ui-skeleton" style={{ width: "100%", height: "200px", borderRadius: "18px" }} />
     </div>
   );
 }
