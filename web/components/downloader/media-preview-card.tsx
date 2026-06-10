@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ArrowLeft,
   CirclePlay,
@@ -36,6 +37,7 @@ export function MediaPreviewCard({
 }) {
   const selectedSize = estimateSelectedSize(preview.rawFormats, selectedQuality);
   const isAudioSelection = selectedQuality?.startsWith("audio_") ?? false;
+  const isImageMedia = preview.type === "image" || preview.type === "gallery";
   const platformMeta = PLATFORM_META[preview.platform];
 
   return (
@@ -98,6 +100,8 @@ export function MediaPreviewCard({
               position: "relative",
               background: isAudioSelection
                 ? "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))"
+                : isImageMedia
+                ? "var(--surface-muted)"
                 : "oklch(8% 0.010 265)",
               minHeight: "280px",
               display: "flex",
@@ -108,6 +112,7 @@ export function MediaPreviewCard({
             <PreviewArtwork
               duration={preview.duration}
               isAudio={isAudioSelection}
+              isImage={isImageMedia}
               thumbnail={preview.thumbnail}
               title={preview.title}
             />
@@ -188,7 +193,7 @@ export function MediaPreviewCard({
                   marginBottom: "10px",
                 }}
               >
-                Format & Quality
+                {isImageMedia ? "Image" : "Format & Quality"}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {preview.qualities.map((option) => {
@@ -253,6 +258,18 @@ export function MediaPreviewCard({
                   <span style={{ fontWeight: 600, color: "var(--foreground-muted)", fontVariantNumeric: "tabular-nums" }}>
                     {formatBytes(selectedSize)}
                   </span>
+                </p>
+              ) : null}
+              {preview.type === "gallery" && preview.imageCount ? (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--foreground-soft)",
+                    marginTop: "10px",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {preview.imageCount} images will be saved into a folder.
                 </p>
               ) : null}
             </div>
@@ -340,14 +357,19 @@ export function MediaPreviewCard({
 function PreviewArtwork({
   duration,
   isAudio,
+  isImage,
   thumbnail,
   title,
 }: {
   duration: number | null;
   isAudio: boolean;
+  isImage: boolean;
   thumbnail: string | null;
   title: string;
 }) {
+  const [failedThumbnail, setFailedThumbnail] = useState<string | null>(null);
+  const usableThumbnail = thumbnail && failedThumbnail !== thumbnail ? thumbnail : null;
+
   if (isAudio) {
     return (
       <div
@@ -355,10 +377,12 @@ function PreviewArtwork({
         role="img"
         aria-label={`${title} audio artwork`}
       >
-        {thumbnail && (
+        {usableThumbnail && (
           <img
-            src={thumbnail}
+            src={usableThumbnail}
             alt=""
+            referrerPolicy="no-referrer"
+            onError={() => setFailedThumbnail(usableThumbnail)}
             style={{
               position: "absolute",
               inset: 0,
@@ -386,8 +410,14 @@ function PreviewArtwork({
             overflow: "hidden",
           }}
         >
-          {thumbnail ? (
-            <img src={thumbnail} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {usableThumbnail ? (
+            <img
+              src={usableThumbnail}
+              alt={title}
+              referrerPolicy="no-referrer"
+              onError={() => setFailedThumbnail(usableThumbnail)}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           ) : (
             <Disc3 size={48} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
           )}
@@ -421,8 +451,14 @@ function PreviewArtwork({
       role="img"
       aria-label={`${title} thumbnail`}
     >
-      {thumbnail ? (
-        <img src={thumbnail} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      {usableThumbnail ? (
+        <img
+          src={usableThumbnail}
+          alt={title}
+          referrerPolicy="no-referrer"
+          onError={() => setFailedThumbnail(usableThumbnail)}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
       ) : (
         <div
           style={{
@@ -437,7 +473,24 @@ function PreviewArtwork({
           <CirclePlay size={52} style={{ color: "var(--foreground-subtle)" }} aria-hidden="true" />
         </div>
       )}
-      {duration && (
+      {isImage && (
+        <span
+          style={{
+            position: "absolute",
+            bottom: "12px",
+            left: "12px",
+            background: "var(--overlay-strong)",
+            color: "var(--on-primary)",
+            borderRadius: "6px",
+            padding: "4px 8px",
+            fontSize: "12px",
+            fontWeight: 700,
+          }}
+        >
+          Image
+        </span>
+      )}
+      {duration && !isImage && (
         <span
           style={{
             position: "absolute",
@@ -476,6 +529,7 @@ function formatDuration(totalSeconds: number): string {
 function estimateSelectedSize(formats: RawFormat[], selectedQuality: QualityValue | null): number | null {
   if (!selectedQuality) return null;
   if (selectedQuality === "best") return bestVideoSize(formats);
+  if (selectedQuality === "image_original") return largestKnownSize(formats);
   if (selectedQuality.startsWith("audio_")) return audioSize(formats, selectedQuality);
   return videoSizeForHeight(formats, Number.parseInt(selectedQuality, 10));
 }

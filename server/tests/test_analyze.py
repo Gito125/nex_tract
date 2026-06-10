@@ -70,6 +70,10 @@ def test_analyze_rejects_unsupported_platform() -> None:
 
 
 def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
+    noisy_url = (
+        "https://www.tiktok.com/@creator/video/123"
+        "?is_from_webapp=1&sender_device=pc"
+    )
     with patch(
         "app.platforms.base.subprocess.run",
         return_value=_completed_process(
@@ -82,7 +86,7 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     ) as run:
         response = client.post(
             "/api/analyze",
-            json={"url": "https://www.tiktok.com/@creator/video/123"},
+            json={"url": noisy_url},
         )
 
     assert response.status_code == 200
@@ -95,6 +99,37 @@ def test_analyze_tiktok_video_returns_normalized_metadata() -> None:
     assert [item["value"] for item in body["qualities"]] == ["best", "720p", "audio_mp3"]
     assert body["rawFormats"][0]["filesize"] == 7_875_000
     assert "--no-playlist" in run.call_args.args[0]
+    assert run.call_args.args[0][-1] == "https://www.tiktok.com/@creator/video/123"
+
+
+def test_analyze_clean_and_noisy_tiktok_urls_match() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            _social_video_metadata(
+                "Example TikTok",
+                "TikTok Creator",
+                "https://www.tiktok.com/@creator/video/123",
+            )
+        ),
+    ):
+        clean_response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.tiktok.com/@creator/video/123"},
+        )
+        noisy_response = client.post(
+            "/api/analyze",
+            json={
+                "url": (
+                    "https://www.tiktok.com/@creator/video/123"
+                    "?is_from_webapp=1&sender_device=pc"
+                )
+            },
+        )
+
+    assert clean_response.status_code == 200
+    assert noisy_response.status_code == 200
+    assert clean_response.json()["webpageUrl"] == noisy_response.json()["webpageUrl"]
 
 
 def test_analyze_instagram_video_returns_normalized_metadata() -> None:
@@ -143,6 +178,69 @@ def test_analyze_x_video_returns_normalized_metadata() -> None:
     assert body["type"] == "video"
     assert body["title"] == "Example X Post"
     assert body["rawFormats"][0]["filesize"] == 7_875_000
+
+
+def test_analyze_prefers_https_thumbnail_candidates() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(
+            {
+                **_social_video_metadata(
+                    "Example Reel",
+                    "Instagram Creator",
+                    "https://www.instagram.com/reel/ABC123/",
+                ),
+                "thumbnail": "http://bad.example/thumb.jpg",
+                "thumbnails": [
+                    {"url": "http://bad.example/low.jpg"},
+                    {"url": "https://cdn.example/good.jpg"},
+                ],
+            }
+        ),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.instagram.com/reel/ABC123/"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["thumbnail"] == "https://cdn.example/good.jpg"
+
+
+def test_analyze_image_only_metadata_returns_image_option() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(_image_metadata()),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://www.instagram.com/p/IMG123/"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["type"] == "image"
+    assert body["imageCount"] is None
+    assert body["qualities"] == [
+        {"label": "Original image", "value": "image_original", "available": True, "kind": "image"}
+    ]
+
+
+def test_analyze_multi_image_metadata_returns_gallery_option() -> None:
+    with patch(
+        "app.platforms.base.subprocess.run",
+        return_value=_completed_process(_gallery_metadata()),
+    ):
+        response = client.post(
+            "/api/analyze",
+            json={"url": "https://x.com/creator/status/123"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["type"] == "gallery"
+    assert body["imageCount"] == 2
+    assert body["qualities"][0]["value"] == "image_original"
 
 
 def test_analyze_social_private_error_is_friendly() -> None:
@@ -427,6 +525,37 @@ def _social_video_metadata(title: str, creator: str, webpage_url: str) -> dict:
                 "acodec": "aac",
                 "tbr": 1500,
             }
+        ],
+    }
+
+
+def _image_metadata() -> dict:
+    return {
+        "title": "Example Image",
+        "thumbnail": "https://cdn.example/image-preview.jpg",
+        "webpage_url": "https://www.instagram.com/p/IMG123/",
+        "ext": "jpg",
+        "formats": [
+            {
+                "format_id": "original",
+                "ext": "jpg",
+                "url": "https://cdn.example/image.jpg",
+                "filesize": 2048,
+                "vcodec": "none",
+                "acodec": "none",
+            }
+        ],
+    }
+
+
+def _gallery_metadata() -> dict:
+    return {
+        "title": "Example Gallery",
+        "thumbnail": "https://cdn.example/gallery-preview.jpg",
+        "webpage_url": "https://x.com/creator/status/123",
+        "entries": [
+            {"id": "one", "title": "Image One", "thumbnail": "https://cdn.example/one.jpg"},
+            {"id": "two", "title": "Image Two", "thumbnail": "https://cdn.example/two.jpg"},
         ],
     }
 

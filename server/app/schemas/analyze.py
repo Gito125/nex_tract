@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.platforms.base import PlatformValue
+from app.platforms.base import MediaType, PlatformValue
 
 
 class AnalyzeRequest(BaseModel):
@@ -20,9 +20,10 @@ class QualityOption(BaseModel):
         "audio_m4a",
         "audio_mp3",
         "audio_opus",
+        "image_original",
     ]
     available: bool = True
-    kind: Literal["video", "audio"]
+    kind: Literal["video", "audio", "image"]
 
 
 class RawFormat(BaseModel):
@@ -64,7 +65,7 @@ class AnalyzeResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     platform: PlatformValue
-    type: Literal["video", "playlist"]
+    type: MediaType
     title: str
     thumbnail: str | None = None
     duration: int | None = None
@@ -74,3 +75,4 @@ class AnalyzeResponse(BaseModel):
     raw_formats: list[RawFormat] = Field(default_factory=list, alias="rawFormats")
     playlist: PlaylistSummary | None = None
     notice: str | None = None
+    image_count: int | None = Field(default=None, alias="imageCount")

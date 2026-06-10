@@ -20,3 +20,14 @@ class TikTokAdapter(PlatformAdapter):
             return
 
         raise PlatformValidationError("Paste a public TikTok video link.")
+
+    def canonicalize_url(self, parsed: ParseResult) -> str:
+        if parsed.hostname == "vm.tiktok.com":
+            return parsed._replace(query="", fragment="").geturl()
+
+        return parsed._replace(
+            scheme="https",
+            netloc="www.tiktok.com",
+            query="",
+            fragment="",
+        ).geturl()

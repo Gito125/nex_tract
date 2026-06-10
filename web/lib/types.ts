@@ -17,13 +17,14 @@ export type QualityValue =
   | "360p"
   | "audio_m4a"
   | "audio_mp3"
-  | "audio_opus";
+  | "audio_opus"
+  | "image_original";
 
 export type QualityOption = {
   value: QualityValue;
   label: string;
   available: boolean;
-  kind: "video" | "audio";
+  kind: "video" | "audio" | "image";
 };
 
 export type RawFormat = {
@@ -57,7 +58,7 @@ export type PlaylistSummary = {
 
 export type AnalyzeResponse = {
   platform: PlatformValue;
-  type: "video" | "playlist";
+  type: "video" | "image" | "gallery" | "playlist";
   title: string;
   thumbnail: string | null;
   duration: number | null;
@@ -67,6 +68,7 @@ export type AnalyzeResponse = {
   rawFormats: RawFormat[];
   playlist: PlaylistSummary | null;
   notice: string | null;
+  imageCount: number | null;
 };
 
 export type DownloadStatus =
@@ -85,7 +87,7 @@ export type ProgressStatus =
   | "failed"
   | "cancelled";
 
-export type DownloadType = "video" | "audio";
+export type DownloadType = "video" | "audio" | "image";
 export type AudioFormat = "m4a" | "mp3" | "opus";
 
 export type DownloadCreateRequest = {
@@ -118,7 +120,7 @@ export type DownloadJob = {
   id: string;
   url: string;
   platform: PlatformValue;
-  mediaType: "video";
+  mediaType: "video" | "image" | "gallery";
   title: string;
   thumbnail: string | null;
   duration: number | null;
@@ -228,7 +230,7 @@ export type HistoryItem = {
   jobId: string;
   url: string;
   platform: PlatformValue;
-  mediaType: "video";
+  mediaType: "video" | "image" | "gallery";
   title: string;
   thumbnail: string | null;
   duration: number | null;

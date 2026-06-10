@@ -14,8 +14,9 @@ QualityValue = Literal[
     "audio_m4a",
     "audio_mp3",
     "audio_opus",
+    "image_original",
 ]
-DownloadType = Literal["video", "audio"]
+DownloadType = Literal["video", "audio", "image"]
 AudioFormat = Literal["m4a", "mp3", "opus"]
 DownloadStatusValue = Literal[
     "pending",
@@ -50,7 +51,7 @@ class DownloadJobResponse(BaseModel):
     id: str
     url: str
     platform: PlatformValue
-    media_type: Literal["video"] = Field(alias="mediaType")
+    media_type: Literal["video", "image", "gallery"] = Field(alias="mediaType")
     title: str
     thumbnail: str | None = None
     duration: int | None = None

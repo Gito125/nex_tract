@@ -241,7 +241,7 @@ export function AnalyzeHome() {
     estimatePlaylistSizesMutation.mutate(request);
   }
 
-  if (analysis?.type === "video") {
+  if (analysis && ["video", "image", "gallery"].includes(analysis.type)) {
     return (
       <div
         className="animate-fade-up"
@@ -581,6 +581,9 @@ function PlatformChip({
 
 /* ── Helpers ────────────────────────────────────────────────────── */
 function toDownloadRequest(url: string, quality: QualityValue): DownloadCreateRequest {
+  if (quality === "image_original") {
+    return { url, quality, downloadType: "image", audioFormat: null };
+  }
   const audioFormat = audioFormatForQuality(quality);
   if (audioFormat) return { url, quality, downloadType: "audio", audioFormat };
   return { url, quality, downloadType: "video", audioFormat: null };
@@ -635,10 +638,10 @@ function getRepeatDownloadMessage(
   if (matchingJobs.length === 0) return null;
   const sameQuality = matchingJobs.some((job) => job.selectedQuality === selectedQuality);
   if (sameQuality) {
-    return `You already have ${selectedQuality.replaceAll("_", " ")} for this video.`;
+    return `You already have ${selectedQuality.replaceAll("_", " ")} for this media.`;
   }
   const existing = Array.from(new Set(matchingJobs.map((j) => j.selectedQuality.replaceAll("_", " ")))).join(", ");
-  return `This video is already in your queue as ${existing}.`;
+  return `This media is already in your queue as ${existing}.`;
 }
 
 function upsertDownloadJob(

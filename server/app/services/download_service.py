@@ -51,6 +51,7 @@ QUALITY_FORMATS: dict[QualityValue, str] = {
     "audio_mp3": "ba",
     "audio_opus": "ba[ext=opus]/ba",
 }
+IMAGE_QUALITY: QualityValue = "image_original"
 
 AUDIO_QUALITY_FORMATS: dict[QualityValue, AudioFormat] = {
     "audio_m4a": "m4a",
@@ -100,7 +101,7 @@ def create_download_job(
     job = DownloadJob(
         url=analysis.webpage_url,
         platform=analysis.platform,
-        media_type="video",
+        media_type=analysis.type,
         title=analysis.title,
         thumbnail=analysis.thumbnail,
         duration=analysis.duration,
@@ -208,15 +209,18 @@ def build_ytdlp_args(job: DownloadJob) -> list[str]:
     download_root = Path(app_settings.download_folder).resolve()
 
     q = cast(QualityValue, job.selected_quality)
-    output_template = download_root / f"{_render_filename_template(job, q)}.%(ext)s"
+    media_type = cast(Any, job.media_type)
+    output_root = _output_root_for_job(job, download_root)
+    output_template = _output_template_for_job(job, q, output_root)
 
     adapter = get_adapter(cast(PlatformValue, job.platform))
     return adapter.build_download_args(
         url=job.url,
-        output_root=str(download_root),
+        output_root=str(output_root),
         output_template=str(output_template),
-        quality_format=QUALITY_FORMATS[q],
+        quality_format=QUALITY_FORMATS.get(q),
         audio_format=(job.audio_format or "m4a") if q in AUDIO_QUALITY_FORMATS else None,
+        media_type=media_type,
     )
 
 
@@ -230,7 +234,7 @@ def job_to_response(job: DownloadJob) -> DownloadJobResponse:
         id=job.id,
         url=job.url,
         platform=cast(PlatformValue, job.platform),
-        mediaType="video",
+        mediaType=cast(Any, job.media_type),
         title=job.title,
         thumbnail=job.thumbnail,
         duration=job.duration,
@@ -258,6 +262,11 @@ def _run_download_job(job_id: str) -> None:
 
         app_settings = get_app_settings(session)
         Path(app_settings.download_folder).mkdir(parents=True, exist_ok=True)
+        if job.media_type == "gallery":
+            (
+                Path(app_settings.download_folder).resolve()
+                / sanitize_filename(job.title, fallback="gallery")
+            ).mkdir(parents=True, exist_ok=True)
         args = build_ytdlp_args(job)
 
     try:
@@ -307,7 +316,7 @@ def _run_download_job(job_id: str) -> None:
             return
 
         if process.returncode == 0:
-            output_path = _safe_output_path(output)
+            output_path = _safe_output_path(output, job)
             job.status = DownloadStatus.COMPLETED.value
             job.progress = 100
             job.speed = None
@@ -419,6 +428,13 @@ def _apply_progress_update(job_id: str, update: ProgressUpdate) -> None:
 
 
 def _validate_download_shape(request: DownloadCreateRequest) -> None:
+    if request.quality == IMAGE_QUALITY:
+        if request.download_type != "image":
+            raise DownloadError("Image downloads must use downloadType image.")
+        if request.audio_format is not None:
+            raise DownloadError("Image downloads cannot include an audio format.")
+        return
+
     expected_audio_format = AUDIO_QUALITY_FORMATS.get(request.quality)
 
     if expected_audio_format:
@@ -477,9 +493,12 @@ def _friendly_ytdlp_error(stderr: str) -> str:
     return "Download failed. Please try again."
 
 
-def _safe_output_path(stdout: str) -> str | None:
+def _safe_output_path(stdout: str, job: DownloadJob) -> str | None:
     app_settings = _current_app_settings()
     download_root = Path(app_settings.download_folder).resolve()
+
+    if job.media_type == "gallery":
+        return str(_output_root_for_job(job, download_root))
 
     for line in reversed(stdout.splitlines()):
         candidate = line.strip()
@@ -500,7 +519,14 @@ def _file_size(output_path: str | None) -> int | None:
         return None
 
     try:
-        return Path(output_path).stat().st_size
+        path = Path(output_path)
+        if path.is_dir():
+            return sum(
+                item.stat().st_size
+                for item in path.rglob("*")
+                if item.is_file()
+            )
+        return path.stat().st_size
     except OSError:
         return None
 
@@ -529,3 +555,19 @@ def _render_filename_template(job: DownloadJob, quality: QualityValue) -> str:
         rendered = rendered.replace(placeholder, value)
 
     return sanitize_filename(rendered, fallback="download")
+
+
+def _output_root_for_job(job: DownloadJob, download_root: Path) -> Path:
+    if job.media_type == "gallery":
+        return download_root / sanitize_filename(job.title, fallback="gallery")
+    return download_root
+
+
+def _output_template_for_job(
+    job: DownloadJob,
+    quality: QualityValue,
+    output_root: Path,
+) -> Path:
+    if job.media_type == "gallery":
+        return output_root / "%(autonumber)03d - %(title).200B [%(id)s].%(ext)s"
+    return output_root / f"{_render_filename_template(job, quality)}.%(ext)s"

@@ -7,7 +7,7 @@ from urllib.parse import ParseResult
 from app.services.exceptions import AnalyzeError
 
 PlatformValue = Literal["youtube", "tiktok", "instagram", "x"]
-MediaType = Literal["video", "playlist"]
+MediaType = Literal["video", "image", "gallery", "playlist"]
 
 
 @dataclass(frozen=True)
@@ -37,6 +37,9 @@ class PlatformAdapter:
     def validate_public_single_link(self, parsed: ParseResult) -> None:
         return
 
+    def canonicalize_url(self, parsed: ParseResult) -> str:
+        return parsed.geturl()
+
     def extract_metadata(self, url: str, media_type: MediaType) -> dict[str, Any]:
         return run_ytdlp_metadata(
             url,
@@ -50,12 +53,12 @@ class PlatformAdapter:
         url: str,
         output_root: str,
         output_template: str,
-        quality_format: str,
+        quality_format: str | None,
         audio_format: str | None,
+        media_type: MediaType = "video",
     ) -> list[str]:
         args = [
             "yt-dlp",
-            "--no-playlist",
             "--no-warnings",
             "--no-simulate",
             "--no-overwrites",
@@ -65,15 +68,21 @@ class PlatformAdapter:
             output_root,
             "--output",
             output_template,
-            "--format",
-            quality_format,
             "--print",
             "after_move:filepath",
         ]
 
+        if media_type == "gallery":
+            args.append("--yes-playlist")
+        else:
+            args.append("--no-playlist")
+
+        if quality_format is not None:
+            args.extend(["--format", quality_format])
+
         if audio_format:
             args.extend(["--extract-audio", "--audio-format", audio_format])
-        else:
+        elif media_type == "video":
             args.extend(["--merge-output-format", "mp4"])
 
         args.append(url)

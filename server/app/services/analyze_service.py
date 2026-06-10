@@ -5,6 +5,7 @@ from app.platforms.registry import get_adapter
 from app.schemas.analyze import AnalyzeResponse, PlaylistAnalyzeItem, PlaylistSummary
 from app.services.exceptions import AnalyzeError
 from app.services.format_service import (
+    image_quality_options,
     normalize_quality_options,
     sanitize_raw_formats,
     standard_playlist_quality_options,
@@ -44,10 +45,11 @@ def _video_response(
 ) -> AnalyzeResponse:
     formats = _list_value(metadata.get("formats"))
     adapter = get_adapter(platform.platform)
+    response_type = _media_type_from_metadata(metadata, formats)
 
     return AnalyzeResponse(
         platform=platform.platform,
-        type="video",
+        type=response_type,
         title=_string_value(
             metadata.get("title"),
             fallback_title or f"Untitled {adapter.display_name} video",
@@ -55,10 +57,15 @@ def _video_response(
         thumbnail=_thumbnail(metadata),
         duration=_int_or_none(metadata.get("duration")),
         creator=_creator(metadata),
-        webpageUrl=_string_value(metadata.get("webpage_url"), platform.url),
-        qualities=normalize_quality_options(formats),
+        webpageUrl=_webpage_url(platform, metadata),
+        qualities=(
+            image_quality_options()
+            if response_type in {"image", "gallery"}
+            else normalize_quality_options(formats)
+        ),
         rawFormats=sanitize_raw_formats(formats, metadata),
         notice=notice,
+        imageCount=_image_count(metadata) if response_type == "gallery" else None,
     )
 
 
@@ -158,18 +165,80 @@ def _creator(metadata: dict[str, Any]) -> str | None:
     return None
 
 
-def _thumbnail(metadata: dict[str, Any]) -> str | None:
-    thumbnail = _string_or_none(metadata.get("thumbnail"))
-    if thumbnail:
-        return thumbnail
+def _media_type_from_metadata(
+    metadata: dict[str, Any],
+    formats: list[dict[str, Any]],
+) -> str:
+    if any(_has_video(item) for item in formats):
+        return "video"
 
+    image_count = _image_count(metadata)
+    if image_count > 1:
+        return "gallery"
+    if image_count == 1 or _looks_like_image_metadata(metadata, formats):
+        return "image"
+
+    return "video"
+
+
+def _image_count(metadata: dict[str, Any]) -> int:
+    entries = _list_value(metadata.get("entries"))
+    if entries:
+        return len(entries)
+
+    images = metadata.get("images")
+    if isinstance(images, list):
+        return len([item for item in images if isinstance(item, dict | str)])
+
+    if _looks_like_image_metadata(metadata, _list_value(metadata.get("formats"))):
+        return 1
+
+    return 0
+
+
+def _looks_like_image_metadata(
+    metadata: dict[str, Any],
+    formats: list[dict[str, Any]],
+) -> bool:
+    if formats:
+        return any(_is_image_format(item) for item in formats) and not any(
+            _has_video(item) or _has_audio(item) for item in formats
+        )
+
+    ext = _string_or_none(metadata.get("ext"))
+    if ext and ext.lower() in {"jpg", "jpeg", "png", "webp", "avif"}:
+        return True
+
+    return _thumbnail(metadata) is not None and _int_or_none(metadata.get("duration")) is None
+
+
+def _is_image_format(item: dict[str, Any]) -> bool:
+    ext = _string_or_none(item.get("ext"))
+    if ext and ext.lower() in {"jpg", "jpeg", "png", "webp", "avif"}:
+        return True
+
+    url = _string_or_none(item.get("url"))
+    return bool(url and url.lower().split("?")[0].endswith((".jpg", ".jpeg", ".png", ".webp", ".avif")))
+
+
+def _webpage_url(platform: PlatformInfo, metadata: dict[str, Any]) -> str:
+    if platform.platform != "youtube":
+        return platform.url
+    return _string_value(metadata.get("webpage_url"), platform.url)
+
+
+def _thumbnail(metadata: dict[str, Any]) -> str | None:
     thumbnails = metadata.get("thumbnails")
     if isinstance(thumbnails, list):
         for item in reversed(thumbnails):
             if isinstance(item, dict):
                 url = _string_or_none(item.get("url"))
-                if url:
+                if _is_usable_image_url(url):
                     return url
+
+    thumbnail = _string_or_none(metadata.get("thumbnail"))
+    if _is_usable_image_url(thumbnail):
+        return thumbnail
 
     return None
 
@@ -190,6 +259,20 @@ def _string_or_none(value: Any) -> str | None:
     if isinstance(value, str) and value.strip():
         return value
     return None
+
+
+def _has_video(item: dict[str, Any]) -> bool:
+    vcodec = item.get("vcodec")
+    return isinstance(vcodec, str) and vcodec != "none"
+
+
+def _has_audio(item: dict[str, Any]) -> bool:
+    acodec = item.get("acodec")
+    return isinstance(acodec, str) and acodec != "none"
+
+
+def _is_usable_image_url(value: str | None) -> bool:
+    return bool(value and value.startswith("https://"))
 
 
 def _int_or_none(value: Any) -> int | None:

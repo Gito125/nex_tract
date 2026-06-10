@@ -67,6 +67,12 @@ def standard_playlist_quality_options() -> list[QualityOption]:
     ]
 
 
+def image_quality_options() -> list[QualityOption]:
+    return [
+        QualityOption(label="Original image", value="image_original", kind="image")
+    ]
+
+
 def sanitize_raw_formats(
     formats: list[dict[str, Any]],
     metadata: dict[str, Any] | None = None,

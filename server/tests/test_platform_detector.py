@@ -4,22 +4,35 @@ from app.utils.platform_detector import PlatformValidationError, detect_platform
 
 
 @pytest.mark.parametrize(
-    ("url", "platform"),
+    ("url", "platform", "canonical_url"),
     [
-        ("https://www.tiktok.com/@creator/video/1234567890", "tiktok"),
-        ("https://vm.tiktok.com/ZMabc123/", "tiktok"),
-        ("https://www.instagram.com/reel/ABC123/", "instagram"),
-        ("https://instagram.com/p/ABC123/", "instagram"),
-        ("https://x.com/user/status/1234567890", "x"),
-        ("https://twitter.com/user/status/1234567890", "x"),
+        (
+            "https://www.tiktok.com/@creator/video/1234567890",
+            "tiktok",
+            "https://www.tiktok.com/@creator/video/1234567890",
+        ),
+        (
+            "https://www.tiktok.com/@creator/video/1234567890?is_from_webapp=1&sender_device=pc",
+            "tiktok",
+            "https://www.tiktok.com/@creator/video/1234567890",
+        ),
+        ("https://vm.tiktok.com/ZMabc123/?share=1", "tiktok", "https://vm.tiktok.com/ZMabc123/"),
+        ("https://www.instagram.com/reel/ABC123/?utm_source=ig_web_copy_link", "instagram", "https://www.instagram.com/reel/ABC123/"),
+        ("https://instagram.com/p/ABC123/", "instagram", "https://www.instagram.com/p/ABC123/"),
+        ("https://x.com/user/status/1234567890?s=20", "x", "https://x.com/user/status/1234567890"),
+        ("https://twitter.com/user/status/1234567890", "x", "https://x.com/user/status/1234567890"),
     ],
 )
-def test_detect_platform_supported_single_links(url: str, platform: str) -> None:
+def test_detect_platform_supported_single_links(
+    url: str,
+    platform: str,
+    canonical_url: str,
+) -> None:
     detected = detect_platform(url)
 
     assert detected.platform == platform
     assert detected.media_type == "video"
-    assert detected.url == url
+    assert detected.url == canonical_url
 
 
 @pytest.mark.parametrize(

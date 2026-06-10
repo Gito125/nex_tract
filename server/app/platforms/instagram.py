@@ -14,3 +14,11 @@ class InstagramAdapter(PlatformAdapter):
             return
 
         raise PlatformValidationError("Paste a public Instagram reel, post, or video link.")
+
+    def canonicalize_url(self, parsed: ParseResult) -> str:
+        return parsed._replace(
+            scheme="https",
+            netloc="www.instagram.com",
+            query="",
+            fragment="",
+        ).geturl()

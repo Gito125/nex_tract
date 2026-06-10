@@ -14,3 +14,11 @@ class XAdapter(PlatformAdapter):
             return
 
         raise PlatformValidationError("Paste a public X post link.")
+
+    def canonicalize_url(self, parsed: ParseResult) -> str:
+        return parsed._replace(
+            scheme="https",
+            netloc="x.com",
+            query="",
+            fragment="",
+        ).geturl()

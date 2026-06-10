@@ -3,7 +3,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from sqlalchemy import func, or_
 from sqlmodel import Session, col, select
@@ -194,7 +194,7 @@ def history_to_response(item: DownloadHistoryItem) -> HistoryItemResponse:
         jobId=item.job_id,
         url=item.url,
         platform=cast(PlatformValue, item.platform),
-        mediaType="video",
+        mediaType=cast(Any, item.media_type),
         title=item.title,
         thumbnail=item.thumbnail,
         duration=item.duration,

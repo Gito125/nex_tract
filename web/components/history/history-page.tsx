@@ -300,25 +300,7 @@ function HistoryCard({
           flexShrink: 0,
         }}
       >
-        {item.thumbnail ? (
-          <img
-            alt=""
-            src={item.thumbnail}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              height: "100%",
-            }}
-          >
-            <Archive size={24} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
-          </div>
-        )}
+        <HistoryThumbnail thumbnail={item.thumbnail} />
       </div>
 
       {/* Info */}
@@ -328,6 +310,7 @@ function HistoryCard({
           <StatusBadge status={item.status} />
           <Pill value={formatQuality(item.selectedQuality)} />
           <Pill value={platformLabel(item.platform)} />
+          <Pill value={item.mediaType} />
           {item.fileSize ? <Pill value={formatBytes(item.fileSize)} /> : null}
         </div>
 
@@ -432,6 +415,37 @@ function StatusBadge({ status }: { status: HistoryStatus }) {
       <Icon size={11} aria-hidden="true" />
       {status}
     </span>
+  );
+}
+
+function HistoryThumbnail({ thumbnail }: { thumbnail: string | null }) {
+  const [failedThumbnail, setFailedThumbnail] = useState<string | null>(null);
+  const usableThumbnail = thumbnail && failedThumbnail !== thumbnail ? thumbnail : null;
+
+  if (usableThumbnail) {
+    return (
+      <img
+        alt=""
+        src={usableThumbnail}
+        referrerPolicy="no-referrer"
+        onError={() => setFailedThumbnail(usableThumbnail)}
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%",
+      }}
+    >
+      <Archive size={24} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
+    </div>
   );
 }
 

@@ -104,6 +104,53 @@ def test_create_download_job_stores_social_platform() -> None:
     assert body["platform"] == "tiktok"
 
 
+def test_create_download_job_stores_image_media_type() -> None:
+    with (
+        patch(
+            "app.platforms.base.subprocess.run",
+            return_value=_completed_process(_image_metadata()),
+        ),
+        patch("app.services.download_service._executor.submit"),
+    ):
+        response = client.post(
+            "/api/downloads",
+            json={
+                "url": "https://www.instagram.com/p/IMG123/",
+                "quality": "image_original",
+                "downloadType": "image",
+                "audioFormat": None,
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mediaType"] == "image"
+    assert body["selectedQuality"] == "image_original"
+
+
+def test_create_download_job_stores_gallery_media_type() -> None:
+    with (
+        patch(
+            "app.platforms.base.subprocess.run",
+            return_value=_completed_process(_gallery_metadata()),
+        ),
+        patch("app.services.download_service._executor.submit"),
+    ):
+        response = client.post(
+            "/api/downloads",
+            json={
+                "url": "https://x.com/creator/status/123",
+                "quality": "image_original",
+                "downloadType": "image",
+                "audioFormat": None,
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mediaType"] == "gallery"
+
+
 def test_create_download_rejects_playlist() -> None:
     response = client.post(
         "/api/downloads",
@@ -175,6 +222,39 @@ def test_build_ytdlp_args_uses_active_settings(tmp_path: Path) -> None:
         assert "--no-overwrites" in args
     finally:
         client.patch("/api/settings", json=original)
+
+
+def test_build_ytdlp_args_for_image_download_omits_video_formatting() -> None:
+    job = DownloadJob(
+        url="https://www.instagram.com/p/IMG123/",
+        platform="instagram",
+        media_type="image",
+        title="Example Image",
+        selected_quality="image_original",
+    )
+
+    args = build_ytdlp_args(job)
+
+    assert "--format" not in args
+    assert "--merge-output-format" not in args
+    assert "--extract-audio" not in args
+    assert "--no-playlist" in args
+
+
+def test_build_ytdlp_args_for_gallery_download_uses_folder() -> None:
+    job = DownloadJob(
+        url="https://x.com/creator/status/123",
+        platform="x",
+        media_type="gallery",
+        title="Example Gallery",
+        selected_quality="image_original",
+    )
+
+    args = build_ytdlp_args(job)
+
+    assert "--yes-playlist" in args
+    assert "--no-playlist" not in args
+    assert any("Example Gallery" in item for item in args)
 
 
 def test_download_progress_output_updates_metrics() -> None:
@@ -452,6 +532,37 @@ def _video_metadata(
                 "vcodec": "none",
                 "acodec": "opus",
             },
+        ],
+    }
+
+
+def _image_metadata() -> dict[str, Any]:
+    return {
+        "title": "Example Image",
+        "thumbnail": "https://cdn.example/image-preview.jpg",
+        "webpage_url": "https://www.instagram.com/p/IMG123/",
+        "ext": "jpg",
+        "formats": [
+            {
+                "format_id": "original",
+                "ext": "jpg",
+                "url": "https://cdn.example/image.jpg",
+                "filesize": 2048,
+                "vcodec": "none",
+                "acodec": "none",
+            }
+        ],
+    }
+
+
+def _gallery_metadata() -> dict[str, Any]:
+    return {
+        "title": "Example Gallery",
+        "thumbnail": "https://cdn.example/gallery-preview.jpg",
+        "webpage_url": "https://x.com/creator/status/123",
+        "entries": [
+            {"id": "one", "title": "Image One", "thumbnail": "https://cdn.example/one.jpg"},
+            {"id": "two", "title": "Image Two", "thumbnail": "https://cdn.example/two.jpg"},
         ],
     }
 

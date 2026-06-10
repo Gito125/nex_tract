@@ -18,7 +18,7 @@ def detect_platform(url: str) -> PlatformInfo:
         return PlatformInfo(
             platform=adapter.name,
             media_type=adapter.detect_media_type(parsed),
-            url=url.strip(),
+            url=adapter.canonicalize_url(parsed),
         )
 
     raise PlatformValidationError(

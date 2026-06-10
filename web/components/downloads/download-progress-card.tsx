@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   CheckCircle2,
   Clock3,
@@ -37,6 +38,7 @@ export function DownloadProgressCard({
   const canCancel = job.status === "pending" || job.status === "downloading";
   const canRetry  = job.status === "failed"  || job.status === "cancelled";
   const isAudio   = job.selectedQuality.startsWith("audio_");
+  const isImage   = job.mediaType === "image" || job.mediaType === "gallery";
   const meta      = STATUS_META[job.status];
   const Icon      = meta.icon;
 
@@ -67,6 +69,8 @@ export function DownloadProgressCard({
       <MediaThumb
         duration={job.duration}
         isAudio={isAudio}
+        isImage={isImage}
+        mediaLabel={job.mediaType === "gallery" ? "Gallery" : "Image"}
         thumbnail={job.thumbnail}
         title={job.title}
       />
@@ -116,7 +120,7 @@ export function DownloadProgressCard({
                 textTransform: "uppercase",
               }}
             >
-              {job.selectedQuality.replace("_", " ")}
+              {job.selectedQuality.replaceAll("_", " ")}
             </span>
             <span
               style={{
@@ -132,6 +136,22 @@ export function DownloadProgressCard({
               }}
             >
               {platformLabel(job.platform)}
+            </span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "4px 9px",
+                borderRadius: "9999px",
+                fontSize: "11px",
+                fontWeight: 700,
+                background: "var(--surface)",
+                border: "1px solid var(--border-strong)",
+                color: "var(--foreground-soft)",
+                textTransform: "capitalize",
+              }}
+            >
+              {job.mediaType}
             </span>
           </div>
 
@@ -255,14 +275,21 @@ export function DownloadProgressCard({
 function MediaThumb({
   duration,
   isAudio,
+  isImage,
+  mediaLabel,
   thumbnail,
   title,
 }: {
   duration: number | null;
   isAudio: boolean;
+  isImage: boolean;
+  mediaLabel: string;
   thumbnail: string | null;
   title: string;
 }) {
+  const [failedThumbnail, setFailedThumbnail] = useState<string | null>(null);
+  const usableThumbnail = thumbnail && failedThumbnail !== thumbnail ? thumbnail : null;
+
   const base: React.CSSProperties = {
     width: "100px",
     borderRadius: "10px",
@@ -280,16 +307,24 @@ function MediaThumb({
   if (isAudio) {
     return (
       <div className="download-thumb" style={{ ...base, background: "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))" }} role="img" aria-label={`${title} audio`}>
-        {thumbnail && (
+        {usableThumbnail && (
           <img
-            src={thumbnail}
+            src={usableThumbnail}
             alt=""
+            referrerPolicy="no-referrer"
+            onError={() => setFailedThumbnail(usableThumbnail)}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.25, filter: "blur(8px)", transform: "scale(1.1)" }}
           />
         )}
         <div style={{ position: "relative" }}>
-          {thumbnail ? (
-            <img src={thumbnail} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
+          {usableThumbnail ? (
+            <img
+              src={usableThumbnail}
+              alt=""
+              referrerPolicy="no-referrer"
+              onError={() => setFailedThumbnail(usableThumbnail)}
+              style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }}
+            />
           ) : (
             <Disc3 size={30} style={{ color: "var(--foreground-soft)" }} aria-hidden="true" />
           )}
@@ -318,12 +353,35 @@ function MediaThumb({
 
   return (
     <div className="download-thumb" style={base} role="img" aria-label={`${title} thumbnail`}>
-      {thumbnail ? (
-        <img src={thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      {usableThumbnail ? (
+        <img
+          src={usableThumbnail}
+          alt=""
+          referrerPolicy="no-referrer"
+          onError={() => setFailedThumbnail(usableThumbnail)}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
       ) : (
         <Download size={24} style={{ color: "var(--foreground-subtle)" }} aria-hidden="true" />
       )}
-      {duration && (
+      {isImage && (
+        <span
+          style={{
+            position: "absolute",
+            bottom: "4px",
+            left: "4px",
+            background: "var(--overlay-strong)",
+            color: "var(--on-primary)",
+            borderRadius: "4px",
+            padding: "2px 5px",
+            fontSize: "10px",
+            fontWeight: 700,
+          }}
+        >
+          {mediaLabel}
+        </span>
+      )}
+      {duration && !isImage && (
         <span
           style={{
             position: "absolute",

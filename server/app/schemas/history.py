@@ -16,7 +16,7 @@ class HistoryItemResponse(BaseModel):
     job_id: str = Field(alias="jobId")
     url: str
     platform: PlatformValue
-    media_type: Literal["video"] = Field(alias="mediaType")
+    media_type: Literal["video", "image", "gallery"] = Field(alias="mediaType")
     title: str
     thumbnail: str | None = None
     duration: int | None = None
