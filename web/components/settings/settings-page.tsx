@@ -298,7 +298,7 @@ export function SettingsPage() {
 
 function PageFrame({ children }: { children: ReactNode }) {
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "32px 24px 64px" }}>
+    <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 24px 64px" }}>
       {children}
     </div>
   );

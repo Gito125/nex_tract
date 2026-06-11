@@ -76,7 +76,7 @@ export default function QueuePage() {
       style={{
         maxWidth: "1100px",
         margin: "0 auto",
-        padding: "32px 24px 48px",
+        padding: "32px 24px 64px",
       }}
     >
       <div style={{ marginBottom: "24px", padding: "0 16px" }}>
