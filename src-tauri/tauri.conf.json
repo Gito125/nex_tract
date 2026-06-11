@@ -2,10 +2,10 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Nextract",
   "version": "1.9.1",
-  "identifier": "com.nextract.app",
+  "identifier": "com.nextract.desktop",
   "build": {
     "beforeDevCommand": "",
-    "beforeBuildCommand": "cd ../web && pnpm build",
+    "beforeBuildCommand": "cd web && pnpm build",
     "devUrl": "http://localhost:3004",
     "frontendDist": "../web/out"
   },
@@ -42,7 +42,7 @@
     ],
     "resources": [
       "resources/ffmpeg",
-      "resources/ffmpeg.exe"
+      "binaries/nextract-server-x86_64-unknown-linux-gnu"
     ]
   }
 }

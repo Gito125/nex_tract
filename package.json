@@ -1,7 +1,7 @@
 {
   "name": "nex_tract",
   "version": "1.9.1",
-  "description": "",
+  "description": "Nextract is a desktop/web application for downloading and managing media content from various sources. It provides a user-friendly interface for searching, downloading, and organizing media files, making it easier for users to access their favorite content.",
   "main": "index.js",
   "scripts": {
     "version": "echo 'Use ./scripts/version.sh instead' && exit 1",
@@ -10,8 +10,8 @@
     "release:minor": "bash scripts/version.sh minor",
     "release:major": "bash scripts/version.sh major"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["nextract", "media downloader", "content manager", "desktop application", "web application"],
+  "author": "Ogwang Gift Gideon",
   "license": "ISC",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
