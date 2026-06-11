@@ -18,7 +18,7 @@ import { BackendHealthCard } from "@/components/common/backend-health-card";
 
 const navItems = [
   { label: "Home", icon: Home, href: "/" },
-  { label: "Queue", icon: Download, href: null },
+  { label: "Queue", icon: Download, href: "/queue" },
   { label: "History", icon: Clock3, href: "/history" },
   { label: "Settings", icon: Settings, href: "/settings" },
 ];
