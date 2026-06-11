@@ -1,10 +1,11 @@
 {
   "name": "nex_tract",
-  "version": "1.1.0",
+  "version": "1.9.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "version": "echo 'Use ./scripts/version.sh instead' && exit 1",
+    "release": "bash scripts/version.sh",
     "release:patch": "bash scripts/version.sh patch",
     "release:minor": "bash scripts/version.sh minor",
     "release:major": "bash scripts/version.sh major"
