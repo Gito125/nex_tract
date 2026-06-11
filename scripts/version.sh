@@ -1,85 +1,69 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # scripts/version.sh
+# Usage: ./scripts/version.sh <patch|minor|major>
+#
+# Bumps all version files in sync. Does NOT commit or tag.
+# Review changes with `git diff`, then commit manually.
 
-# Usage: ./scripts/version.sh <component: web|server|all> <type: patch|minor|major>
+set -e
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <web|server|all> <patch|minor|major>"
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <patch|minor|major>"
     exit 1
 fi
 
-COMPONENT=$1
-TYPE=$2
+TYPE=$1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$SCRIPT_DIR/.."
 
 increment_version() {
-  local version=$1
-  local type=$2
-  # Remove potential leading 'v'
-  version=${version#v}
-  IFS='.' read -ra ADDR <<< "$version"
-  major=${ADDR[0]}
-  minor=${ADDR[1]}
-  patch=${ADDR[2]}
+    local version="${1#v}"
+    IFS='.' read -r major minor patch <<< "$version"
 
-  case $type in
-    major)
-      major=$((major + 1))
-      minor=0
-      patch=0
-      ;;
-    minor)
-      minor=$((minor + 1))
-      patch=0
-      ;;
-    patch)
-      patch=$((patch + 1))
-      ;;
-    *)
-      echo "Invalid type: $type"
-      exit 1
-      ;;
-  esac
-  echo "$major.$minor.$patch"
+    case $TYPE in
+        major) major=$((major + 1)); minor=0; patch=0 ;;
+        minor) minor=$((minor + 1)); patch=0 ;;
+        patch) patch=$((patch + 1)) ;;
+        *)
+            echo "Invalid type: $TYPE. Use patch, minor, or major." >&2
+            exit 1
+            ;;
+    esac
+
+    echo "$major.$minor.$patch"
 }
 
-update_web() {
-    local version=$(grep '"version":' web/package.json | cut -d'"' -f4)
-    local new_version=$(increment_version $version $TYPE)
-    sed -i "s/\"version\": \".*\"/\"version\": \"$new_version\"/" web/package.json
-    echo "Web updated to $new_version"
-    echo "$new_version"
-}
+CURRENT=$(node -p "require('$ROOT/package.json').version")
+NEW_VERSION=$(increment_version "$CURRENT")
 
-update_server() {
-    local version=$(grep '^version = ' server/pyproject.toml | cut -d'"' -f2)
-    local new_version=$(increment_version $version $TYPE)
-    sed -i "s/^version = \".*\"/version = \"$new_version\"/" server/pyproject.toml
-    echo "Server updated to $new_version"
-    echo "$new_version"
-}
+echo "Bumping: $CURRENT → $NEW_VERSION ($TYPE)"
 
-case $COMPONENT in
-    web)
-        VERSION=$(update_web)
-        git add web/package.json
-        git commit -m "chore(web): bump version to $VERSION"
-        git tag "web-v$VERSION"
-        ;;
-    server)
-        VERSION=$(update_server)
-        git add server/pyproject.toml
-        git commit -m "chore(server): bump version to $VERSION"
-        git tag "server-v$VERSION"
-        ;;
-    all)
-        WEB_VERSION=$(update_web)
-        SERVER_VERSION=$(update_server)
-        git add web/package.json server/pyproject.toml
-        git commit -m "chore: bump versions (web: $WEB_VERSION, server: $SERVER_VERSION)"
-        git tag "v$WEB_VERSION-$SERVER_VERSION"
-        ;;
-    *)
-        echo "Invalid component: $COMPONENT"
-        exit 1
-        ;;
-esac
+# Root package.json
+sed -i "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW_VERSION\"/" "$ROOT/package.json"
+echo "  ✓ package.json"
+
+# web/package.json
+WEB_CURRENT=$(node -p "require('$ROOT/web/package.json').version")
+sed -i "s/\"version\": \"$WEB_CURRENT\"/\"version\": \"$NEW_VERSION\"/" "$ROOT/web/package.json"
+echo "  ✓ web/package.json"
+
+# server/pyproject.toml
+sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" "$ROOT/server/pyproject.toml"
+echo "  ✓ server/pyproject.toml"
+
+# src-tauri/tauri.conf.json (safe JSON edit via node)
+if [ -f "$ROOT/src-tauri/tauri.conf.json" ]; then
+    node -e "
+        const fs = require('fs');
+        const path = '$ROOT/src-tauri/tauri.conf.json';
+        const conf = JSON.parse(fs.readFileSync(path, 'utf8'));
+        conf.version = '$NEW_VERSION';
+        fs.writeFileSync(path, JSON.stringify(conf, null, 2) + '\n');
+    "
+    echo "  ✓ src-tauri/tauri.conf.json"
+fi
+
+echo ""
+echo "Done. Files updated to v$NEW_VERSION."
+echo "Review with: git diff"
+echo "Then commit:  git add -A && git commit -m \"chore: release v$NEW_VERSION\" && git tag v$NEW_VERSION"
