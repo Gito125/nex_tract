@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Start backend
+cd server
+uv run uvicorn app.main:app --reload --port 8000 &
+BACKEND_PID=$!
+
+# Start frontend dev server
+cd ../web
+pnpm dev &
+FRONTEND_PID=$!
+
+echo "Backend PID: $BACKEND_PID"
+echo "Frontend PID: $FRONTEND_PID"
+echo ""
+echo "Dev mode: open http://localhost:3000"
+echo "To run the Tauri desktop in dev mode: pnpm tauri dev (from project root)"
+echo ""
+echo "Press Ctrl+C to stop all processes."
 
 cleanup() {
-  trap - INT TERM EXIT
-  kill 0
+    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null
+    exit 0
 }
-
-trap cleanup INT TERM EXIT
-
-(
-  cd "$ROOT_DIR/server"
-  uv run uvicorn app.main:app --reload
-) &
-
-(
-  cd "$ROOT_DIR"
-  pnpm --filter @nextract/web dev
-) &
+trap cleanup SIGINT SIGTERM
 
 wait

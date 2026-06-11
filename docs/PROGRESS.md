@@ -394,14 +394,14 @@ Package Nextract as a desktop app.
 
 ## Tasks
 
-- [ ] Choose Tauri or Electron.
-- [ ] Define packaging strategy.
-- [ ] Bundle frontend.
-- [ ] Bundle backend.
-- [ ] Bundle or detect yt-dlp.
-- [ ] Bundle or detect FFmpeg.
-- [ ] Store local database properly.
-- [ ] Test Linux.
+- [x] Choose Tauri or Electron.
+- [x] Define packaging strategy.
+- [x] Bundle frontend.
+- [x] Bundle backend.
+- [x] Bundle or detect yt-dlp.
+- [x] Bundle or detect FFmpeg.
+- [x] Store local database properly.
+- [/] Test Linux.
 - [ ] Test Windows.
 - [ ] Test update process.
 

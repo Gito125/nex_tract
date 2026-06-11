@@ -16,9 +16,12 @@ import type {
   SettingsUpdateRequest,
 } from "@/lib/types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
-  "http://localhost:8000";
+function getBaseUrl(): string {
+  if (typeof window !== "undefined" && (window as any).__TAURI__) {
+    return "http://127.0.0.1:57000";
+  }
+  return process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
+}
 const REQUEST_TIMEOUT_MS = 45_000; // 45 seconds timeout for API requests
 
 async function request<T>(
@@ -31,7 +34,7 @@ async function request<T>(
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(`${getBaseUrl()}${path}`, {
       ...init,
       signal: controller.signal,
       headers: {
@@ -102,12 +105,12 @@ export function retryDownload(jobId: string): Promise<DownloadJob> {
 }
 
 export function getDownloadEventsUrl(jobId: string): string {
-  return `${API_BASE_URL}/api/downloads/${jobId}/events`;
+  return `${getBaseUrl()}/api/downloads/${jobId}/events`;
 }
 
 export function getApiAssetUrl(url: string | null): string | null {
   if (!url) return null;
-  if (url.startsWith("/api/")) return `${API_BASE_URL}${url}`;
+  if (url.startsWith("/api/")) return `${getBaseUrl()}${url}`;
   return url;
 }
 
@@ -131,7 +134,7 @@ export function cancelPlaylist(playlistId: string): Promise<PlaylistResponse> {
 }
 
 export function getPlaylistEventsUrl(playlistId: string): string {
-  return `${API_BASE_URL}/api/playlists/${playlistId}/events`;
+  return `${getBaseUrl()}/api/playlists/${playlistId}/events`;
 }
 
 export function estimatePlaylistSizes(

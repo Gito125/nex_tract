@@ -53,3 +53,8 @@ data/*.db
 data/*.db-*
 downloads/*
 !downloads/.gitkeep
+
+# Desktop package
+web/out/
+src-tauri/resources/ffmpeg
+src-tauri/resources/ffmpeg.exe
