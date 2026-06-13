@@ -29,10 +29,12 @@ class PlaylistStatus(StrEnum):
 class PlaylistItemStatus(StrEnum):
     QUEUED = "queued"
     DOWNLOADING = "downloading"
+    MERGING = "merging"
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
     CANCELLED = "cancelled"
+    INTERRUPTED = "interrupted"
 
 
 class DownloadJob(SQLModel, table=True):

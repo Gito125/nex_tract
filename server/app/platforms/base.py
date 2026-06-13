@@ -7,7 +7,7 @@ from urllib.parse import ParseResult
 from app.services.exceptions import AnalyzeError
 
 PlatformValue = Literal["youtube", "tiktok", "instagram", "x", "vimeo", "reddit", "facebook", "soundcloud", "generic"]
-MediaType = Literal["video", "image", "gallery", "playlist"]
+MediaType = Literal["video", "audio", "image", "gallery", "playlist"]
 YTDLP_BROWSER_HEADERS = [
     "--add-header",
     "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

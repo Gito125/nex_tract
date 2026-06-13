@@ -241,7 +241,7 @@ export function AnalyzeHome() {
     estimatePlaylistSizesMutation.mutate(request);
   }
 
-  if (analysis && ["video", "image", "gallery"].includes(analysis.type)) {
+  if (analysis && ["video", "audio", "image", "gallery"].includes(analysis.type)) {
     return (
       <div
         className="animate-fade-up"

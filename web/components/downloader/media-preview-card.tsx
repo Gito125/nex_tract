@@ -33,11 +33,12 @@ export function MediaPreviewCard({
   selectedQuality: QualityValue | null;
 }) {
   const selectedSize = estimateSelectedSize(preview.rawFormats, selectedQuality);
-  const isAudioSelection = selectedQuality?.startsWith("audio_") ?? false;
+  const isAudioMedia = preview.type === "audio";
+  const isAudioSelection = isAudioMedia || (selectedQuality?.startsWith("audio_") ?? false);
   const isImageMedia = preview.type === "image" || preview.type === "gallery";
   const thumbnailUrl = getApiAssetUrl(preview.thumbnail);
   const platformMeta = PLATFORM_META[preview.platform];
-  const displayQualities = preview.platform === "soundcloud" 
+  const displayQualities = isAudioMedia
     ? preview.qualities.filter(q => q.kind === "audio")
     : preview.qualities;
 

@@ -58,7 +58,7 @@ export type PlaylistSummary = {
 
 export type AnalyzeResponse = {
   platform: PlatformValue;
-  type: "video" | "image" | "gallery" | "playlist";
+  type: "video" | "audio" | "image" | "gallery" | "playlist";
   title: string;
   thumbnail: string | null;
   duration: number | null;
@@ -155,10 +155,12 @@ export type PlaylistStatus =
 export type PlaylistItemStatus =
   | "queued"
   | "downloading"
+  | "merging"
   | "completed"
   | "failed"
   | "skipped"
-  | "cancelled";
+  | "cancelled"
+  | "interrupted";
 
 export type PlaylistItem = {
   id: string;
