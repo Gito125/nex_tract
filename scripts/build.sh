@@ -10,17 +10,47 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 echo "=== Nextract Production Build ==="
 echo "Project root: $PROJECT_ROOT"
 
+# ── Detect OS ──────────────────────────────────────────────────────────────
+OS="$(uname -s)"
+case "$OS" in
+    Linux*)   PLATFORM="linux"  ;;
+    Darwin*)  PLATFORM="macos"  ;;
+    MINGW*|MSYS*|CYGWIN*) PLATFORM="windows" ;;
+    *) echo "Unsupported OS: $OS"; exit 1 ;;
+esac
+
+echo "Detected platform: $PLATFORM"
+
 # ── Download FFmpeg if not present ──────────────────────────────────────────
 mkdir -p "$PROJECT_ROOT/src-tauri/resources"
-if [ ! -f "$PROJECT_ROOT/src-tauri/resources/ffmpeg" ]; then
-    echo "Downloading FFmpeg for Linux..."
-    cd /tmp
-    wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-    tar xf ffmpeg-release-amd64-static.tar.xz
-    cp ffmpeg-*-amd64-static/ffmpeg "$PROJECT_ROOT/src-tauri/resources/ffmpeg"
-    chmod +x "$PROJECT_ROOT/src-tauri/resources/ffmpeg"
-    rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
-    cd "$PROJECT_ROOT"
+
+if [ "$PLATFORM" = "linux" ]; then
+    if [ ! -f "$PROJECT_ROOT/src-tauri/resources/ffmpeg" ]; then
+        echo "Downloading FFmpeg for Linux..."
+        cd /tmp
+        wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+        tar xf ffmpeg-release-amd64-static.tar.xz
+        cp ffmpeg-*-amd64-static/ffmpeg "$PROJECT_ROOT/src-tauri/resources/ffmpeg"
+        chmod +x "$PROJECT_ROOT/src-tauri/resources/ffmpeg"
+        rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
+        cd "$PROJECT_ROOT"
+    fi
+elif [ "$PLATFORM" = "windows" ]; then
+    if [ ! -f "$PROJECT_ROOT/src-tauri/resources/ffmpeg.exe" ]; then
+        echo "Downloading FFmpeg for Windows..."
+        cd /tmp
+        curl -sL -o ffmpeg-win.zip https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
+        unzip -qo ffmpeg-win.zip
+        cp ffmpeg-*-essentials_build/bin/ffmpeg.exe "$PROJECT_ROOT/src-tauri/resources/ffmpeg.exe"
+        rm -rf ffmpeg-*-essentials_build ffmpeg-win.zip
+        cd "$PROJECT_ROOT"
+    fi
+elif [ "$PLATFORM" = "macos" ]; then
+    if [ ! -f "$PROJECT_ROOT/src-tauri/resources/ffmpeg" ]; then
+        echo "FFmpeg not found. Install via: brew install ffmpeg"
+        echo "Then copy ffmpeg to src-tauri/resources/ffmpeg"
+        exit 1
+    fi
 fi
 
 # ── Step 1: Build Python sidecar ─────────────────────────────────────────────
@@ -57,4 +87,15 @@ pnpm tauri build
 
 echo ""
 echo "=== Build complete ==="
-echo "Installer located in: src-tauri/target/release/bundle/"
+echo "Installers located in: src-tauri/target/release/bundle/"
+
+# List generated bundles
+if [ -d "$PROJECT_ROOT/src-tauri/target/release/bundle" ]; then
+    echo ""
+    echo "Generated packages:"
+    find "$PROJECT_ROOT/src-tauri/target/release/bundle" \
+        -maxdepth 2 -type f \
+        \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" \
+           -o -name "*.exe" -o -name "*.msi" -o -name "*.dmg" \) \
+        -exec echo "  → {}" \;
+fi
