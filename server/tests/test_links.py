@@ -31,13 +31,14 @@ def check(url):
         return True, d.get('title')
     return False, res.stderr.split('\n')[0]
 
-print("Testing links...")
-for plat, urls in links.items():
-    print(f"\n--- {plat} ---")
-    for u in urls:
-        ok, msg = check(u)
-        if ok:
-            print(f"[OK] {u} - {msg}")
-        else:
-            print(f"[FAIL] {u} - {msg}")
+if __name__ == "__main__":
+    print("Testing links...")
+    for plat, urls in links.items():
+        print(f"\n--- {plat} ---")
+        for u in urls:
+            ok, msg = check(u)
+            if ok:
+                print(f"[OK] {u} - {msg}")
+            else:
+                print(f"[FAIL] {u} - {msg}")
 

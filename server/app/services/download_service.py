@@ -35,6 +35,7 @@ from app.services.settings_service import get_app_settings
 from app.utils.filename import sanitize_filename
 from app.utils.platform_detector import PlatformValidationError, detect_platform
 from app.utils.progress_parser import ProgressUpdate, parse_ytdlp_progress_line
+from app.utils.validators import validate_safe_url, check_storage_and_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ AUDIO_QUALITY_FORMATS: dict[QualityValue, AudioFormat] = {
     "audio_opus": "opus",
 }
 
-_executor = ThreadPoolExecutor(max_workers=1)
+_executor = ThreadPoolExecutor(max_workers=3)
 _process_lock = threading.Lock()
 _active_processes: dict[str, subprocess.Popen[str]] = {}
 
@@ -72,6 +73,11 @@ def create_download_job(
     request: DownloadCreateRequest, session: Session
 ) -> DownloadJobResponse:
     _validate_download_shape(request)
+
+    try:
+        validate_safe_url(request.url)
+    except ValueError as exc:
+        raise DownloadError(str(exc), status_code=400)
 
     try:
         platform = detect_platform(request.url)
@@ -89,6 +95,15 @@ def create_download_job(
         raise DownloadError(exc.message, status_code=exc.status_code) from exc
 
     app_settings = get_app_settings(session)
+    download_root = Path(app_settings.download_folder).resolve()
+    try:
+        # Check permissions and storage (assuming 0 estimated size for now, as we only have duration/quality in Analysis)
+        # Or estimate size if needed: (duration * typical bitrate)
+        # But even without estimation, the 500MB buffer is checked.
+        check_storage_and_permissions(download_root)
+    except ValueError as exc:
+        raise DownloadError(str(exc), status_code=500)
+
     available_qualities = {option.value for option in analysis.qualities}
     if request.quality not in available_qualities:
         raise DownloadError("Selected quality is not available for this media.")

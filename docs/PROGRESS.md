@@ -370,8 +370,8 @@ For Phase 8 v1 platforms: TikTok, Instagram, and X.com.
 - [x] Add platform detection.
 - [x] Add metadata extraction.
 - [x] Normalize formats.
-- [/] Test single download with mocked backend coverage.
-- [/] Test audio-only support with shared quality/download path.
+- [x] Test single download with mocked backend coverage.
+- [x] Test audio-only support with shared quality/download path.
 - [x] Test error states.
 - [x] Add platform badge.
 - [x] Add platform-specific notes.
@@ -422,16 +422,16 @@ Make the project stable and safe.
 
 ## Tasks
 
-- [ ] Add tests.
-- [ ] Add error logs.
-- [ ] Add crash-safe job handling.
-- [ ] Add file permission checks.
-- [ ] Add storage checks.
-- [ ] Add URL safety validation.
-- [ ] Add rate/concurrency limits.
-- [ ] Add docs for setup.
-- [ ] Add docs for usage.
-- [ ] Add release checklist.
+- [x] Add tests.
+- [x] Add error logs.
+- [x] Add crash-safe job handling.
+- [x] Add file permission checks.
+- [x] Add storage checks.
+- [x] Add URL safety validation.
+- [x] Add rate/concurrency limits.
+- [x] Add docs for setup.
+- [x] Add docs for usage.
+- [x] Add release checklist.
 
 ## Exit Criteria
 
@@ -442,3 +442,4 @@ Phase 10 is complete when:
 - Error handling is strong.
 - Setup is documented.
 - The project is ready for real usage.
+- proper readme files for root, web, and server are created. with beautiful designs and all necessary information for users to get started.

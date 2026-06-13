@@ -1,13 +1,12 @@
-import json
 import logging
-import subprocess
+import yt_dlp
 from typing import Any, Literal, cast
 
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
 
-from app.platforms.base import YTDLP_BROWSER_HEADERS, _combined_output
+from app.platforms.base import YTDLP_BROWSER_HEADERS
 from app.schemas.analyze import AnalyzeResponse, QualityOption
 
 logger = logging.getLogger(__name__)
@@ -130,7 +129,7 @@ def _raise_network_blocked_error(url: str, stderr: str | None) -> None:
     )
 
 
-import yt_dlp
+
 
 # ---------------------------------------------------------------------------
 # yt-dlp runner
@@ -292,5 +291,5 @@ def _build_generic_response(
         qualities=qualities,
         rawFormats=raw_formats,
         isGeneric=True,
-        extractionMethod=cast(ExtractionMethod, method),
+        extractionMethod=method,
     )

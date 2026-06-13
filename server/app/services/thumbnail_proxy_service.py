@@ -97,7 +97,7 @@ def fetch_proxied_thumbnail(url: str) -> ProxiedThumbnail:
         ) from exc
     except (OSError, URLError) as exc:
         raise ThumbnailProxyError(
-            "Could not reach the thumbnail CDN.",
+            "Could not reach Instagram's thumbnail CDN.",
             status_code=502,
         ) from exc
 

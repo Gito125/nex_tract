@@ -1,7 +1,6 @@
 import json
 import subprocess
 from typing import Any, Literal
-from urllib.parse import ParseResult
 
 from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS, _combined_output
 from app.services.exceptions import AnalyzeError, MediaUnavailableError

@@ -125,11 +125,11 @@ def list_history_items(
             )
         )
     if status:
-        filters.append(DownloadHistoryItem.status == status)
+        filters.append(col(DownloadHistoryItem.status) == status)
     if from_date:
-        filters.append(DownloadHistoryItem.completed_at >= from_date)
+        filters.append(col(DownloadHistoryItem.completed_at) >= from_date)
     if to_date:
-        filters.append(DownloadHistoryItem.completed_at <= to_date)
+        filters.append(col(DownloadHistoryItem.completed_at) <= to_date)
 
     statement = select(DownloadHistoryItem)
     count_statement = select(func.count()).select_from(DownloadHistoryItem)

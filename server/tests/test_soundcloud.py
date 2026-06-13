@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.platforms.soundcloud import SoundCloudAdapter, extract_soundcloud_metadata
-from app.services.exceptions import AnalyzeError, MediaUnavailableError
+from app.services.exceptions import MediaUnavailableError
 
 
 def test_soundcloud_detects_playlist() -> None:

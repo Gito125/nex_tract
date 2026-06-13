@@ -13,7 +13,6 @@ from sqlmodel import Session, col, select
 from app.db.database import engine
 from app.db.models import Playlist, PlaylistItem, PlaylistItemStatus, PlaylistStatus
 from app.platforms.base import PlatformValue
-from app.platforms.youtube import extract_youtube_metadata
 from app.schemas.analyze import PlaylistAnalyzeItem
 from app.schemas.download import AudioFormat, DownloadType, QualityValue
 from app.schemas.playlist import (
@@ -740,7 +739,7 @@ def _merge_estimate_kind(
         return incoming
     if current == "approximate" or incoming == "approximate":
         return "approximate"
-    if current == "unknown" or incoming == "unknown":
+    if incoming == "unknown":
         return "unknown"
     return "exact"
 

@@ -1,8 +1,8 @@
 import yt_dlp
-from typing import Any
+from typing import Any, cast
 from urllib.parse import ParseResult
 
-from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS
+from app.platforms.base import PlatformAdapter, DEFAULT_USER_AGENT, MediaType
 from app.services.exceptions import AnalyzeError, MediaUnavailableError
 
 SUPPORTED_FACEBOOK_HOSTS = {"facebook.com", "www.facebook.com", "m.facebook.com", "fb.watch"}
@@ -13,10 +13,10 @@ class FacebookAdapter(PlatformAdapter):
     display_name = "Facebook"
     hosts = SUPPORTED_FACEBOOK_HOSTS
 
-    def detect_media_type(self, parsed: ParseResult) -> str:
+    def detect_media_type(self, parsed: ParseResult) -> MediaType:
         return "video"
 
-    def extract_metadata(self, url: str, media_type: str) -> dict[str, Any]:
+    def extract_metadata(self, url: str, media_type: MediaType) -> dict[str, Any]:
         return extract_facebook_metadata(url)
 
 
@@ -29,15 +29,15 @@ def extract_facebook_metadata(
         "no_warnings": True,
         "extract_flat": True,
         "socket_timeout": timeout,
-        "user_agent": next((v for k, v in YTDLP_BROWSER_HEADERS if k.lower() == "user-agent"), None),
+        "user_agent": DEFAULT_USER_AGENT,
     }
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(cast(Any, ydl_opts)) as ydl:
             payload = ydl.extract_info(url, download=False)
             if payload is None:
                 _raise_facebook_error("Video is unavailable")
-            return payload
+            return cast(dict[str, Any], payload)
     except Exception as e:
         _raise_facebook_error(str(e))
         # _raise_facebook_error always raises, but for type checking:

@@ -1,6 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from typing import cast
 from urllib.parse import quote, urljoin, urlparse
 
 import httpx
@@ -17,16 +18,16 @@ MEDIA_ACCEPT_HEADER = (
     "image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,*/*;q=0.8"
 )
 MAX_REDIRECTS = 3
-
-
+ 
+ 
 @dataclass
 class ProxiedInstagramMedia:
     response: httpx.Response
     client: httpx.AsyncClient
-
+ 
     @property
     def content_type(self) -> str:
-        return self.response.headers.get("content-type", "application/octet-stream")
+        return cast(str, self.response.headers.get("content-type", "application/octet-stream"))
 
     async def iter_bytes(self) -> AsyncIterator[bytes]:
         try:

@@ -1,72 +1,80 @@
-# Nextract
+<div align="center">
+  <img src="src-tauri/icons/icon.png" alt="Nextract Logo" width="128" />
+  <h1>Nextract</h1>
+  <p><strong>A clean, local-first media extraction and downloading app.</strong></p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/Tauri-v2-blue?logo=tauri" alt="Tauri" />
+    <img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js" />
+    <img src="https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi" alt="FastAPI" />
+    <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python" alt="Python" />
+    <img src="https://img.shields.io/badge/Rust-1.80-000000?logo=rust" alt="Rust" />
+  </p>
+</div>
 
-**Nextract** is a clean, local-first media extraction and downloading app.
+---
 
-The name comes from **Nexus + Extract**:
-- **Nexus**: a connection point between platforms, media, and the user.
-- **Extract**: pulling allowed media into an organized personal vault.
+## 🌟 Vision
 
-Nextract starts as a YouTube downloader with support for video qualities, audio-only downloads, and full playlists. It later grows into a broader social media downloader for supported platforms such as TikTok, Instagram, X.com, Facebook, Reddit, Vimeo, and others where technically and legally appropriate.
+**Nextract** (Nexus + Extract) acts as a connection point between platforms, media, and the user—pulling allowed media into an organized personal vault. 
 
-## Core Principle
+It starts as a powerful YouTube downloader supporting multiple video qualities, audio-only downloads, and full playlists, wrapped in a polished productivity tool that feels like a native OS application, rather than a suspicious downloader website.
 
-Nextract should feel like a polished productivity tool, not a suspicious downloader website.
-
-The experience should be:
-
-```txt
+The experience is simple:
+```text
 Paste link → Analyze → Choose quality → Download → Organize
 ```
 
-## Tech Direction
+## ✨ Features
 
-- Frontend: Next.js
-- Backend: Python FastAPI
-- Python project manager: uv
-- Downloader engine: yt-dlp
-- Media processing: FFmpeg
-- Database: SQLite for local-first MVP
-- Future desktop packaging: Tauri or Electron
+- **Beautiful Local-First App**: A seamless native desktop experience (powered by Tauri v2).
+- **Format Flexibility**: Download media in multiple qualities or extract audio directly.
+- **Batch Downloading**: Support for full playlist downloads and a built-in download queue.
+- **Robust Under the Hood**: Powered by `yt-dlp` and `FFmpeg` for flawless processing and format conversion.
+- **Resilient**: Graceful shutdown handling and resumption for interrupted downloads.
+- **Organized**: Built-in history, settings, and structured file saving.
 
-## Project Structure
+## 🏗️ Architecture
 
-```txt
-nextract/
-  web/        Next.js frontend
-  server/     FastAPI backend
-  downloads/  saved media files
-  data/       SQLite database
+Nextract uses the **Tauri Sidecar Pattern** to seamlessly unite a Next.js static UI, a Python backend, and native OS APIs.
+
+```mermaid
+graph TD
+    subgraph Tauri OS Shell
+        UI[Next.js WebView<br/>Static Export]
+        Rust[Tauri Rust Core<br/>Window & File System Manager]
+        Sidecar[FastAPI Python Binary<br/>PyInstaller Single Executable]
+    end
+
+    UI <-->|HTTP API| Sidecar
+    UI <-->|WebSockets / Events| Sidecar
+    Rust -->|Spawns & Kills| Sidecar
+    Rust -->|Bootstraps| UI
+    
+    Sidecar --> DB[(SQLite DB)]
+    Sidecar --> YTDLP[yt-dlp Engine]
+    Sidecar --> FFMPEG[FFmpeg Engine]
 ```
 
-## Documentation Files
+## 🚀 Getting Started
 
-```txt
-docs/
-  01-vision.md
-  02-mini-srs.md
-  03-architecture.md
-  04-design.md
-  05-folder-structure.md
-  PROGRESS.md
-```
+### For Users
+See our [Usage Guide](docs/USAGE.md) for information on how to navigate the app, manage downloads, and configure your settings.
 
-## MVP Target
+### For Developers
+Nextract is built with Next.js, FastAPI, and Tauri.
+Please refer to the comprehensive [Setup Guide](docs/SETUP.md) for Linux-focused system prerequisites and local development instructions.
 
-The first working version should allow the user to:
+## 📚 Documentation
 
-1. Paste a YouTube video link.
-2. Analyze the link.
-3. Preview the media.
-4. Choose a quality.
-5. Download the video.
-6. Paste a YouTube playlist link.
-7. Download the playlist.
-8. Track progress.
-9. View download history.
-10. Change the download folder.
+- [Project Vision & Ethics](docs/01-vision.md)
+- [Architecture Details](docs/03-architecture.md)
+- [Setup Instructions](docs/SETUP.md)
+- [Usage Guide](docs/USAGE.md)
+- [Release Checklist](docs/RELEASE_CHECKLIST.md)
 
-## Product Boundary
+---
 
-Nextract is for downloading media the user owns, has permission to download, or is legally allowed to save.
+## 🛡️ Product Boundaries & Ethics
 
-It must not be designed for DRM bypassing, piracy, private account scraping, paywall bypassing, or unauthorized downloading.
+Nextract is designed exclusively for downloading media the user owns, has explicit permission to download, or is legally allowed to save. It must not be designed or used for DRM bypassing, piracy, private account scraping, paywall bypassing, or unauthorized downloading.

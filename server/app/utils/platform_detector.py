@@ -3,6 +3,8 @@ from urllib.parse import urlparse
 from app.platforms.base import PlatformInfo, PlatformValidationError
 from app.platforms.registry import ADAPTERS
 
+__all__ = ["detect_platform", "PlatformInfo", "PlatformValidationError"]
+
 
 def detect_platform(url: str) -> PlatformInfo:
     parsed = urlparse(url.strip())

@@ -1,12 +1,10 @@
 import json
 import subprocess
-from typing import Any, Literal
+from typing import Any
 from urllib.parse import ParseResult
 
-from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS, _combined_output
+from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS, _combined_output, MediaType
 from app.services.exceptions import AnalyzeError, MediaUnavailableError
-
-MediaType = Literal["video", "playlist"]
 
 SUPPORTED_VIMEO_HOSTS = {"vimeo.com"}
 

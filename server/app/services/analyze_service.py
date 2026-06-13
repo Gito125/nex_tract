@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
+from app.platforms.base import MediaType
 from app.platforms.registry import get_adapter
 from app.schemas.analyze import AnalyzeResponse, PlaylistAnalyzeItem, PlaylistSummary
 from app.services.exceptions import AnalyzeError, UnsupportedPlatformError
@@ -191,10 +192,10 @@ def _creator(metadata: dict[str, Any]) -> str | None:
 def _media_type_from_metadata(
     metadata: dict[str, Any],
     formats: list[dict[str, Any]],
-) -> str:
+) -> MediaType:
     # If the adapter explicitly injected a media type hint, use it
     if "_nextract_media_type" in metadata:
-        return metadata["_nextract_media_type"]
+        return cast(MediaType, metadata["_nextract_media_type"])
 
     if any(_has_video(item) for item in formats):
         return "video"

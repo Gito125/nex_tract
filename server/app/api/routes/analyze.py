@@ -7,6 +7,7 @@ from app.services.generic_service import run_generic_pipeline
 from app.db.database import engine
 from sqlmodel import Session
 from app.services.settings_service import get_app_settings
+from app.utils.validators import validate_safe_url
 
 router = APIRouter(tags=["analyze"])
 
@@ -14,13 +15,21 @@ router = APIRouter(tags=["analyze"])
 @router.post("/analyze", response_model=AnalyzeResponse)
 def analyze_media(request: AnalyzeRequest) -> AnalyzeResponse:
     try:
+        validate_safe_url(str(request.url))
         return analyze_url(str(request.url))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except AnalyzeError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
 @router.post("/analyze/generic", response_model=AnalyzeResponse)
 def analyze_generic(request: AnalyzeRequest) -> AnalyzeResponse:
+    try:
+        validate_safe_url(str(request.url))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
     with Session(engine) as session:
         app_settings = get_app_settings(session)
         if not app_settings.generic_fallback_enabled:

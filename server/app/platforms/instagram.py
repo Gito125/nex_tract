@@ -1,7 +1,7 @@
 import json
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import ParseResult, quote, urlencode, urlparse
+from urllib.parse import ParseResult, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from app.platforms.base import PlatformAdapter, PlatformValidationError

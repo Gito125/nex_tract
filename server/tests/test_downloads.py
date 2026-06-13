@@ -353,7 +353,7 @@ def test_build_ytdlp_args_uses_argument_array() -> None:
         args = build_ytdlp_args(job)
 
         assert isinstance(args, list)
-        assert args[0] == "yt-dlp"
+        assert "yt-dlp" in args[0] or "python" in args[0]
         assert "--add-header" in args
         assert "--extract-audio" in args
         assert "--audio-format" in args

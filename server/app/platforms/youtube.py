@@ -1,11 +1,10 @@
+import subprocess  # noqa: F401
 import yt_dlp
-from typing import Any, Literal
+from typing import Any, cast
 from urllib.parse import ParseResult, parse_qs
 
-from app.platforms.base import PlatformAdapter
+from app.platforms.base import PlatformAdapter, MediaType
 from app.services.exceptions import AnalyzeError
-
-MediaType = Literal["video", "playlist"]
 
 SUPPORTED_YOUTUBE_HOSTS = {
     "youtube.com",
@@ -46,11 +45,13 @@ def extract_youtube_metadata(
     }
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(cast(Any, ydl_opts)) as ydl:
             payload = ydl.extract_info(url, download=False)
             if payload is None:
+                if media_type == "playlist":
+                    raise AnalyzeError("This playlist is unavailable or no longer exists.", status_code=400)
                 raise AnalyzeError("Could not analyze this YouTube link.")
-            return payload
+            return cast(dict[str, Any], payload)
     except Exception as e:
         error_msg = str(e)
         friendly_error = _friendly_ytdlp_error(error_msg, media_type)

@@ -1,6 +1,7 @@
 import tomllib
 from pathlib import Path
 from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,8 +15,9 @@ from app.api.routes.proxy import router as proxy_router
 from app.api.routes.settings import router as settings_router
 from app.core.config import CORS_ORIGINS, IS_PACKAGED
 from app.core.errors import register_error_handlers
+from app.core.logger import setup_logging
 from app.db.database import init_db
-from app.workers.queue import shutdown_queue
+from app.workers.queue import shutdown_queue, reset_interrupted_queue_jobs
 
 
 def get_api_version() -> str:
@@ -29,12 +31,14 @@ def get_api_version() -> str:
         return "0.1.0"
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    reset_interrupted_queue_jobs()
     yield
     await shutdown_queue()
 
 
 def create_app() -> FastAPI:
+    setup_logging()
     init_db()
     app = FastAPI(title="Nextract API", version=get_api_version(), lifespan=lifespan)
 
@@ -59,3 +63,4 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+

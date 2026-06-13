@@ -1,7 +1,7 @@
-import json
 import subprocess
+import yt_dlp
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from urllib.parse import ParseResult
 
 from app.services.exceptions import AnalyzeError
@@ -15,6 +15,7 @@ YTDLP_BROWSER_HEADERS = [
     "--add-header",
     "Accept-Language: en-US,en;q=0.9",
 ]
+DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
 
 
 @dataclass(frozen=True)
@@ -100,7 +101,7 @@ class PlatformAdapter:
         return args
 
 
-import yt_dlp
+
 
 def run_ytdlp_metadata(
     url: str,
@@ -114,15 +115,15 @@ def run_ytdlp_metadata(
         "no_warnings": True,
         "extract_flat": True if media_type == "playlist" else False,
         "socket_timeout": timeout,
-        "user_agent": next((v for k, v in YTDLP_BROWSER_HEADERS if k.lower() == "user-agent"), None),
+        "user_agent": DEFAULT_USER_AGENT,
     }
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(cast(Any, ydl_opts)) as ydl:
             payload = ydl.extract_info(url, download=False)
             if payload is None:
                 raise AnalyzeError(f"Could not analyze this {display_name} link.")
-            return payload
+            return cast(dict[str, Any], payload)
     except Exception as e:
         error_msg = str(e)
         friendly_error = friendly_ytdlp_error(error_msg, media_type, display_name)
