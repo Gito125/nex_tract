@@ -261,7 +261,7 @@ wheels = [
 
 [[package]]
 name = "nextract-server"
-version = "1.12.1"
+version = "1.13.0"
 source = { virtual = "." }
 dependencies = [
     { name = "beautifulsoup4" },
