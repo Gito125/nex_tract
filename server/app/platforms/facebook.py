@@ -1,9 +1,8 @@
-import json
-import subprocess
+import yt_dlp
 from typing import Any
 from urllib.parse import ParseResult
 
-from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS, _combined_output
+from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS
 from app.services.exceptions import AnalyzeError, MediaUnavailableError
 
 SUPPORTED_FACEBOOK_HOSTS = {"facebook.com", "www.facebook.com", "m.facebook.com", "fb.watch"}
@@ -25,55 +24,24 @@ def extract_facebook_metadata(
     url: str,
     timeout: int = 45,
 ) -> dict[str, Any]:
-    args = [
-        "yt-dlp",
-        "--dump-single-json",
-        "--no-warnings",
-        "--no-playlist",
-        *YTDLP_BROWSER_HEADERS,
-        url,
-    ]
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "extract_flat": True,
+        "socket_timeout": timeout,
+        "user_agent": next((v for k, v in YTDLP_BROWSER_HEADERS if k.lower() == "user-agent"), None),
+    }
 
     try:
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
-    except FileNotFoundError as exc:
-        raise AnalyzeError(
-            "yt-dlp is not installed or is not available to the backend.",
-            status_code=500,
-        ) from exc
-    except subprocess.TimeoutExpired as exc:
-        raise AnalyzeError(
-            "Analysis timed out. Please try again.",
-            status_code=504,
-        ) from exc
-
-    output = _combined_output(result)
-
-    # yt-dlp outputs "null" (JSON null) on some failure modes — treat that as a failure.
-    stdout_stripped = result.stdout.strip()
-    failed = result.returncode != 0 or not stdout_stripped or stdout_stripped == "null"
-
-    if failed:
-        _raise_facebook_error(output)
-
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise AnalyzeError(
-            "The analyzer returned unreadable metadata. Please try another link.",
-            status_code=502,
-        ) from exc
-
-    if not isinstance(payload, dict):
-        _raise_facebook_error(output)
-
-    return payload
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            payload = ydl.extract_info(url, download=False)
+            if payload is None:
+                _raise_facebook_error("Video is unavailable")
+            return payload
+    except Exception as e:
+        _raise_facebook_error(str(e))
+        # _raise_facebook_error always raises, but for type checking:
+        return {}
 
 
 def _raise_facebook_error(output: str) -> None:

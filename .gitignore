@@ -17,8 +17,14 @@ node_modules
 .next
 out
 
-# production
+# production / build
 build
+*.log
+ffmpeg
+ffmpeg.exe
+nextract-server.spec
+nextract-server
+nextract-server-x86_64-unknown-linux-gnu
 
 # misc
 .DS_Store

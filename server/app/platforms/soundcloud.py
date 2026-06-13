@@ -1,9 +1,8 @@
-import json
-import subprocess
+import yt_dlp
 from typing import Any, Literal
 from urllib.parse import ParseResult
 
-from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS, _combined_output
+from app.platforms.base import PlatformAdapter, YTDLP_BROWSER_HEADERS
 from app.services.exceptions import AnalyzeError, MediaUnavailableError
 
 MediaType = Literal["video", "playlist"]
@@ -36,71 +35,30 @@ def extract_soundcloud_metadata(
     media_type: MediaType,
     timeout: int = 45,
 ) -> dict[str, Any]:
-    args = ["yt-dlp", "--dump-single-json", "--no-warnings", *YTDLP_BROWSER_HEADERS]
-
-    if media_type == "playlist":
-        args.extend(["--flat-playlist", "--yes-playlist", "--ignore-errors"])
-    else:
-        args.append("--no-playlist")
-
-    args.append(url)
-
-    try:
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
-    except FileNotFoundError as exc:
-        raise AnalyzeError(
-            "yt-dlp is not installed or is not available to the backend.",
-            status_code=500,
-        ) from exc
-    except subprocess.TimeoutExpired as exc:
-        raise AnalyzeError(
-            "Analysis timed out. Please try again.",
-            status_code=504,
-        ) from exc
-
-    output = _combined_output(result)
-    lower_output = output.lower()
-
-    if "private" in lower_output or "not available" in lower_output or "could not download webpage" in lower_output:
-        raise MediaUnavailableError(
-            "This SoundCloud track is private or unavailable in your region."
-        )
-
-    if result.returncode != 0:
-        raise AnalyzeError(
-            _friendly_ytdlp_error(output, media_type),
-            status_code=400,
-        )
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "extract_flat": True if media_type == "playlist" else False,
+        "socket_timeout": timeout,
+        "user_agent": next((v for k, v in YTDLP_BROWSER_HEADERS if k.lower() == "user-agent"), None),
+    }
 
     try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise AnalyzeError(
-            "The analyzer returned unreadable metadata. Please try another link.",
-            status_code=502,
-        ) from exc
-
-    if not isinstance(payload, dict):
-        raise AnalyzeError(
-            _friendly_ytdlp_error(output, media_type),
-            status_code=400,
-        )
-        
-    # Inject audio-only type into payload so it's handled properly by analyze_service
-    # If it's a playlist, leave it as playlist. If it's a single track, set to 'audio'.
-    if payload.get("_type") == "playlist":
-        payload["_nextract_media_type"] = "playlist"
-    else:
-        payload["_nextract_media_type"] = "audio"
-
-    return payload
-
-
-def _friendly_ytdlp_error(output: str, media_type: MediaType) -> str:
-    return "Could not analyze this SoundCloud link."
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            payload = ydl.extract_info(url, download=False)
+            if payload is None:
+                raise MediaUnavailableError("This SoundCloud track is private or unavailable.")
+            
+            # Inject audio-only type into payload so it's handled properly by analyze_service
+            # If it's a playlist, leave it as playlist. If it's a single track, set to 'audio'.
+            if payload.get("_type") == "playlist":
+                payload["_nextract_media_type"] = "playlist"
+            else:
+                payload["_nextract_media_type"] = "audio"
+                
+            return payload
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "private" in error_msg or "not available" in error_msg:
+            raise MediaUnavailableError("This SoundCloud track is private or unavailable.")
+        raise AnalyzeError("Could not analyze this SoundCloud link.", status_code=400) from e

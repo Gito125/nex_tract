@@ -45,8 +45,11 @@ class GenericAdapter(PlatformAdapter):
         sites accept the request. Delegates format/audio logic to the base
         implementation.
         """
+        import sys
         args = [
-            "yt-dlp",
+            sys.executable,
+            "-m",
+            "yt_dlp",
             "--no-warnings",
             "--no-simulate",
             "--no-overwrites",

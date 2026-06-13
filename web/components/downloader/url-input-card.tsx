@@ -2,6 +2,20 @@
 
 import { FormEvent, useRef, useState } from "react";
 import { Clipboard, Link2, LoaderCircle, Search, X } from "lucide-react";
+import { isTauri } from "@/lib/env";
+
+/**
+ * Read text from clipboard using the best available API.
+ * Inside Tauri: uses @tauri-apps/plugin-clipboard-manager (avoids webview security block).
+ * In browser/dev: falls back to navigator.clipboard.
+ */
+async function readClipboardText(): Promise<string> {
+  if (isTauri()) {
+    const { readText } = await import("@tauri-apps/plugin-clipboard-manager");
+    return (await readText()) ?? "";
+  }
+  return navigator.clipboard.readText();
+}
 
 export function UrlInputCard({
   error,
@@ -35,7 +49,7 @@ export function UrlInputCard({
       return;
     }
     try {
-      const text = await navigator.clipboard.readText();
+      const text = await readClipboardText();
       if (text) {
         onUrlChange(text);
         setUtilityMessage("Link pasted from clipboard.");

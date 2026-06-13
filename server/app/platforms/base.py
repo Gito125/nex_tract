@@ -64,8 +64,11 @@ class PlatformAdapter:
         audio_format: str | None,
         media_type: MediaType = "video",
     ) -> list[str]:
+        import sys
         args = [
-            "yt-dlp",
+            sys.executable,
+            "-m",
+            "yt_dlp",
             "--no-warnings",
             "--no-simulate",
             "--no-overwrites",
@@ -97,6 +100,8 @@ class PlatformAdapter:
         return args
 
 
+import yt_dlp
+
 def run_ytdlp_metadata(
     url: str,
     *,
@@ -104,55 +109,24 @@ def run_ytdlp_metadata(
     display_name: str,
     timeout: int = 45,
 ) -> dict[str, Any]:
-    args = ["yt-dlp", "--dump-single-json", "--no-warnings", *YTDLP_BROWSER_HEADERS]
-
-    if media_type == "playlist":
-        args.extend(["--flat-playlist", "--yes-playlist", "--ignore-errors"])
-    else:
-        args.append("--no-playlist")
-
-    args.append(url)
-
-    try:
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
-    except FileNotFoundError as exc:
-        raise AnalyzeError(
-            "yt-dlp is not installed or is not available to the backend.",
-            status_code=500,
-        ) from exc
-    except subprocess.TimeoutExpired as exc:
-        raise AnalyzeError(
-            "Analysis timed out. Please try again.",
-            status_code=504,
-        ) from exc
-
-    if result.returncode != 0:
-        raise AnalyzeError(
-            friendly_ytdlp_error(_combined_output(result), media_type, display_name),
-            status_code=400,
-        )
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "extract_flat": True if media_type == "playlist" else False,
+        "socket_timeout": timeout,
+        "user_agent": next((v for k, v in YTDLP_BROWSER_HEADERS if k.lower() == "user-agent"), None),
+    }
 
     try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise AnalyzeError(
-            "The analyzer returned unreadable metadata. Please try another link.",
-            status_code=502,
-        ) from exc
-
-    if not isinstance(payload, dict):
-        raise AnalyzeError(
-            friendly_ytdlp_error(_combined_output(result), media_type, display_name),
-            status_code=400,
-        )
-
-    return payload
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            payload = ydl.extract_info(url, download=False)
+            if payload is None:
+                raise AnalyzeError(f"Could not analyze this {display_name} link.")
+            return payload
+    except Exception as e:
+        error_msg = str(e)
+        friendly_error = friendly_ytdlp_error(error_msg, media_type, display_name)
+        raise AnalyzeError(friendly_error, status_code=400) from e
 
 
 def friendly_ytdlp_error(

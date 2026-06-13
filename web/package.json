@@ -1,6 +1,6 @@
 {
   "name": "@nextract/web",
-  "version": "1.10.4",
+  "version": "1.11.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3004",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "lucide-react": "^1.14.0",
     "next": "16.2.7",
     "react": "19.2.4",

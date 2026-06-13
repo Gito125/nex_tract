@@ -130,6 +130,8 @@ def _raise_network_blocked_error(url: str, stderr: str | None) -> None:
     )
 
 
+import yt_dlp
+
 # ---------------------------------------------------------------------------
 # yt-dlp runner
 # ---------------------------------------------------------------------------
@@ -138,53 +140,26 @@ def _run_ytdlp(
     url: str, extra_args: list[str], timeout: int = 45
 ) -> tuple[dict[str, Any] | None, str | None]:
     """
-    Run yt-dlp --dump-single-json and return (payload, stderr).
-    payload is None on any failure; stderr is always returned for diagnostics.
+    Run yt-dlp via its Python API and return (payload, error_message).
+    payload is None on any failure.
     """
-    args = [
-        "yt-dlp",
-        "--dump-single-json",
-        "--no-warnings",
-        "--no-playlist",
-        *extra_args,
-        url,
-    ]
+    # Map CLI-style extra_args to ydl_opts where possible,
+    # but for simplicity we'll start with standard opts.
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "extract_flat": True,
+        "socket_timeout": timeout,
+    }
 
     try:
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        logger.warning("yt-dlp timed out after %ss for %s", timeout, url)
-        return None, "timeout"
-    except FileNotFoundError:
-        logger.error("yt-dlp not found — is it installed?")
-        return None, "yt-dlp not found"
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            payload = ydl.extract_info(url, download=False)
+            return payload, None
+    except Exception as e:
+        logger.error("yt-dlp error for %s: %s", url, str(e))
+        return None, str(e)
 
-    stderr = result.stderr.strip() or None
-
-    if result.returncode != 0 or stderr:
-        logger.warning(
-            "yt-dlp exited %s for %s | stderr: %s",
-            result.returncode, url, (stderr or "")[:800],
-        )
-
-    if result.returncode != 0:
-        return None, stderr
-
-    stdout = result.stdout.strip()
-    if not stdout or stdout == "null":
-        return None, stderr
-
-    try:
-        payload = json.loads(stdout)
-        return (payload if isinstance(payload, dict) else None), stderr
-    except json.JSONDecodeError:
-        return None, stderr
 
 
 

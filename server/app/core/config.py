@@ -43,7 +43,13 @@ class Settings(BaseSettings):
     ffmpeg_path: str = FFMPEG_PATH
     port: int = PORT
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["tauri://localhost", "https://tauri.localhost"] if IS_PACKAGED else [
+        default_factory=lambda: [
+            "tauri://localhost",
+            "https://tauri.localhost",
+            "http://tauri.localhost",
+            "http://localhost",
+            "http://127.0.0.1",
+        ] if IS_PACKAGED else [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "http://localhost:3004",

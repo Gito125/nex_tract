@@ -1,9 +1,12 @@
 {
   "name": "nex_tract",
-  "version": "1.10.4",
+  "version": "1.11.0",
   "description": "Nextract is a desktop/web application for downloading and managing media content from various sources. It provides a user-friendly interface for searching, downloading, and organizing media files, making it easier for users to access their favorite content.",
   "main": "index.js",
   "scripts": {
+    "build": "bash scripts/build.sh",
+    "dev": "bash scripts/dev.sh",
+    "tauri": "APPIMAGE_EXTRACT_AND_RUN=1 NO_STRIP=true tauri",
     "version": "echo 'Use ./scripts/version.sh instead' && exit 1",
     "release": "bash scripts/version.sh",
     "release:patch": "bash scripts/version.sh patch",

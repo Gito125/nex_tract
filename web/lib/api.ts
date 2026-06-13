@@ -15,12 +15,16 @@ import type {
   PlaylistSizeEstimateResponse,
   SettingsUpdateRequest,
 } from "@/lib/types";
+import { isTauri } from "@/lib/env";
 
 function getBaseUrl(): string {
-  if (typeof window !== "undefined" && (window as any).__TAURI__) {
+  if (isTauri()) {
     return "http://127.0.0.1:57000";
   }
-  return process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
+  return (
+    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
+    "http://localhost:8000"
+  );
 }
 const REQUEST_TIMEOUT_MS = 45_000; // 45 seconds timeout for API requests
 

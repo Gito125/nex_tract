@@ -21,6 +21,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .manage(SidecarState(Mutex::new(None)))
         .setup(|app| {
             let app_handle = app.handle().clone();
@@ -48,6 +49,24 @@ pub fn run() {
             std::fs::create_dir_all(&downloads_dir)
                 .expect("Failed to create downloads directory");
 
+            // Kill any existing zombie sidecar processes to free up the port
+            #[cfg(not(target_os = "windows"))]
+            {
+                let _ = std::process::Command::new("pkill")
+                    .arg("-f")
+                    .arg("nextract-server")
+                    .status();
+            }
+            #[cfg(target_os = "windows")]
+            {
+                let _ = std::process::Command::new("taskkill")
+                    .arg("/F")
+                    .arg("/IM")
+                    .arg("nextract-server.exe")
+                    .arg("/T")
+                    .status();
+            }
+
             // Spawn Python sidecar
             let sidecar_cmd = app_handle
                 .shell()
@@ -60,8 +79,29 @@ pub fn run() {
                 .env("NEXTRACT_PORT", API_PORT.to_string())
                 .env("NEXTRACT_ENV", "packaged");
 
-            let (_rx, child) = sidecar_cmd.spawn()
+            let (mut rx, child) = sidecar_cmd.spawn()
                 .expect("Failed to spawn Python sidecar");
+
+            // Consume sidecar output to prevent broken pipe crashes
+            tauri::async_runtime::spawn(async move {
+                while let Some(event) = rx.recv().await {
+                    match event {
+                        tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
+                            println!("Sidecar STDOUT: {}", String::from_utf8_lossy(&line));
+                        }
+                        tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
+                            eprintln!("Sidecar STDERR: {}", String::from_utf8_lossy(&line));
+                        }
+                        tauri_plugin_shell::process::CommandEvent::Error(err) => {
+                            eprintln!("Sidecar ERROR: {}", err);
+                        }
+                        tauri_plugin_shell::process::CommandEvent::Terminated(payload) => {
+                            println!("Sidecar Terminated: {:?}", payload);
+                        }
+                        _ => {}
+                    }
+                }
+            });
 
             // Store child process handle so we can kill on exit
             *app_handle.state::<SidecarState>().0.lock().unwrap() = Some(child);

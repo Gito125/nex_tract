@@ -394,7 +394,7 @@ Package Nextract as a desktop app.
 
 ## Tasks
 
-- [x] Choose Tauri or Electron.
+- [x] Choose Tauri.
 - [x] Define packaging strategy.
 - [x] Bundle frontend.
 - [x] Bundle backend.

@@ -5,7 +5,7 @@ set -e
 
 # Resolve the project root (directory containing this script)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "=== Nextract Production Build ==="
 echo "Project root: $PROJECT_ROOT"
@@ -48,6 +48,10 @@ if [ ! -f "package.json" ]; then
     pnpm init
     pnpm add -D @tauri-apps/cli
 fi
+
+# Export environment variables for AppImage bundling on modern Linux
+export APPIMAGE_EXTRACT_AND_RUN=1
+export NO_STRIP=true
 
 pnpm tauri build
 

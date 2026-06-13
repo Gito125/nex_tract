@@ -7,7 +7,7 @@ block_cipher = None
 yt_dlp_datas, yt_dlp_binaries, yt_dlp_hiddenimports = collect_all('yt_dlp')
 
 a = Analysis(
-    ['app/main.py'],
+    ['run_server.py'],
     pathex=[str(Path.cwd())],
     binaries=yt_dlp_binaries,
     datas=yt_dlp_datas,
@@ -27,6 +27,8 @@ a = Analysis(
         'sqlalchemy.dialects.sqlite',
         'sqlmodel',
         'aiosqlite',
+        'app',
+        'app.main',
     ],
     hookspath=[],
     hooksconfig={},
