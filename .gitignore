@@ -70,3 +70,7 @@ src-tauri/resources/ffmpeg.exe
 
 # Development Reports
 docs/dev_reports/
+
+# AI
+CLAUDE.md
+GEMINI.md
