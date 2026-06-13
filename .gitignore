@@ -19,6 +19,9 @@ out
 
 # production / build
 build
+server/build/
+server/dist/
+src-tauri/binaries/
 *.log
 ffmpeg
 ffmpeg.exe
