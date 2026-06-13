@@ -17,6 +17,7 @@ class SettingsResponse(BaseModel):
     theme: ThemeValue
     filename_template: str = Field(alias="filenameTemplate")
     skip_existing: bool = Field(alias="skipExisting")
+    generic_fallback_enabled: bool = Field(alias="genericFallbackEnabled")
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
 
@@ -34,3 +35,4 @@ class SettingsUpdateRequest(BaseModel):
     theme: ThemeValue | None = None
     filename_template: str | None = Field(default=None, alias="filenameTemplate")
     skip_existing: bool | None = Field(default=None, alias="skipExisting")
+    generic_fallback_enabled: bool | None = Field(default=None, alias="genericFallbackEnabled")

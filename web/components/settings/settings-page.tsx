@@ -15,6 +15,7 @@ import {
   FileText,
   Layers,
   SkipForward,
+  Cpu,
 } from "lucide-react";
 
 import { applyTheme } from "@/app/providers";
@@ -188,6 +189,15 @@ export function SettingsPage() {
             description="Prevents starting a duplicate if a completed download already exists."
             checked={form.skipExisting ?? false}
             onChange={(v) => updateForm(setDraft, { skipExisting: v })}
+          />
+
+          {/* Generic fallback toggle */}
+          <ToggleRow
+            icon={Cpu}
+            label="Enable generic fallback engine"
+            description="Attempt to extract media from unsupported sites using advanced scraping techniques."
+            checked={form.genericFallbackEnabled ?? true}
+            onChange={(v) => updateForm(setDraft, { genericFallbackEnabled: v })}
           />
         </SettingsSection>
 
@@ -647,6 +657,7 @@ function toForm(settings: AppSettings): SettingsUpdateRequest {
     theme:             settings.theme,
     filenameTemplate:  settings.filenameTemplate,
     skipExisting:      settings.skipExisting,
+    genericFallbackEnabled: settings.genericFallbackEnabled,
   };
 }
 

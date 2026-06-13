@@ -56,6 +56,8 @@ def update_app_settings(
         )
     if request.skip_existing is not None:
         settings.skip_existing = request.skip_existing
+    if request.generic_fallback_enabled is not None:
+        settings.generic_fallback_enabled = request.generic_fallback_enabled
 
     settings.updated_at = _utc_now()
     session.add(settings)
@@ -74,6 +76,7 @@ def settings_to_response(settings: AppSettings) -> SettingsResponse:
         theme=cast(ThemeValue, settings.theme),
         filenameTemplate=settings.filename_template,
         skipExisting=settings.skip_existing,
+        genericFallbackEnabled=settings.generic_fallback_enabled,
         createdAt=settings.created_at,
         updatedAt=settings.updated_at,
     )

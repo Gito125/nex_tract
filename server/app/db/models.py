@@ -146,5 +146,6 @@ class AppSettings(SQLModel, table=True):
     theme: str = Field(default="system")
     filename_template: str = Field(default="{title}-{id}-{quality}")
     skip_existing: bool = Field(default=False)
+    generic_fallback_enabled: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)

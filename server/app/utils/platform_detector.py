@@ -22,5 +22,5 @@ def detect_platform(url: str) -> PlatformInfo:
         )
 
     raise PlatformValidationError(
-        "This platform is not supported yet. Try YouTube, TikTok, Instagram, or X."
+        "This platform is not natively supported."
     )

@@ -49,6 +49,26 @@ from app.utils.platform_detector import PlatformValidationError, detect_platform
             "x",
             "https://x.com/user/status/1234567890",
         ),
+        (
+            "https://vimeo.com/123456789",
+            "vimeo",
+            "https://vimeo.com/123456789",
+        ),
+        (
+            "https://www.reddit.com/r/Nextract/comments/123456/test_video/",
+            "reddit",
+            "https://www.reddit.com/r/Nextract/comments/123456/test_video/",
+        ),
+        (
+            "https://www.facebook.com/watch/?v=1234567890",
+            "facebook",
+            "https://www.facebook.com/watch/?v=1234567890",
+        ),
+        (
+            "https://soundcloud.com/artist/track",
+            "soundcloud",
+            "https://soundcloud.com/artist/track",
+        ),
     ],
 )
 def test_detect_platform_supported_single_links(
@@ -79,11 +99,9 @@ def test_detect_platform_rejects_invalid_protocols(url: str) -> None:
 
 def test_detect_platform_rejects_unsupported_hosts() -> None:
     with pytest.raises(PlatformValidationError) as exc:
-        detect_platform("https://vimeo.com/123")
+        detect_platform("https://example.com/123")
 
-    assert exc.value.message == (
-        "This platform is not supported yet. Try YouTube, TikTok, Instagram, or X."
-    )
+    assert exc.value.message == "This platform is not natively supported."
 
 
 @pytest.mark.parametrize(

@@ -77,12 +77,8 @@ def create_playlist_download(
     except PlatformValidationError as exc:
         raise PlaylistError(exc.message, status_code=400) from exc
 
-    if platform.platform != "youtube":
-        raise PlaylistError(
-            "Playlist downloads are currently only available for YouTube."
-        )
     if platform.media_type != "playlist":
-        raise PlaylistError("Paste a YouTube playlist link to start a playlist download.")
+        raise PlaylistError("Paste a playlist link to start a playlist download.")
 
     try:
         analysis = analyze_url(platform.url)
@@ -100,9 +96,18 @@ def create_playlist_download(
         if request.skip_existing is not None
         else app_settings.skip_existing
     )
-    playlist_folder = Path(app_settings.download_folder).resolve() / sanitize_filename(
+    from app.platforms.registry import get_adapter
+    platform_name = "Other"
+    if analysis.platform != "generic":
+        try:
+            adapter = get_adapter(analysis.platform)
+            platform_name = adapter.display_name
+        except ValueError:
+            pass
+            
+    playlist_folder = Path(app_settings.download_folder).resolve() / platform_name / sanitize_filename(
         analysis.title,
-        fallback="YouTube Playlist",
+        fallback="Playlist",
     )
     playlist_folder.mkdir(parents=True, exist_ok=True)
 
@@ -222,12 +227,13 @@ def estimate_playlist_sizes(
 def _extract_size_metadata(url: str) -> dict[str, Any] | None:
     try:
         platform = detect_platform(url)
-        if platform.platform != "youtube":
+        if platform.platform not in ("youtube", "vimeo", "soundcloud"):
             return None
-        return extract_youtube_metadata(
+        from app.platforms.registry import get_adapter
+        adapter = get_adapter(platform.platform)
+        return adapter.extract_metadata(
             platform.url,
             "video",
-            timeout=SIZE_ESTIMATE_ITEM_TIMEOUT,
         )
     except (AnalyzeError, PlatformValidationError):
         return None

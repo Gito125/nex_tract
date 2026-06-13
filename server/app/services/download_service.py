@@ -658,13 +658,27 @@ def _render_filename_template(job: DownloadJob, quality: QualityValue) -> str:
 
 
 def _output_root_for_job(job: DownloadJob, download_root: Path) -> Path:
+    from app.platforms.registry import get_adapter
+    from typing import cast
+    from app.platforms.base import PlatformValue
+
+    platform_name = "Other"
+    if job.platform and job.platform != "generic":
+        try:
+            adapter = get_adapter(cast(PlatformValue, job.platform))
+            platform_name = adapter.display_name
+        except ValueError:
+            pass
+            
+    base_path = download_root / platform_name
+
     if job.media_type == "gallery":
         return (
-            download_root / "images" / sanitize_filename(job.title, fallback="gallery")
+            base_path / "images" / sanitize_filename(job.title, fallback="gallery")
         )
     if job.media_type == "image":
-        return download_root / "images"
-    return download_root
+        return base_path / "images"
+    return base_path
 
 
 def _output_template_for_job(

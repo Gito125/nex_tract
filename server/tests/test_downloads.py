@@ -20,7 +20,7 @@ client = TestClient(app)
 
 
 def test_create_download_job_completes_successfully() -> None:
-    output_path = _download_folder() / "Example Video-abc123.mp4"
+    output_path = _download_folder() / "YouTube" / "Example Video-abc123.mp4"
 
     with (
         patch(
@@ -62,19 +62,21 @@ def test_create_download_job_completes_successfully() -> None:
 
 
 def test_create_download_rejects_unsupported_platform() -> None:
-    response = client.post(
-        "/api/downloads",
-        json={
-            "url": "https://vimeo.com/123",
-            "quality": "best",
-            "downloadType": "video",
-            "audioFormat": None,
-        },
-    )
+    with patch("app.services.analyze_service.get_app_settings") as mock_get_settings:
+        mock_get_settings.return_value.generic_fallback_enabled = False
+        response = client.post(
+            "/api/downloads",
+            json={
+                "url": "https://example.com/123",
+                "quality": "best",
+                "downloadType": "video",
+                "audioFormat": None,
+            },
+        )
 
     assert response.status_code == 400
     assert response.json() == {
-        "detail": "This platform is not supported yet. Try YouTube, TikTok, Instagram, or X."
+        "detail": "This platform is not natively supported."
     }
 
 
@@ -173,7 +175,8 @@ def test_full_analyze_to_download_flow_for_social_video_platforms(
     platform: str,
     webpage_url: str,
 ) -> None:
-    output_path = tmp_path / f"{platform}-video.mp4"
+    display_name = "TikTok" if platform == "tiktok" else "Instagram"
+    output_path = tmp_path / display_name / f"{platform}-video.mp4"
     original = client.get("/api/settings").json()
 
     try:
@@ -219,7 +222,7 @@ def test_full_analyze_to_download_flow_for_social_video_platforms(
 
 
 def test_x_image_download_completes_to_images_folder(tmp_path: Path) -> None:
-    output_path = tmp_path / "images" / "Example Image-123-image_original.jpg"
+    output_path = tmp_path / "X" / "images" / "Example Image-123-image_original.jpg"
     original = client.get("/api/settings").json()
 
     try:
@@ -264,14 +267,14 @@ def test_x_image_download_completes_to_images_folder(tmp_path: Path) -> None:
 
         assert job["mediaType"] == "image"
         assert job["outputPath"] == str(output_path)
-        assert Path(job["outputPath"]).parent == tmp_path / "images"
+        assert Path(job["outputPath"]).parent == tmp_path / "X" / "images"
         assert output_path.read_bytes() == b"jpg-bytes"
     finally:
         client.patch("/api/settings", json=original)
 
 
 def test_x_video_download_keeps_video_root(tmp_path: Path) -> None:
-    output_path = tmp_path / "Example Video-x123-720p.mp4"
+    output_path = tmp_path / "X" / "Example Video-x123-720p.mp4"
     original = client.get("/api/settings").json()
 
     try:
@@ -309,7 +312,7 @@ def test_x_video_download_keeps_video_root(tmp_path: Path) -> None:
 
         assert job["mediaType"] == "video"
         assert job["outputPath"] == str(output_path)
-        assert Path(job["outputPath"]).parent == tmp_path
+        assert Path(job["outputPath"]).parent == tmp_path / "X"
     finally:
         client.patch("/api/settings", json=original)
 
@@ -381,7 +384,7 @@ def test_build_ytdlp_args_uses_active_settings(tmp_path: Path) -> None:
         )
         args = build_ytdlp_args(job)
 
-        assert str(tmp_path) in args
+        assert any(str(tmp_path) in arg for arg in args)
         assert any("Example Video-youtube-720p-%(id)s.%(ext)s" in item for item in args)
         assert "--no-overwrites" in args
     finally:

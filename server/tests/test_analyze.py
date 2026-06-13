@@ -56,19 +56,53 @@ def test_analyze_youtube_video_returns_normalized_metadata() -> None:
 
 
 def test_analyze_rejects_invalid_url() -> None:
-    response = client.post("/api/analyze", json={"url": "not a url"})
+    with patch("app.services.analyze_service.get_app_settings") as mock_get_settings:
+        mock_get_settings.return_value.generic_fallback_enabled = False
+        response = client.post("/api/analyze", json={"url": "not a url"})
 
     assert response.status_code == 400
     assert response.json() == {"detail": "Only http and https links are supported."}
 
 
 def test_analyze_rejects_unsupported_platform() -> None:
-    response = client.post("/api/analyze", json={"url": "https://vimeo.com/123"})
+    with patch("app.services.analyze_service.get_app_settings") as mock_get_settings:
+        mock_get_settings.return_value.generic_fallback_enabled = False
+        response = client.post("/api/analyze", json={"url": "https://example.com/123"})
 
     assert response.status_code == 400
     assert response.json() == {
-        "detail": "This platform is not supported yet. Try YouTube, TikTok, Instagram, or X."
+        "detail": "This platform is not natively supported."
     }
+
+def test_analyze_uses_generic_fallback() -> None:
+    from app.schemas.analyze import AnalyzeResponse, QualityOption
+    generic_response = AnalyzeResponse(
+        platform="generic",
+        type="video",
+        title="Generic title",
+        thumbnail=None,
+        duration=None,
+        creator=None,
+        webpageUrl="https://example.com/123",
+        qualities=[QualityOption(label="Best Quality", value="best", available=True, kind="video")],
+        rawFormats=[],
+        playlist=None,
+        notice=None,
+        imageCount=None,
+        isGeneric=True,
+        extractionMethod="ytdlp_generic",
+    )
+    with (
+        patch("app.services.analyze_service.get_app_settings") as mock_get_settings,
+        patch("app.services.analyze_service.run_generic_pipeline") as mock_run_generic
+    ):
+        mock_get_settings.return_value.generic_fallback_enabled = True
+        mock_run_generic.return_value = generic_response
+        
+        response = client.post("/api/analyze", json={"url": "https://example.com/123"})
+
+    assert response.status_code == 200
+    assert response.json()["isGeneric"] is True
 
 
 def test_analyze_tiktok_video_returns_normalized_metadata() -> None:

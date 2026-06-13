@@ -76,3 +76,5 @@ class AnalyzeResponse(BaseModel):
     playlist: PlaylistSummary | None = None
     notice: str | None = None
     image_count: int | None = Field(default=None, alias="imageCount")
+    is_generic: bool | None = Field(default=None, alias="isGeneric")
+    extraction_method: Literal["ytdlp_generic", "ytdlp_relaxed", "html_scrape"] | None = Field(default=None, alias="extractionMethod")

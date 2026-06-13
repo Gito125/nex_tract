@@ -7,7 +7,7 @@ export type AnalyzeRequest = {
   url: string;
 };
 
-export type PlatformValue = "youtube" | "tiktok" | "instagram" | "x";
+export type PlatformValue = "youtube" | "tiktok" | "instagram" | "x" | "vimeo" | "reddit" | "facebook" | "soundcloud" | "generic";
 
 export type QualityValue =
   | "best"
@@ -69,6 +69,8 @@ export type AnalyzeResponse = {
   playlist: PlaylistSummary | null;
   notice: string | null;
   imageCount: number | null;
+  isGeneric?: boolean;
+  extractionMethod?: "ytdlp_generic" | "ytdlp_relaxed" | "html_scrape";
 };
 
 export type DownloadStatus =
@@ -276,6 +278,7 @@ export type AppSettings = {
   theme: ThemeValue;
   filenameTemplate: string;
   skipExisting: boolean;
+  genericFallbackEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -289,5 +292,6 @@ export type SettingsUpdateRequest = Partial<
     | "theme"
     | "filenameTemplate"
     | "skipExisting"
+    | "genericFallbackEnabled"
   >
 >;

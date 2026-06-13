@@ -3,7 +3,11 @@ from urllib.parse import urlparse
 
 from app.platforms.registry import get_adapter
 from app.schemas.analyze import AnalyzeResponse, PlaylistAnalyzeItem, PlaylistSummary
-from app.services.exceptions import AnalyzeError
+from app.services.exceptions import AnalyzeError, UnsupportedPlatformError
+from app.services.generic_service import run_generic_pipeline
+from app.db.database import engine
+from sqlmodel import Session
+from app.services.settings_service import get_app_settings
 from app.services.format_service import (
     image_quality_options,
     normalize_quality_options,
@@ -22,7 +26,12 @@ def analyze_url(url: str) -> AnalyzeResponse:
     try:
         platform = detect_platform(url)
     except PlatformValidationError as exc:
-        raise AnalyzeError(exc.message, status_code=400) from exc
+        with Session(engine) as session:
+            app_settings = get_app_settings(session)
+            if app_settings.generic_fallback_enabled:
+                return run_generic_pipeline(url)
+            else:
+                raise UnsupportedPlatformError(exc.message, status_code=400) from exc
 
     adapter = get_adapter(platform.platform)
     metadata = adapter.extract_metadata(platform.url, platform.media_type)
@@ -183,6 +192,10 @@ def _media_type_from_metadata(
     metadata: dict[str, Any],
     formats: list[dict[str, Any]],
 ) -> str:
+    # If the adapter explicitly injected a media type hint, use it
+    if "_nextract_media_type" in metadata:
+        return metadata["_nextract_media_type"]
+
     if any(_has_video(item) for item in formats):
         return "video"
 

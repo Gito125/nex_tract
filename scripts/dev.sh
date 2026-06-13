@@ -14,7 +14,7 @@ FRONTEND_PID=$!
 echo "Backend PID: $BACKEND_PID"
 echo "Frontend PID: $FRONTEND_PID"
 echo ""
-echo "Dev mode: open http://localhost:3000"
+echo "Dev mode: open http://localhost:3004"
 echo "To run the Tauri desktop in dev mode: pnpm tauri dev (from project root)"
 echo ""
 echo "Press Ctrl+C to stop all processes."

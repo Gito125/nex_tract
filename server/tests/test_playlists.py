@@ -18,8 +18,8 @@ client = TestClient(app)
 
 def test_create_playlist_download_completes_all_items(tmp_path: Path) -> None:
     original = client.get("/api/settings").json()
-    output_one = tmp_path / "Example Playlist" / "001 - One.mp4"
-    output_two = tmp_path / "Example Playlist" / "002 - Two.mp4"
+    output_one = tmp_path / "YouTube" / "Example Playlist" / "001 - One.mp4"
+    output_two = tmp_path / "YouTube" / "Example Playlist" / "002 - Two.mp4"
 
     try:
         assert client.patch("/api/settings", json={"downloadFolder": str(tmp_path)}).status_code == 200
@@ -166,7 +166,7 @@ def test_playlist_skip_existing_marks_item_skipped(tmp_path: Path) -> None:
 
 def test_playlist_failure_continues_to_remaining_items(tmp_path: Path) -> None:
     original = client.get("/api/settings").json()
-    output_two = tmp_path / "Example Playlist" / "002 - Two.mp4"
+    output_two = tmp_path / "YouTube" / "Example Playlist" / "002 - Two.mp4"
 
     try:
         assert client.patch("/api/settings", json={"downloadFolder": str(tmp_path)}).status_code == 200
