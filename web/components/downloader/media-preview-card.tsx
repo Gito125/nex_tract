@@ -76,7 +76,7 @@ export function MediaPreviewCard({
         }}
       >
         <ArrowLeft size={15} aria-hidden="true" />
-        Back to paste
+        Back to input
       </button>
 
       {/* Main card */}
@@ -261,14 +261,49 @@ export function MediaPreviewCard({
 
             {/* Actions */}
             <div
+              className="flex flex-col sm:flex-row"
               style={{
                 paddingTop: "20px",
                 borderTop: "1px solid var(--border-soft)",
-                display: "flex",
                 gap: "10px",
-                flexWrap: "wrap",
               }}
             >
+              <button
+                type="button"
+                onClick={onBack}
+                style={{
+                  flex: 1,
+                  minHeight: "46px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-strong)",
+                  background: "var(--surface-raised)",
+                  color: "var(--foreground-muted)",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-body)",
+                  transition: "all 0.15s var(--ease-out)",
+                  letterSpacing: "-0.01em",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-raised)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
+                }}
+              >
+                <ArrowLeft size={16} aria-hidden="true" />
+                Download Next Video
+              </button>
+
               <button
                 type="button"
                 disabled={!selectedQuality || isDownloadPending}
@@ -307,7 +342,6 @@ export function MediaPreviewCard({
                 <Download size={16} aria-hidden="true" />
                 {isDownloadPending ? "Starting…" : "Download Now"}
               </button>
-
             </div>
 
             {downloadError && (

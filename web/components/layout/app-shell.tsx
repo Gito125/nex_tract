@@ -10,7 +10,6 @@ import {
   Download,
   HelpCircle,
   Home,
-  Layers,
   Settings,
 } from "lucide-react";
 
@@ -50,21 +49,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             style={{ textDecoration: "none" }}
             title={isCollapsed ? "Nextract" : undefined}
           >
-            <span
+            <img
+              src="/icon.png"
+              alt="Nextract Logo"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 width: "36px",
                 height: "36px",
                 borderRadius: "10px",
-                background: "var(--primary)",
-                boxShadow: "0 4px 14px var(--primary-glow)",
+                objectFit: "contain",
                 flexShrink: 0,
               }}
-            >
-              <Layers size={18} color="var(--on-primary)" aria-hidden="true" />
-            </span>
+            />
             <div className="app-shell__brand-text">
               <p
                 style={{
@@ -158,20 +153,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
       >
         <Link href="/" className="app-shell__mobile-brand" style={{ textDecoration: "none" }}>
-          <span
+          <img
+            src="/icon.png"
+            alt="Nextract Logo"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               width: "30px",
               height: "30px",
               borderRadius: "8px",
-              background: "var(--primary)",
+              objectFit: "contain",
               flexShrink: 0,
             }}
-          >
-            <Layers size={14} color="var(--on-primary)" aria-hidden="true" />
-          </span>
+          />
           <span
             style={{
               fontFamily: "var(--font-display)",

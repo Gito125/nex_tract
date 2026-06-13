@@ -149,7 +149,7 @@ export function PlaylistPreviewCard({
         }}
       >
         <ArrowLeft size={15} aria-hidden="true" />
-        Back to paste
+        Back to input
       </button>
 
       <div style={shellStyle}>

@@ -4,11 +4,12 @@
 
 /** Returns true when running inside the Tauri desktop shell. */
 export function isTauri(): boolean {
+  if (typeof window === "undefined") return false;
+  const win = window as unknown as { __TAURI__?: unknown; __TAURI_INTERNALS__?: unknown };
   return (
-    typeof window !== "undefined" &&
-    (Boolean((window as any).__TAURI__) ||
-      Boolean((window as any).__TAURI_INTERNALS__) ||
-      window.location.protocol === "tauri:" ||
-      window.location.hostname === "tauri.localhost")
+    Boolean(win.__TAURI__) ||
+    Boolean(win.__TAURI_INTERNALS__) ||
+    window.location.protocol === "tauri:" ||
+    window.location.hostname === "tauri.localhost"
   );
 }
