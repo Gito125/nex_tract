@@ -280,7 +280,7 @@ def _thumbnail(metadata: dict[str, Any]) -> str | None:
 
 def _response_thumbnail(platform: PlatformInfo, metadata: dict[str, Any]) -> str | None:
     thumbnail = _thumbnail(metadata)
-    if platform.platform == "instagram":
+    if platform.platform in {"instagram", "facebook"}:
         return proxied_thumbnail_url(thumbnail)
     return thumbnail
 
