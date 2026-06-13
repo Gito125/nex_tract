@@ -401,9 +401,9 @@ Package Nextract as a desktop app.
 - [x] Bundle or detect yt-dlp.
 - [x] Bundle or detect FFmpeg.
 - [x] Store local database properly.
-- [/] Test Linux.
-- [ ] Test Windows.
-- [ ] Test update process.
+- [x] Test Linux.
+- [x] Test Windows.
+- [ ] Test update process. Not yet implemented.
 
 ## Exit Criteria
 
