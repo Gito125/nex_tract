@@ -7,6 +7,7 @@ from app.platforms.vimeo import VimeoAdapter
 from app.platforms.reddit import RedditAdapter
 from app.platforms.facebook import FacebookAdapter
 from app.platforms.soundcloud import SoundCloudAdapter
+from app.platforms.generic import GenericAdapter
 
 ADAPTERS: tuple[PlatformAdapter, ...] = (
     YouTubeAdapter(),
@@ -17,6 +18,11 @@ ADAPTERS: tuple[PlatformAdapter, ...] = (
     RedditAdapter(),
     FacebookAdapter(),
     SoundCloudAdapter(),
+    # GenericAdapter intentionally last — it matches every host,
+    # but platform_detector uses it only via run_generic_pipeline,
+    # not via the ADAPTERS loop. Registered here so get_adapter("generic")
+    # works for download jobs.
+    GenericAdapter(),
 )
 
 

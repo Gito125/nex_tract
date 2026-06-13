@@ -1,6 +1,6 @@
 {
   "name": "@nextract/web",
-  "version": "1.10.2",
+  "version": "1.10.4",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3004",

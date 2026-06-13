@@ -13,43 +13,75 @@ VIDEO_QUALITIES: tuple[tuple[VideoQualityValue, int], ...] = (
 
 
 def normalize_quality_options(formats: list[dict[str, Any]]) -> list[QualityOption]:
-    heights = {
-        value
-        for value in (_int_or_none(item.get("height")) for item in formats)
-        if value is not None and _has_video(item=_format_by_height(formats, value))
-    }
-    has_video = any(_has_video(item) for item in formats)
-    has_audio = any(_has_audio(item) for item in formats)
-    has_m4a = any(_has_audio(item) and item.get("ext") == "m4a" for item in formats)
+    """
+    Build quality options from a yt-dlp formats list.
+
+    Handles three common format shapes returned by yt-dlp:
+    - Separate video-only + audio-only streams (YouTube, Vimeo)
+    - Merged audio+video streams (Facebook, Reddit, TikTok, most generic sites)
+    - Audio-only streams (SoundCloud, podcasts, Bandcamp)
+
+    The ``vcodec`` / ``acodec`` fields are treated as absent (not "none")
+    when they are None or missing — this is common for merged streams where
+    the extractor doesn't explicitly annotate codec fields.
+    """
+
+    # --- capability detection ---
+    has_video = any(_fmt_has_video(f) for f in formats)
+    # A format carries audio if it has an explicit audio codec OR if it is a
+    # merged stream that has no explicit vcodec=none marker but still has a url
+    # (i.e. it is a real playable file, not a video-only shard).
+    has_audio = any(_fmt_has_audio(f) for f in formats) or any(
+        _fmt_is_merged(f) for f in formats
+    )
+
+    # Detect which concrete video heights are offered.
+    heights: set[int] = set()
+    for fmt in formats:
+        h = _int_or_none(fmt.get("height"))
+        if h is None:
+            continue
+        # Accept the height if the format carries video (strict) OR if it is a
+        # merged / ambiguous stream (no explicit vcodec=none).
+        if _fmt_has_video(fmt) or _fmt_is_merged(fmt):
+            heights.add(h)
+
+    # Detect audio container types for richer audio options.
+    has_m4a = any(
+        _fmt_has_audio(f) and f.get("ext") == "m4a" for f in formats
+    ) or any(
+        _fmt_is_merged(f) and f.get("ext") in {"m4a", "mp4"} for f in formats
+    )
     has_opus = any(
-        _has_audio(item)
-        and (item.get("ext") == "opus" or _codec_contains(item.get("acodec"), "opus"))
-        for item in formats
+        (_fmt_has_audio(f) or _fmt_is_merged(f))
+        and (f.get("ext") == "opus" or _codec_contains(f.get("acodec"), "opus"))
+        for f in formats
     )
 
     options: list[QualityOption] = []
 
-    if has_video:
-        options.append(
-            QualityOption(label="Best quality", value="best", kind="video")
-        )
+    # ── Video options ────────────────────────────────────────────────────────
+    if has_video or any(_fmt_is_merged(f) for f in formats):
+        options.append(QualityOption(label="Best quality", value="best", kind="video"))
 
     for label, height in VIDEO_QUALITIES:
         if height in heights:
             options.append(QualityOption(label=label, value=label, kind="video"))
 
-    if has_audio and has_m4a:
-        options.append(
-            QualityOption(label="Audio only (M4A)", value="audio_m4a", kind="audio")
-        )
+    # ── Audio options ────────────────────────────────────────────────────────
+    # Always offer audio extraction when the media has any audio track.
     if has_audio:
+        if has_m4a:
+            options.append(
+                QualityOption(label="Audio only (M4A)", value="audio_m4a", kind="audio")
+            )
         options.append(
             QualityOption(label="Audio only (MP3)", value="audio_mp3", kind="audio")
         )
-    if has_audio and has_opus:
-        options.append(
-            QualityOption(label="Audio only (OPUS)", value="audio_opus", kind="audio")
-        )
+        if has_opus:
+            options.append(
+                QualityOption(label="Audio only (OPUS)", value="audio_opus", kind="audio")
+            )
 
     return options
 
@@ -93,21 +125,50 @@ def sanitize_raw_formats(
     ]
 
 
-def _has_video(item: dict[str, Any]) -> bool:
+# ---------------------------------------------------------------------------
+# Internal format-shape helpers
+# ---------------------------------------------------------------------------
+
+def _fmt_has_video(item: dict[str, Any]) -> bool:
+    """Format explicitly carries video (vcodec is set and is not 'none')."""
     vcodec = item.get("vcodec")
-    return isinstance(vcodec, str) and vcodec != "none"
+    return isinstance(vcodec, str) and vcodec.lower() != "none"
 
 
-def _has_audio(item: dict[str, Any]) -> bool:
+def _fmt_has_audio(item: dict[str, Any]) -> bool:
+    """Format explicitly carries audio (acodec is set and is not 'none')."""
     acodec = item.get("acodec")
-    return isinstance(acodec, str) and acodec != "none"
+    return isinstance(acodec, str) and acodec.lower() != "none"
+
+
+def _fmt_is_merged(item: dict[str, Any]) -> bool:
+    """
+    Format is a merged/muxed stream where codec fields are absent (None) rather
+    than explicitly 'none'. Common on Facebook, Reddit, TikTok, generic sites.
+    A format with a url but no explicit vcodec/acodec is treated as merged.
+    """
+    vcodec = item.get("vcodec")
+    acodec = item.get("acodec")
+    has_url = bool(item.get("url") or item.get("manifest_url") or item.get("fragment_base_url"))
+    # Explicitly video-only or audio-only streams have one codec set to "none"
+    vcodec_none = isinstance(vcodec, str) and vcodec.lower() == "none"
+    acodec_none = isinstance(acodec, str) and acodec.lower() == "none"
+    is_split_stream = vcodec_none or acodec_none
+    return has_url and not is_split_stream and not _fmt_has_video(item) and not _fmt_has_audio(item)
+
+
+# Keep old names as aliases so existing callers in analyze_service.py don't break.
+_has_video = _fmt_has_video
+_has_audio = _fmt_has_audio
 
 
 def _format_by_height(
     formats: list[dict[str, Any]], height: int
 ) -> dict[str, Any]:
     for item in formats:
-        if _int_or_none(item.get("height")) == height and _has_video(item):
+        if _int_or_none(item.get("height")) == height and (
+            _fmt_has_video(item) or _fmt_is_merged(item)
+        ):
             return item
     return {}
 
