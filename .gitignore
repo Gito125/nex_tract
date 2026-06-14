@@ -70,6 +70,7 @@ src-tauri/resources/ffmpeg.exe
 
 # Development Reports
 docs/dev_reports/
+docs/lessons/
 
 # AI
 CLAUDE.md
