@@ -5,7 +5,7 @@
   
   <p>
     <img src="https://img.shields.io/badge/Tauri-v2-blue?logo=tauri" alt="Tauri" />
-    <img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js" />
+    <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js" />
     <img src="https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi" alt="FastAPI" />
     <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python" alt="Python" />
     <img src="https://img.shields.io/badge/Rust-1.80-000000?logo=rust" alt="Rust" />
