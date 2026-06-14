@@ -31,6 +31,9 @@ git tag -d v1.13.1
 # 2. Delete the incorrect tag from the GitHub remote repository
 git push origin :refs/tags/v1.13.1
 
+# 2.1 Better modern way to delete remote tag:
+git push --delete origin v1.13.1
+
 # 3. Stage, commit, and push your latest code changes to your branch
 git add .
 git commit -m "feat: complete all changes before tagging"

@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Archive,
   Camera,
   CirclePlay,
-  ClipboardList,
-  FileAudio,
   Sparkles,
+  Music2,
+  Hash,
+  List,
+  Archive,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -346,6 +347,20 @@ export function AnalyzeHome() {
           textAlign: "center",
         }}
       >
+        {/* Dot grid — signature element */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='1' cy='1' r='1' fill='%234F46E5' fill-opacity='0.065'/%3E%3C/svg%3E")`,
+            backgroundSize: "24px 24px",
+            pointerEvents: "none",
+            maskImage: "radial-gradient(ellipse 70% 80% at 50% 40%, black 30%, transparent 90%)",
+            WebkitMaskImage: "radial-gradient(ellipse 70% 80% at 50% 40%, black 30%, transparent 90%)",
+          }}
+        />
+
         {/* Eyebrow badge */}
         <div
           className="animate-fade-up stagger-1"
@@ -426,8 +441,63 @@ export function AnalyzeHome() {
 
         {/* Analyzing state */}
         {analyzeMutation.isPending && (
-          <div className="animate-fade-in" style={{ marginTop: "32px", width: "100%", maxWidth: "680px", display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div className="ui-skeleton" style={{ width: "100%", height: "160px", borderRadius: "16px" }} />
+          <div className="animate-fade-in" style={{ marginTop: "32px", width: "100%", maxWidth: "1100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            {url.includes("list=") || url.includes("playlist") ? (
+              /* Playlist loading skeleton */
+              <div className="ui-skeleton" style={{ width: "100%", height: "160px", borderRadius: "16px" }} />
+            ) : (
+              /* Single media loading skeleton */
+              <div
+                style={{
+                  borderRadius: "16px",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border-soft)",
+                  padding: "24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  width: "100%",
+                }}
+              >
+                <div className="flex flex-col md:flex-row gap-6 items-start" style={{ textAlign: "left", display: "flex", alignItems: "flex-start" }}>
+                  {/* Thumbnail skeleton */}
+                  <div
+                    className="ui-skeleton w-full md:w-[400px] shrink-0"
+                    style={{
+                      aspectRatio: "16/9",
+                      borderRadius: "12px",
+                    }}
+                  />
+                  {/* Details skeleton */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "14px", minWidth: 0, alignSelf: "stretch" }}>
+                    <div>
+                      {/* Badges skeleton */}
+                      <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+                        <div className="ui-skeleton" style={{ width: "60px", height: "18px", borderRadius: "9999px" }} />
+                        <div className="ui-skeleton" style={{ width: "50px", height: "18px", borderRadius: "9999px" }} />
+                      </div>
+                      {/* Title skeleton */}
+                      <div className="ui-skeleton" style={{ width: "90%", height: "20px", borderRadius: "4px", marginBottom: "8px" }} />
+                      {/* Creator skeleton */}
+                      <div className="ui-skeleton" style={{ width: "50%", height: "14px", borderRadius: "4px" }} />
+                    </div>
+                    {/* Format selector label skeleton */}
+                    <div>
+                      <div className="ui-skeleton" style={{ width: "80px", height: "10px", borderRadius: "2px", marginBottom: "8px" }} />
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        <div className="ui-skeleton" style={{ width: "80px", height: "28px", borderRadius: "9999px" }} />
+                        <div className="ui-skeleton" style={{ width: "70px", height: "28px", borderRadius: "9999px" }} />
+                        <div className="ui-skeleton" style={{ width: "85px", height: "28px", borderRadius: "9999px" }} />
+                      </div>
+                    </div>
+                    {/* Actions skeleton */}
+                    <div style={{ display: "flex", gap: "8px", borderTop: "1px solid var(--border-soft)", paddingTop: "16px", marginTop: "auto" }}>
+                      <div className="ui-skeleton" style={{ flex: 1, height: "38px", borderRadius: "8px" }} />
+                      <div className="ui-skeleton" style={{ flex: 1, height: "38px", borderRadius: "8px" }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "center" }}>
               <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--foreground-soft)" }}>
                 Fetching metadata and available formats…
@@ -534,11 +604,11 @@ function RepeatDownloadNotice({
 
 /* ── Platform chips ──────────────────────────────────────────────── */
 const CHIPS = [
-  { icon: CirclePlay, label: "YouTube", color: "#FF4444" },
-  { icon: FileAudio, label: "TikTok", color: "var(--success)" },
-  { icon: Camera, label: "Instagram", color: "#B83280" },
-  { icon: Archive, label: "X", color: "var(--foreground)" },
-  { icon: ClipboardList, label: "YouTube playlists", color: "var(--accent)" },
+  { icon: CirclePlay, label: "YouTube", color: "#EF4444" },
+  { icon: Music2,     label: "TikTok", color: "#1D9E75" },
+  { icon: Camera,     label: "Instagram", color: "#D4537E" },
+  { icon: Archive,       label: "X", color: "var(--foreground)" },
+  { icon: List,       label: "Playlists", color: "#EF4444" },
 ];
 
 function PlatformChip({

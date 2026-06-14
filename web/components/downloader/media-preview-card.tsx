@@ -82,30 +82,29 @@ export function MediaPreviewCard({
       {/* Main card */}
       <div
         style={{
-          borderRadius: "20px",
+          borderRadius: "16px",
           overflow: "hidden",
           background: "var(--surface)",
           border: "1px solid var(--border)",
           boxShadow: "var(--shadow-lift)",
+          padding: "1rem",
         }}
+
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr",
-          }}
-          className="xl:grid-cols-[1.4fr_1fr]"
-        >
+        <div className="flex flex-col md:flex-row gap-6 p-6 items-start" style={{ display: "flex", alignItems: "flex-start" }}>
           {/* Thumbnail pane */}
           <div
+            className="w-full md:w-[400px] shrink-0"
             style={{
               position: "relative",
               background: isAudioSelection
                 ? "linear-gradient(145deg, var(--surface-muted), var(--surface-strong))"
                 : isImageMedia
                 ? "var(--surface-muted)"
-                : "oklch(8% 0.010 265)",
-              minHeight: "280px",
+                : "#0A0A14",
+              aspectRatio: "16/9",
+              borderRadius: "12px",
+              overflow: "hidden",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -125,13 +124,15 @@ export function MediaPreviewCard({
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "24px",
-              padding: "28px",
+              gap: "16px",
+              flex: 1,
+              minWidth: 0,
+              alignSelf: "stretch",
             }}
           >
             {/* Header */}
             <div>
-              <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
                 <PlatformBadge platform={preview.platform} />
                 <GenericEngineIndicator isGeneric={preview.isGeneric} />
               </div>
@@ -139,12 +140,12 @@ export function MediaPreviewCard({
               <h2
                 style={{
                   fontFamily: "var(--font-display)",
-                  fontSize: "22px",
+                  fontSize: "18px",
                   fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1.25,
+                  letterSpacing: "-0.025em",
+                  lineHeight: 1.3,
                   color: "var(--foreground)",
-                  marginBottom: "6px",
+                  marginBottom: "4px",
                 }}
               >
                 {preview.title}
@@ -170,14 +171,14 @@ export function MediaPreviewCard({
                   fontSize: "10px",
                   fontWeight: 700,
                   color: "var(--foreground-subtle)",
-                  letterSpacing: "0.10em",
+                  letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  marginBottom: "10px",
+                  marginBottom: "8px",
                 }}
               >
                 {isImageMedia ? "Image" : "Format & Quality"}
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {displayQualities.map((option) => {
                   const isSelected = option.value === selectedQuality;
                   const optionSize = estimateSelectedSize(preview.rawFormats, option.value);
@@ -186,33 +187,16 @@ export function MediaPreviewCard({
                       key={option.value}
                       type="button"
                       onClick={() => onSelectQuality(option.value)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "5px",
-                        padding: "7px 14px",
-                        borderRadius: "9999px",
-                        border: isSelected
-                          ? "1.5px solid var(--primary)"
-                          : "1.5px solid var(--border-strong)",
-                        background: isSelected ? "var(--primary)" : "var(--surface-raised)",
-                        color: isSelected ? "var(--on-primary)" : "var(--foreground-muted)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        fontFamily: "var(--font-body)",
-                        transition: "all 0.15s var(--ease-out)",
-                        boxShadow: isSelected ? "0 2px 10px var(--primary-glow)" : "none",
-                      }}
+                      className={`quality-pill ${isSelected ? "quality-pill--active" : ""}`}
                     >
                       {option.kind === "audio" && (
-                        <FileAudio size={12} className="shrink-0" aria-hidden="true" />
+                        <FileAudio size={11} className="shrink-0" aria-hidden="true" />
                       )}
                       <span>{option.label}</span>
                       {optionSize ? (
                         <span
                           style={{
-                            fontSize: "11px",
+                            fontSize: "10px",
                             fontWeight: 700,
                             opacity: 0.75,
                             fontVariantNumeric: "tabular-nums",
@@ -228,9 +212,9 @@ export function MediaPreviewCard({
               {selectedSize ? (
                 <p
                   style={{
-                    fontSize: "12px",
+                    fontSize: "11px",
                     color: "var(--foreground-soft)",
-                    marginTop: "10px",
+                    marginTop: "6px",
                     display: "flex",
                     alignItems: "center",
                     gap: "4px",
@@ -245,9 +229,9 @@ export function MediaPreviewCard({
               {preview.type === "gallery" && preview.imageCount ? (
                 <p
                   style={{
-                    fontSize: "12px",
+                    fontSize: "11px",
                     color: "var(--foreground-soft)",
-                    marginTop: "10px",
+                    marginTop: "6px",
                     lineHeight: 1.5,
                   }}
                 >
@@ -257,15 +241,15 @@ export function MediaPreviewCard({
             </div>
 
             {/* Spacer */}
-            <div style={{ flex: 1 }} />
+            <div style={{ flex: 1, minHeight: "8px" }} />
 
             {/* Actions */}
             <div
               className="flex flex-col sm:flex-row"
               style={{
-                paddingTop: "20px",
+                paddingTop: "16px",
                 borderTop: "1px solid var(--border-soft)",
-                gap: "10px",
+                gap: "8px",
               }}
             >
               <button
@@ -273,21 +257,20 @@ export function MediaPreviewCard({
                 onClick={onBack}
                 style={{
                   flex: 1,
-                  minHeight: "46px",
+                  minHeight: "38px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "8px",
-                  borderRadius: "10px",
+                  gap: "6px",
+                  borderRadius: "8px",
                   border: "1px solid var(--border-strong)",
                   background: "var(--surface-raised)",
                   color: "var(--foreground-muted)",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: 700,
                   cursor: "pointer",
                   fontFamily: "var(--font-body)",
                   transition: "all 0.15s var(--ease-out)",
-                  letterSpacing: "-0.01em",
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
@@ -300,8 +283,8 @@ export function MediaPreviewCard({
                   (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground-muted)";
                 }}
               >
-                <ArrowLeft size={16} aria-hidden="true" />
-                Download Next Video
+                <ArrowLeft size={14} aria-hidden="true" />
+                Download Next
               </button>
 
               <button
@@ -310,36 +293,35 @@ export function MediaPreviewCard({
                 onClick={onDownload}
                 style={{
                   flex: 1,
-                  minHeight: "46px",
+                  minHeight: "38px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "8px",
-                  borderRadius: "10px",
+                  gap: "6px",
+                  borderRadius: "8px",
                   border: "none",
                   background: "var(--primary)",
                   color: "var(--on-primary)",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: 700,
                   cursor: !selectedQuality || isDownloadPending ? "not-allowed" : "pointer",
                   opacity: !selectedQuality || isDownloadPending ? 0.65 : 1,
-                  boxShadow: "0 4px 14px var(--primary-glow)",
+                  boxShadow: "0 2px 8px var(--primary-glow)",
                   fontFamily: "var(--font-body)",
                   transition: "all 0.15s var(--ease-out)",
-                  letterSpacing: "-0.01em",
                 }}
                 onMouseEnter={(e) => {
                   if (selectedQuality && !isDownloadPending) {
                     (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px var(--primary-glow)";
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 12px var(--primary-glow)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 14px var(--primary-glow)";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 8px var(--primary-glow)";
                 }}
               >
-                <Download size={16} aria-hidden="true" />
+                <Download size={14} aria-hidden="true" />
                 {isDownloadPending ? "Starting…" : "Download Now"}
               </button>
             </div>
@@ -347,7 +329,7 @@ export function MediaPreviewCard({
             {downloadError && (
               <p
                 role="alert"
-                style={{ fontSize: "13px", fontWeight: 500, color: "var(--error)", marginTop: "-8px" }}
+                style={{ fontSize: "12px", fontWeight: 500, color: "var(--error)", marginTop: "-4px" }}
               >
                 {downloadError}
               </p>

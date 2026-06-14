@@ -21,14 +21,6 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 export function UpdateChecker() {
   const [state, setState] = useState<UpdateState>({ status: "idle" });
 
-  useEffect(() => {
-    if (!isTauri()) return;
-
-    // Delay check slightly so the app loads first
-    const timer = setTimeout(() => checkForUpdates(), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
   async function checkForUpdates() {
     setState({ status: "checking" });
 
@@ -78,6 +70,14 @@ export function UpdateChecker() {
 
     setState({ status: "dismissed" });
   }
+
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    // Delay check slightly so the app loads first
+    const timer = setTimeout(() => checkForUpdates(), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   async function handleUpdate() {
     if (state.status !== "available") return;
