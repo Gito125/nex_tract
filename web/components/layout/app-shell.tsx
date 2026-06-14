@@ -8,7 +8,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Download,
-  HelpCircle,
   Home,
   Settings,
 } from "lucide-react";
@@ -140,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <BackendHealthCard />
           </div>
           <div className="app-shell__divider app-shell__divider--bottom" />
-          <SidebarFooterBtn icon={HelpCircle} isCollapsed={isCollapsed} label="Help coming soon" />
+          <CreatorProfileBtn isCollapsed={isCollapsed} />
         </div>
       </aside>
 
@@ -150,6 +149,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         style={{
           background: "var(--sidebar-bg)",
           borderBottom: "1px solid var(--sidebar-border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
         }}
       >
         <Link href="/" className="app-shell__mobile-brand" style={{ textDecoration: "none" }}>
@@ -176,6 +179,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Nextract
           </span>
         </Link>
+        <a
+          href="https://github.com/Gito125"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="sm:flex lg:hidden items-center justify-center text-2xl" // Show on small and medium screens, hidden on larger screens
+          title="Built with ❤️ by Ogwang Gift Gideon"
+        >
+          <CreatorAvatar size={30} />
+        </a>
       </header>
 
       {/* ── Main content ──────────────────────────────────────── */}
@@ -351,45 +363,183 @@ function MobileNavButton({
   );
 }
 
-function SidebarFooterBtn({
-  icon: Icon,
-  isCollapsed,
-  label,
+type AvatarVariant = "indigo" | "teal" | "slate";
+
+const VARIANT_STYLES: Record<AvatarVariant, React.CSSProperties> = {
+  indigo: {
+    background: "oklch(0.18 0.035 268)",
+    border: "1px solid oklch(0.38 0.12 268 / 0.6)",
+    color: "oklch(0.78 0.12 268)",
+  },
+  teal: {
+    background: "oklch(0.18 0.04 185)",
+    border: "1px solid oklch(0.42 0.14 185 / 0.55)",
+    color: "oklch(0.75 0.13 185)",
+  },
+  slate: {
+    background: "oklch(0.22 0.008 260)",
+    border: "1px solid oklch(0.38 0.02 260 / 0.5)",
+    color: "oklch(0.72 0.02 260)",
+  },
+};
+
+const RING_STYLES: Record<AvatarVariant, string> = {
+  indigo:
+    "conic-gradient(from 200deg, oklch(0.55 0.25 268) 0%, oklch(0.70 0.18 200) 40%, oklch(0.55 0.25 268) 100%)",
+  teal: "conic-gradient(from 200deg, oklch(0.50 0.22 185) 0%, oklch(0.68 0.16 220) 40%, oklch(0.50 0.22 185) 100%)",
+  slate: "conic-gradient(from 200deg, oklch(0.45 0.04 260) 0%, oklch(0.60 0.03 260) 40%, oklch(0.45 0.04 260) 100%)",
+};
+
+function CreatorAvatar({
+  size = 28,
+  username = "Gito125",
+  initials = "O.G",
+  variant = "indigo",
 }: {
-  icon: React.ElementType;
+  size?: number;
+  username?: string;
+  initials?: string;
+  variant?: AvatarVariant;
+}) {
+  const [imgError, setImgError] = useState(false);
+  const avatarUrl = `https://github.com/${username}.png`;
+  const fontSize = Math.round(size * 0.33);
+
+  if (imgError) {
+    return (
+      <span
+        style={{
+          position: "relative",
+          display: "inline-flex",
+          flexShrink: 0,
+        }}
+        aria-label={`${username} avatar`}
+        role="img"
+      >
+        {/* conic ring */}
+        <span
+          style={{
+            position: "absolute",
+            inset: "-2px",
+            borderRadius: "50%",
+            background: RING_STYLES[variant],
+            opacity: variant === "slate" ? 0.35 : 0.45,
+            zIndex: 0,
+          }}
+        />
+        {/* initials */}
+        <span
+          style={{
+            position: "relative",
+            zIndex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: `${size}px`,
+            height: `${size}px`,
+            borderRadius: "50%",
+            flexShrink: 0,
+            userSelect: "none",
+            fontFamily: "'Geist Mono', 'JetBrains Mono', ui-monospace, monospace",
+            fontWeight: 500,
+            fontSize: `${fontSize}px`,
+            letterSpacing: "-0.01em",
+            ...VARIANT_STYLES[variant],
+          }}
+        >
+          {initials}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={avatarUrl}
+      alt={`${username} avatar`}
+      onError={() => setImgError(true)}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: "50%",
+        objectFit: "cover",
+        flexShrink: 0,
+        border: "1px solid var(--sidebar-border)",
+        display: "block",
+      }}
+    />
+  );
+}
+
+function CreatorProfileBtn({
+  isCollapsed,
+}: {
   isCollapsed: boolean;
-  label: string;
 }) {
   return (
-    <button
-      aria-disabled="true"
-      aria-label={label}
+    <a
+      href="https://github.com/Gito125"
+      target="_blank"
+      rel="noopener noreferrer"
       className="app-shell__footer-btn"
-      disabled
-      title={isCollapsed ? label : undefined}
-      type="button"
+      title={isCollapsed ? "Built with ❤️ by O. G. Gideon" : undefined}
       style={{
         display: "flex",
         alignItems: "center",
         gap: "10px",
-        padding: "9px 12px",
+        padding: "8px 12px",
         borderRadius: "10px",
-        fontSize: "13px",
-        fontWeight: 500,
         border: "none",
         background: "transparent",
         color: "var(--sidebar-muted)",
-        cursor: "not-allowed",
+        cursor: "pointer",
         width: "100%",
+        textDecoration: "none",
         textAlign: "left",
         transition: "all 0.15s",
-        minHeight: "44px",
-        opacity: 0.58,
+        minHeight: "48px",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--sidebar-hover)";
+        e.currentTarget.style.color = "var(--sidebar-text)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.color = "var(--sidebar-muted)";
       }}
     >
-      <Icon size={16} aria-hidden="true" />
-      <span className="app-shell__footer-label">{label}</span>
-    </button>
+      <CreatorAvatar size={28} />
+      
+      <div className="app-shell__footer-label" style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <span
+          style={{
+            fontSize: "13px",
+            fontWeight: 600,
+            lineHeight: 1.2,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          O. G. Gideon
+        </span>
+        <span
+          style={{
+            fontSize: "11px",
+            color: "var(--sidebar-muted)",
+            marginTop: "1px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "flex",
+            alignItems: "center",
+            gap: "3px",
+          }}
+        >
+          Built with <span style={{ color: "#ef4444" }}>❤️</span>
+        </span>
+      </div>
+    </a>
   );
 }
 
