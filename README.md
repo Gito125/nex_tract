@@ -61,17 +61,28 @@ graph TD
 ### For Users
 See our [Usage Guide](docs/USAGE.md) for information on how to navigate the app, manage downloads, and configure your settings.
 
+### 📦 Installation & Auto-Updates
+Nextract is compiled for **Windows** and **Linux** via our automated release pipeline:
+* **Windows (`.exe` NSIS):** Download the installer from the latest release. Auto-updates will download and install in the background with a prompt to relaunch when ready.
+* **Linux (`.AppImage`):** Download the portable format. Supports background auto-updates.
+* **Linux (`.deb` / `.rpm`):** Install the native package for Debian/Ubuntu or Fedora/RHEL. The app will notify you via a top banner when a new version is available on GitHub.
+
 ### For Developers
 Nextract is built with Next.js, FastAPI, and Tauri.
 Please refer to the comprehensive [Setup Guide](docs/SETUP.md) for Linux-focused system prerequisites and local development instructions.
 
 ## 📚 Documentation
 
-- [Project Vision & Ethics](docs/01-vision.md)
-- [Architecture Details](docs/03-architecture.md)
-- [Setup Instructions](docs/SETUP.md)
-- [Usage Guide](docs/USAGE.md)
-- [Release Checklist](docs/RELEASE_CHECKLIST.md)
+* **Core & Vision:**
+  * [Project Vision & Ethics](docs/01-vision.md)
+  * [Architecture Details](docs/03-architecture.md)
+  * [Setup Instructions](docs/SETUP.md)
+  * [Usage Guide](docs/USAGE.md)
+* **Releases & Lessons Learned:**
+  * [Release Checklist & Workflow](docs/RELEASE_CHECKLIST.md)
+  * [Git Tag Releases & Tauri Code-Signing Lessons](docs/lessons/git-tag-releases-and-tauri-signing.md)
+  * [Architectural Decisions Records (ADR)](docs/lessons/architectural-decisions.md)
+  * [Auto-Update Integration Log](docs/logs/auto-update-integration.md)
 
 ---
 
