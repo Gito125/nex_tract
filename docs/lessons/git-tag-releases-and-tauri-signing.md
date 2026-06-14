@@ -8,11 +8,11 @@ This document outlines the key lessons learned during the integration of Tauri's
 
 In professional desktop app development, local machines (especially Linux) cannot easily compile installer packages for all target operating systems (like `.exe` for Windows or `.dmg` for macOS). We offload this compilation to the cloud using **GitHub Actions**.
 
-* **The Trigger Mechanism:** The cloud builder does not run on normal branch pushes. It is configured in `.github/workflows/release.yml` to trigger only when a Git **tag** matching the pattern `v*` (like `v1.13.1`) is pushed.
+* **The Trigger Mechanism:** The cloud builder does not run on normal branch pushes. It is configured in `.github/workflows/release.yml` to trigger only when a Git **tag** matching the pattern `v*` (like `v1.13.2`) is pushed.
 * **The Workflow:**
   1. Commit and push your code to your development/main branch.
-  2. Create a local tag: `git tag v1.13.1`
-  3. Push the tag to GitHub: `git push origin v1.13.1`
+  2. Create a local tag: `git tag v1.13.2`
+  3. Push the tag to GitHub: `git push origin v1.13.2`
   4. The tag push triggers the runner to compile, sign, package, and publish the release.
 
 ---
@@ -26,13 +26,13 @@ Because Git tags are unique pointers, you must delete the old tag from both your
 
 ```bash
 # 1. Delete the incorrect tag locally
-git tag -d v1.13.1
+git tag -d v1.13.2
 
 # 2. Delete the incorrect tag from the GitHub remote repository
-git push origin :refs/tags/v1.13.1
+git push origin :refs/tags/v1.13.2
 
 # 2.1 Better modern way to delete remote tag:
-git push --delete origin v1.13.1
+git push --delete origin v1.13.2
 
 # 3. Stage, commit, and push your latest code changes to your branch
 git add .
@@ -40,8 +40,8 @@ git commit -m "feat: complete all changes before tagging"
 git push origin main
 
 # 4. Re-create the tag on the new commit and push it to trigger the clean build
-git tag v1.13.1
-git push origin v1.13.1
+git tag v1.13.2
+git push origin v1.13.2
 ```
 
 ---
