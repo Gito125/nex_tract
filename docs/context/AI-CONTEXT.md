@@ -43,6 +43,8 @@ Nextract must not be framed or implemented as a piracy, DRM bypass, paywall bypa
 
 Prefer user-friendly errors and clear permission-oriented copy. Never expose secrets, tokens, credentials, private user data, or raw internal tracebacks in generated docs, UI copy, or API responses.
 
+When done, make a simple log in `docs/logs/DD-MM-YYYY.md` describing the change, the reasoning, and any relevant context. This will help future agents understand the history of decisions and changes.
+
 ## Context Precedence
 
 1. Active user request.

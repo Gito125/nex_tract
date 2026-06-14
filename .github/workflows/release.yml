@@ -43,6 +43,28 @@ jobs:
       - name: Build Python Sidecar
         run: ${{ matrix.build-cmd }}
 
+      - name: Download FFmpeg (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ffmpegDir = "src-tauri/resources"
+          New-Item -ItemType Directory -Force -Path $ffmpegDir | Out-Null
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
+          Expand-Archive -Path ffmpeg.zip -DestinationPath ffmpeg-extract -Force
+          $ffmpegExe = Get-ChildItem -Path ffmpeg-extract -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+          Copy-Item $ffmpegExe.FullName "$ffmpegDir/ffmpeg.exe"
+          Remove-Item -Recurse ffmpeg.zip, ffmpeg-extract
+
+      - name: Download FFmpeg (Linux)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          mkdir -p src-tauri/resources
+          wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+          tar xf ffmpeg-release-amd64-static.tar.xz
+          cp ffmpeg-*-amd64-static/ffmpeg src-tauri/resources/ffmpeg
+          chmod +x src-tauri/resources/ffmpeg
+          rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -77,9 +99,12 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: nextract-v__VERSION__ # tauri-action automatically replaces __VERSION__ with version from tauri.conf.json
           releaseName: 'Nextract v__VERSION__'
           releaseBody: 'Nextract release build. Installers for Windows, macOS, and Linux.'
           releaseDraft: true
           prerelease: false
+          updaterJsonPreferNsis: true

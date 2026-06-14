@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { getSettings } from "@/lib/api";
 import type { ThemeValue } from "@/lib/types";
+import { UpdateChecker } from "@/components/updater/update-checker";
 
 export const THEME_STORAGE_KEY = "nextract-theme";
 let cleanupSystemThemeListener: (() => void) | undefined;
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeSync />
+      <UpdateChecker />
       {children}
     </QueryClientProvider>
   );
