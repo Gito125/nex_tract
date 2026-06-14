@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     permissions:
@@ -20,8 +23,6 @@ jobs:
         include:
           - platform: 'windows-latest'
             build-cmd: 'cd server && powershell -ExecutionPolicy Bypass -File build-server.ps1'
-          - platform: 'macos-latest'
-            build-cmd: 'cd server && chmod +x build-server.sh && ./build-server.sh'
           - platform: 'ubuntu-latest'
             build-cmd: 'cd server && chmod +x build-server.sh && ./build-server.sh'
 
@@ -101,10 +102,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPIMAGE_EXTRACT_AND_RUN: 1
         with:
           tagName: nextract-v__VERSION__ # tauri-action automatically replaces __VERSION__ with version from tauri.conf.json
           releaseName: 'Nextract v__VERSION__'
-          releaseBody: 'Nextract release build. Installers for Windows, macOS, and Linux.'
+          releaseBody: 'Nextract release build. Installers for Windows and Linux.'
           releaseDraft: true
           prerelease: false
           updaterJsonPreferNsis: true

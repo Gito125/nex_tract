@@ -143,3 +143,37 @@ Tauri v2 allows creating platform-specific configuration files that are automati
 
 Tauri automatically merges these files with `tauri.conf.json` based on the host OS executing the build runner, preventing invalid target cross-compilation errors!
 
+---
+
+## Lesson 6: Cross-Platform inline env variables in `package.json`
+
+### The Problem
+When setting environment variables inline inside `package.json` scripts:
+```json
+"tauri": "APPIMAGE_EXTRACT_AND_RUN=1 NO_STRIP=true tauri"
+```
+This syntax works perfectly on bash shells (Linux and macOS), but fails immediately on Windows runners because the default Command Prompt (`cmd.exe`) does not recognize inline assignment syntax and returns:
+`'APPIMAGE_EXTRACT_AND_RUN' is not recognized as an internal or external command`.
+
+### The Solution
+Keep the `package.json` script simple and cross-platform:
+```json
+"tauri": "tauri"
+```
+And instead, pass platform-specific environment variables directly inside the workflow's job execution environment in `.github/workflows/release.yml`:
+```yaml
+      - name: Build Desktop Application (Tauri)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+```
+
+---
+
+## Lesson 7: De-scoping Unsupported Platforms
+
+In early phases of an application release, focus on platform stability for your primary audience rather than spreading build resources thin:
+* **The Issue:** The macOS runner failed because it was missing target-specific sidecar FFmpeg binaries during compilation (`glob pattern resources/* path not found`).
+* **The Decision:** To expedite stable releases for Windows and Linux users, macOS was de-scoped by removing it from the GitHub Actions build matrix in `.github/workflows/release.yml`. This keeps the release pipeline fast and successful while postponing Apple-specific compilation debugging.
+
+

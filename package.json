@@ -6,7 +6,7 @@
   "scripts": {
     "build": "bash scripts/build.sh",
     "dev": "bash scripts/dev.sh",
-    "tauri": "APPIMAGE_EXTRACT_AND_RUN=1 NO_STRIP=true tauri",
+    "tauri": "tauri",
     "version": "echo 'Use ./scripts/version.sh instead' && exit 1",
     "release": "bash scripts/version.sh",
     "release:patch": "bash scripts/version.sh patch",

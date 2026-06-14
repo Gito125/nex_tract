@@ -67,3 +67,19 @@ We decoupled the bundle targets using Tauri's platform-specific JSON overrides:
    * `tauri.windows.conf.json` — specifies target `["nsis"]`.
    * `tauri.macos.conf.json` — specifies target `["dmg"]`.
 3. Tauri automatically detects the host OS at compile time and merges the corresponding overrides file with the base configuration.
+
+---
+
+## Decision 5: De-scoping macOS Platforms from Release Matrix
+
+### Context
+Developing cross-platform applications requires dedicated setup for each environment. For macOS, building sidecar binaries requires custom target configuration (like dynamically downloading and packaging target-specific arm64/x86_64 FFmpeg packages), and releasing signed `.dmg` installers requires an active Apple Developer Program account and certificates to pass macOS Gatekeeper.
+
+### Decision
+To maximize velocity and guarantee a stable release for the vast majority of our active user base, we decided to de-scope macOS from the current build matrix in `.github/workflows/release.yml`. 
+
+### Rationale
+* **Resource Optimization:** Rather than delaying stable releases for Windows and Linux due to macOS-specific asset bundling issues, we deliver immediately to our primary target audiences.
+* **Apple Developer Constraints:** Complete macOS code signing and notarization require developer credentials that should be configured during dedicated production integration phases.
+* **Ease of Re-entry:** The matrix-based workflow configuration allows us to re-enable macOS at any time in the future by simply adding it back to the workflow strategy.
+
