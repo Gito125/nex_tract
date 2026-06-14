@@ -176,7 +176,31 @@ And instead, pass platform-specific environment variables directly inside the wo
 ## Lesson 7: De-scoping Unsupported Platforms
 
 In early phases of an application release, focus on platform stability for your primary audience rather than spreading build resources thin:
-* **The Issue:** The macOS runner failed because it was missing target-specific sidecar FFmpeg binaries during compilation (`glob pattern resources/* path not found`).
 * **The Decision:** To expedite stable releases for Windows and Linux users, macOS was de-scoped by removing it from the GitHub Actions build matrix in `.github/workflows/release.yml`. This keeps the release pipeline fast and successful while postponing Apple-specific compilation debugging.
+
+---
+
+## Lesson 8: CI/CD Rate Limiting & Host Mirroring (FFmpeg Download Failures)
+
+### The Problem
+During the Linux build step, downloading FFmpeg from `https://johnvansickle.com/` failed with:
+`Error: Process completed with exit code 8.` (Wget: "Server issued an error response").
+* **Root Cause:** Popular free software hosts (like John Van Sickle's static builds server) aggressively rate-limit or block GitHub Actions runner IP addresses. Because thousands of workflow runs download large archives repeatedly, it exhausts server bandwidth.
+
+### The Solution
+When pulling third-party binary dependencies in a CI pipeline, download them from endpoints hosted on highly redundant public infrastructure (like **GitHub Releases** or public package registries) that never throttle GitHub Actions runners.
+* **Fix:** We replaced the download source with `ffbinaries-prebuilt` hosted directly on GitHub Releases:
+  ```yaml
+        - name: Download FFmpeg (Linux)
+          if: matrix.platform == 'ubuntu-latest'
+          run: |
+            mkdir -p src-tauri/resources
+            wget -q https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v6.1/ffmpeg-6.1-linux-64.zip
+            unzip -o ffmpeg-6.1-linux-64.zip -d src-tauri/resources
+            chmod +x src-tauri/resources/ffmpeg
+            rm ffmpeg-6.1-linux-64.zip
+  ```
+This guarantees fast, reliable, uncapped downloads for every build run.
+
 
 

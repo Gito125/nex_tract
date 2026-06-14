@@ -60,11 +60,10 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           mkdir -p src-tauri/resources
-          wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-          tar xf ffmpeg-release-amd64-static.tar.xz
-          cp ffmpeg-*-amd64-static/ffmpeg src-tauri/resources/ffmpeg
+          wget -q https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v6.1/ffmpeg-6.1-linux-64.zip
+          unzip -o ffmpeg-6.1-linux-64.zip -d src-tauri/resources
           chmod +x src-tauri/resources/ffmpeg
-          rm -rf ffmpeg-*-amd64-static* ffmpeg-release-amd64-static.tar.xz
+          rm ffmpeg-6.1-linux-64.zip
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
