@@ -94,3 +94,52 @@ To prevent malicious updates, Tauri enforces cryptographic signing. The applicat
   * `TAURI_SIGNING_PRIVATE_KEY`: The content of the private key file.
   * `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: The password chosen for the key.
 * **Public Verification:** The corresponding public key is safe to share and is placed directly inside `src-tauri/tauri.conf.json` so the app can verify incoming downloads.
+
+---
+
+## Lesson 5: Platform-Specific Configuration & Bundle Targets
+
+In a multi-platform Tauri application, different operating systems require different package bundles (e.g., Linux uses `.deb`/`.rpm`/`.AppImage`, Windows uses `.exe`/`msi`, and macOS uses `.dmg`/`.pkg`). 
+
+### The Problem with Global Targets
+If bundle targets are configured globally in the main `tauri.conf.json`:
+```json
+"targets": ["deb", "rpm", "appimage", "nsis"]
+```
+Tauri will attempt to compile all listed targets on whatever operating system runs the build. 
+* Building on **macOS** will fail because it cannot compile Windows `nsis` or Linux `deb`/`rpm`/`appimage` packages.
+* Building on **Windows** will fail because it cannot compile Linux formats.
+* This results in a build compilation crash: `Command "pnpm ["tauri","build"]" failed with exit code 1`.
+
+### The Solution: Platform Overrides
+Tauri v2 allows creating platform-specific configuration files that are automatically detected and merged with the base `tauri.conf.json` at build time.
+
+1. **Remove** the global `"targets"` array from your main `src-tauri/tauri.conf.json`.
+2. **Create** three files in your `src-tauri/` directory:
+   * **`tauri.linux.conf.json`**:
+     ```json
+     {
+       "bundle": {
+         "targets": ["deb", "rpm", "appimage"]
+       }
+     }
+     ```
+   * **`tauri.windows.conf.json`**:
+     ```json
+     {
+       "bundle": {
+         "targets": ["nsis"]
+       }
+     }
+     ```
+   * **`tauri.macos.conf.json`**:
+     ```json
+     {
+       "bundle": {
+         "targets": ["dmg"]
+       }
+     }
+     ```
+
+Tauri automatically merges these files with `tauri.conf.json` based on the host OS executing the build runner, preventing invalid target cross-compilation errors!
+
