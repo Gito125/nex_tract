@@ -42,7 +42,6 @@ def extract_soundcloud_metadata(
         "user_agent": DEFAULT_USER_AGENT,
         "source_address": "0.0.0.0",
         "legacyserverconnect": True,
-        "impersonate": "chrome",
         "retries": 1,
     }
 

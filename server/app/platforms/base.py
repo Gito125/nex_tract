@@ -86,9 +86,7 @@ class PlatformAdapter:
             "0.0.0.0",
             "--legacy-server-connect",
             "--extractor-args",
-            "youtube:player_client=android,ios",
-            "--impersonate",
-            "chrome",
+            "youtube:player_client=android",
         ]
 
         if media_type == "gallery":
@@ -125,8 +123,7 @@ def run_ytdlp_metadata(
         "user_agent": DEFAULT_USER_AGENT,
         "source_address": "0.0.0.0",
         "legacyserverconnect": True,
-        "extractor_args": {"youtube": {"player_client": ["android", "ios"]}},
-        "impersonate": "chrome",
+        "extractor_args": {"youtube": {"player_client": ["android"]}},
         "retries": 1,
     }
 

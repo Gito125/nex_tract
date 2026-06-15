@@ -44,8 +44,7 @@ def extract_youtube_metadata(
         "socket_timeout": timeout,
         "source_address": "0.0.0.0",
         "legacyserverconnect": True,
-        "extractor_args": {"youtube": {"player_client": ["android", "ios"]}},
-        "impersonate": "chrome",
+        "extractor_args": {"youtube": {"player_client": ["android"]}},
         "retries": 1,
     }
 
