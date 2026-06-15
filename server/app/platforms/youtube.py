@@ -44,10 +44,8 @@ def extract_youtube_metadata(
         "no_warnings": True,
         "extract_flat": True if media_type == "playlist" else False,
         "socket_timeout": timeout,
-        "source_address": "0.0.0.0",
-        "legacyserverconnect": True,
         "extractor_args": {"youtube": {"player_client": ["android"]}},
-        "impersonate": ImpersonateTarget.from_str("chrome-110"),
+        "impersonate": ImpersonateTarget.from_str("safari-18.0"),
         "retries": 1,
     }
 

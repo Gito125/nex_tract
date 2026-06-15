@@ -32,9 +32,7 @@ def extract_facebook_metadata(
         "extract_flat": True,
         "socket_timeout": timeout,
         "user_agent": DEFAULT_USER_AGENT,
-        "source_address": "0.0.0.0",
-        "legacyserverconnect": True,
-        "impersonate": ImpersonateTarget.from_str("chrome-110"),
+        "impersonate": ImpersonateTarget.from_str("safari-18.0"),
         "retries": 1,
     }
 
