@@ -6,6 +6,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Nextract",
   description: "Local-first media extraction and downloading app",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Nextract",
+  },
 };
 
 export default function RootLayout({

@@ -1,6 +1,6 @@
 {
   "name": "nex_tract",
-  "version": "1.13.2",
+  "version": "1.14.0",
   "description": "Nextract is a desktop/web application for downloading and managing media content from various sources. It provides a user-friendly interface for searching, downloading, and organizing media files, making it easier for users to access their favorite content.",
   "main": "index.js",
   "scripts": {

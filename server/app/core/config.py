@@ -3,7 +3,8 @@ from functools import lru_cache
 from pathlib import Path
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
+from typing import Annotated
 
 NEXTRACT_ENV = os.environ.get("NEXTRACT_ENV", "development")
 IS_PACKAGED = NEXTRACT_ENV == "packaged"
@@ -42,7 +43,7 @@ class Settings(BaseSettings):
     download_root: Path = DOWNLOADS_DIR
     ffmpeg_path: str = FFMPEG_PATH
     port: int = PORT
-    cors_origins: list[str] = Field(
+    cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: [
             "tauri://localhost",
             "https://tauri.localhost",
@@ -61,7 +62,16 @@ class Settings(BaseSettings):
     @classmethod
     def split_cors_origins(cls, value: object) -> object:
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
+            origins = [origin.strip() for origin in value.split(",") if origin.strip()]
+            # Ensure both trailing-slash and non-trailing-slash versions are supported
+            clean_origins = []
+            for origin in origins:
+                clean_origins.append(origin)
+                if origin.endswith("/"):
+                    clean_origins.append(origin[:-1])
+                else:
+                    clean_origins.append(origin + "/")
+            return list(set(clean_origins))
         return value
 
 @lru_cache

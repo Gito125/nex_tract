@@ -1,3 +1,13 @@
+---
+title: Nextract API
+emoji: 📥
+colorFrom: purple
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Nextract Backend (FastAPI)
 
 This directory contains the backend processing engine for Nextract, built with [Python FastAPI](https://fastapi.tiangolo.com/). It handles URL analysis, `yt-dlp` integration, database management, and asynchronous download queues.
