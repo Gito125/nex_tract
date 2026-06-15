@@ -2,6 +2,7 @@ import logging
 import yt_dlp
 from typing import Any, Literal, cast
 
+import os
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
@@ -152,6 +153,10 @@ def _run_ytdlp(
         "extractor_args": {"youtube": {"player_client": ["android"]}},
         "retries": 1,
     }
+    
+    proxy = os.environ.get("YOUTUBE_PROXY")
+    if proxy:
+        ydl_opts["proxy"] = proxy
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

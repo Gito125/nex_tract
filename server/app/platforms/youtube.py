@@ -1,5 +1,6 @@
 import subprocess  # noqa: F401
 import yt_dlp
+import os
 from typing import Any, cast
 from urllib.parse import ParseResult, parse_qs
 
@@ -45,6 +46,10 @@ def extract_youtube_metadata(
         "extractor_args": {"youtube": {"player_client": ["android"]}},
         "retries": 1,
     }
+    
+    proxy = os.environ.get("YOUTUBE_PROXY")
+    if proxy:
+        ydl_opts["proxy"] = proxy
 
     try:
         with yt_dlp.YoutubeDL(cast(Any, ydl_opts)) as ydl:

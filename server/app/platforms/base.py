@@ -1,6 +1,7 @@
 import subprocess
 import yt_dlp
 from dataclasses import dataclass
+import os
 from typing import Any, Literal, cast
 from urllib.parse import ParseResult
 
@@ -85,6 +86,10 @@ class PlatformAdapter:
             "--extractor-args",
             "youtube:player_client=android",
         ]
+        
+        proxy = os.environ.get("YOUTUBE_PROXY")
+        if proxy and media_type in ["video", "audio"]:
+            args.extend(["--proxy", proxy])
 
         if media_type == "gallery":
             args.append("--yes-playlist")
@@ -121,6 +126,10 @@ def run_ytdlp_metadata(
         "extractor_args": {"youtube": {"player_client": ["android"]}},
         "retries": 1,
     }
+    
+    proxy = os.environ.get("YOUTUBE_PROXY")
+    if proxy:
+        ydl_opts["proxy"] = proxy
 
     try:
         with yt_dlp.YoutubeDL(cast(Any, ydl_opts)) as ydl:
