@@ -82,6 +82,11 @@ class PlatformAdapter:
             output_template,
             "--print",
             "after_move:filepath",
+            "--source-address",
+            "0.0.0.0",
+            "--legacy-server-connect",
+            "--extractor-args",
+            "youtube:player_client=android,ios",
         ]
 
         if media_type == "gallery":
@@ -116,6 +121,9 @@ def run_ytdlp_metadata(
         "extract_flat": True if media_type == "playlist" else False,
         "socket_timeout": timeout,
         "user_agent": DEFAULT_USER_AGENT,
+        "source_address": "0.0.0.0",
+        "legacyserverconnect": True,
+        "extractor_args": {"youtube": {"player_client": ["android", "ios"]}},
     }
 
     try:
