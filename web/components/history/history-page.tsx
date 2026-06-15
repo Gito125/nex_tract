@@ -20,6 +20,7 @@ import {
   redownloadHistoryItem,
 } from "@/lib/api";
 import { platformLabel } from "@/lib/platforms";
+import { isTauri } from "@/lib/env";
 import type { HistoryFilters, HistoryItem, HistoryStatus } from "@/lib/types";
 
 type StatusFilter = "all" | HistoryStatus;
@@ -405,8 +406,12 @@ function HistoryCard({
 
       {/* Actions */}
       <div className="history-card-actions">
-        <ActionBtn disabled={!item.outputPath} icon={ExternalLink} label="Open file"   onClick={() => onOpenFile(item.id)} />
-        <ActionBtn disabled={!item.outputPath} icon={FolderOpen}   label="Open folder" onClick={() => onOpenFolder(item.id)} />
+        {isTauri() && (
+          <>
+            <ActionBtn disabled={!item.outputPath} icon={ExternalLink} label="Open file"   onClick={() => onOpenFile(item.id)} />
+            <ActionBtn disabled={!item.outputPath} icon={FolderOpen}   label="Open folder" onClick={() => onOpenFolder(item.id)} />
+          </>
+        )}
         <ActionBtn icon={RotateCcw} label="Re-download" onClick={() => onRedownload(item.id)} primary />
       </div>
     </article>

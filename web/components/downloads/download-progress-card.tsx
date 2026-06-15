@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   Clock3,
@@ -14,6 +14,8 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { platformLabel } from "@/lib/platforms";
+import { isTauri } from "@/lib/env";
+import { getDownloadStreamUrl } from "@/lib/api";
 import type { LucideIcon } from "lucide-react";
 import type { DownloadJob, DownloadStatus } from "@/lib/types";
 
@@ -35,6 +37,21 @@ export function DownloadProgressCard({
   onRetry: (jobId: string) => void;
   retryState: MutationState;
 }) {
+  const hasAutoDownloaded = useRef(false);
+
+  useEffect(() => {
+    if (job.status === "completed" && !isTauri() && !hasAutoDownloaded.current) {
+      hasAutoDownloaded.current = true;
+      const url = getDownloadStreamUrl(job.id);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }, [job.status, job.id]);
+
   const canCancel = job.status === "pending" || job.status === "downloading";
   const canRetry  = job.status === "failed"  || job.status === "cancelled";
   const isAudio   = job.selectedQuality.startsWith("audio_");

@@ -112,6 +112,10 @@ export function getDownloadEventsUrl(jobId: string): string {
   return `${getBaseUrl()}/api/downloads/${jobId}/events`;
 }
 
+export function getDownloadStreamUrl(jobId: string): string {
+  return `${getBaseUrl()}/api/downloads/${jobId}/stream`;
+}
+
 export function getApiAssetUrl(url: string | null): string | null {
   if (!url) return null;
   if (url.startsWith("/api/")) return `${getBaseUrl()}${url}`;
