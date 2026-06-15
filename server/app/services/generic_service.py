@@ -5,7 +5,6 @@ from typing import Any, Literal, cast
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
-from yt_dlp.networking.impersonate import ImpersonateTarget
 
 from app.platforms.base import YTDLP_BROWSER_HEADERS
 from app.schemas.analyze import AnalyzeResponse, QualityOption
@@ -151,7 +150,6 @@ def _run_ytdlp(
         "extract_flat": True,
         "socket_timeout": timeout,
         "extractor_args": {"youtube": {"player_client": ["android"]}},
-        "impersonate": ImpersonateTarget.from_str("safari-18.0"),
         "retries": 1,
     }
 

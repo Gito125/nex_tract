@@ -3,8 +3,6 @@ import yt_dlp
 from typing import Any, cast
 from urllib.parse import ParseResult
 
-from yt_dlp.networking.impersonate import ImpersonateTarget
-
 from app.platforms.base import PlatformAdapter, DEFAULT_USER_AGENT, MediaType
 from app.services.exceptions import AnalyzeError, MediaUnavailableError
 
@@ -42,7 +40,6 @@ def extract_soundcloud_metadata(
         "extract_flat": True if media_type == "playlist" else False,
         "socket_timeout": timeout,
         "user_agent": DEFAULT_USER_AGENT,
-        "impersonate": ImpersonateTarget.from_str("safari-18.0"),
         "retries": 1,
     }
 

@@ -3,8 +3,6 @@ import yt_dlp
 from typing import Any, cast
 from urllib.parse import ParseResult, parse_qs
 
-from yt_dlp.networking.impersonate import ImpersonateTarget
-
 from app.platforms.base import PlatformAdapter, MediaType
 from app.services.exceptions import AnalyzeError
 
@@ -45,7 +43,6 @@ def extract_youtube_metadata(
         "extract_flat": True if media_type == "playlist" else False,
         "socket_timeout": timeout,
         "extractor_args": {"youtube": {"player_client": ["android"]}},
-        "impersonate": ImpersonateTarget.from_str("safari-18.0"),
         "retries": 1,
     }
 
@@ -79,6 +76,9 @@ def _friendly_ytdlp_error(output: str, media_type: MediaType) -> str:
         or "unable to download api page" in message
     ):
         return "Could not reach YouTube. Check your internet connection and try again."
+    if "Sign in to confirm" in message:
+        return "YouTube has blocked this server's IP address (Hugging Face). Please run the app locally or deploy on a different network."
+        
     if "private" in message or "sign in" in message:
         return "This media appears to be private or restricted."
     if media_type == "playlist" and (
