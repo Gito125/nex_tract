@@ -32,7 +32,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       style={{ background: "var(--background)", color: "var(--foreground)" }}
     >
       {/* ── Desktop sidebar ───────────────────────────────────── */}
-      <aside
+            <aside
         className="app-shell__sidebar"
         style={{
           background: "var(--sidebar-bg)",
@@ -142,6 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <CreatorProfileBtn isCollapsed={isCollapsed} />
         </div>
       </aside>
+      
 
       {/* ── Mobile header ─────────────────────────────────────── */}
       <header
@@ -155,7 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           width: "100%",
         }}
       >
-        <Link href="/" className="app-shell__mobile-brand" style={{ textDecoration: "none" }}>
+        <Link href="/" className="app-shell__mobile-brand flex lg:hidden items-center gap-3" style={{ textDecoration: "none" }}>
           <img
             src="/icon.png"
             alt="Nextract Logo"
