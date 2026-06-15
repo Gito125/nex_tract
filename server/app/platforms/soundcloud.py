@@ -40,6 +40,10 @@ def extract_soundcloud_metadata(
         "extract_flat": True if media_type == "playlist" else False,
         "socket_timeout": timeout,
         "user_agent": DEFAULT_USER_AGENT,
+        "source_address": "0.0.0.0",
+        "legacyserverconnect": True,
+        "impersonate": "chrome",
+        "retries": 1,
     }
 
     try:

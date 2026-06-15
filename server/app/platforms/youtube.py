@@ -45,6 +45,8 @@ def extract_youtube_metadata(
         "source_address": "0.0.0.0",
         "legacyserverconnect": True,
         "extractor_args": {"youtube": {"player_client": ["android", "ios"]}},
+        "impersonate": "chrome",
+        "retries": 1,
     }
 
     try:
