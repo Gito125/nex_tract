@@ -3,6 +3,8 @@ import yt_dlp
 from typing import Any, cast
 from urllib.parse import ParseResult, parse_qs
 
+from yt_dlp.networking.impersonate import ImpersonateTarget
+
 from app.platforms.base import PlatformAdapter, MediaType
 from app.services.exceptions import AnalyzeError
 
@@ -45,6 +47,7 @@ def extract_youtube_metadata(
         "source_address": "0.0.0.0",
         "legacyserverconnect": True,
         "extractor_args": {"youtube": {"player_client": ["android"]}},
+        "impersonate": ImpersonateTarget.from_str("chrome-110"),
         "retries": 1,
     }
 

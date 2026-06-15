@@ -2,6 +2,8 @@ import yt_dlp
 from typing import Any, cast
 from urllib.parse import ParseResult
 
+from yt_dlp.networking.impersonate import ImpersonateTarget
+
 from app.platforms.base import PlatformAdapter, DEFAULT_USER_AGENT, MediaType
 from app.services.exceptions import AnalyzeError, MediaUnavailableError
 
@@ -32,6 +34,7 @@ def extract_facebook_metadata(
         "user_agent": DEFAULT_USER_AGENT,
         "source_address": "0.0.0.0",
         "legacyserverconnect": True,
+        "impersonate": ImpersonateTarget.from_str("chrome-110"),
         "retries": 1,
     }
 

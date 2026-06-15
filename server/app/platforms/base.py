@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Any, Literal, cast
 from urllib.parse import ParseResult
 
+from yt_dlp.networking.impersonate import ImpersonateTarget
+
 from app.services.exceptions import AnalyzeError
 
 PlatformValue = Literal["youtube", "tiktok", "instagram", "x", "vimeo", "reddit", "facebook", "soundcloud", "generic"]
@@ -87,6 +89,8 @@ class PlatformAdapter:
             "--legacy-server-connect",
             "--extractor-args",
             "youtube:player_client=android",
+            "--impersonate",
+            "chrome-110",
         ]
 
         if media_type == "gallery":
@@ -124,6 +128,7 @@ def run_ytdlp_metadata(
         "source_address": "0.0.0.0",
         "legacyserverconnect": True,
         "extractor_args": {"youtube": {"player_client": ["android"]}},
+        "impersonate": ImpersonateTarget.from_str("chrome-110"),
         "retries": 1,
     }
 
