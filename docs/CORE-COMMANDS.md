@@ -100,7 +100,7 @@ Nextract uses Git tags to trigger cloud builds and auto-update generation.
 ### 1. Perform a New Release (Version Bump)
 To sync versions across `package.json`, `web/package.json`, `server/pyproject.toml`, and `src-tauri/tauri.conf.json`:
 ```bash
-# Bumps patch version (e.g. 1.13.0 -> 1.13.1)
+# Bumps patch version (e.g. 1.13.0 -> 1.14.0)
 pnpm release patch
 
 # Or minor version (e.g. 1.13.0 -> 1.14.0)
@@ -113,24 +113,24 @@ pnpm release minor
 git add .
 
 # Commit with a release message
-git commit -m "chore: release v1.13.1"
+git commit -m "chore: release v1.14.0"
 
 # Create a local Git tag matching the version
-git tag v1.13.1
+git tag v1.14.0
 
 # Push the branch and the tag to GitHub
 git push origin phase-10
-git push origin v1.13.1
+git push origin v1.14.0
 ```
 
 ### 3. Fixing/Replacing a Tag (e.g. if code was tagged before committing/pushing all files)
 If a tag was pushed to GitHub but needs to be updated with new commits:
 ```bash
 # 1. Delete the local tag
-git tag -d v1.13.1
+git tag -d v1.14.0
 
 # 2. Delete the tag on the remote GitHub repository
-git push origin :refs/tags/v1.13.1
+git push origin :refs/tags/v1.14.0
 
 # 3. Stage, commit, and push your latest code changes
 git add .
@@ -138,7 +138,7 @@ git commit -m "feat: correct implementation details"
 git push origin phase-10
 
 # 4. Re-create and push the tag to trigger a clean rebuild
-git tag v1.13.1
-git push origin v1.13.1
+git tag v1.14.0
+git push origin v1.14.0
 ```
 
