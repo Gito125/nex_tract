@@ -93,7 +93,6 @@ async def retry_download(
 @router.get("/downloads/{job_id}/stream")
 async def stream_download_file(
     job_id: str,
-    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
 ) -> FileResponse:
     try:
@@ -108,17 +107,31 @@ async def stream_download_file(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found on server")
 
-    def cleanup_file():
-        try:
-            if file_path.exists():
-                file_path.unlink()
-        except Exception:
-            pass
-
-    background_tasks.add_task(cleanup_file)
-
     return FileResponse(
         path=file_path,
         filename=file_path.name,
         media_type="application/octet-stream",
     )
+
+
+@router.delete("/downloads/{job_id}/file")
+async def delete_download_file(
+    job_id: str,
+    session: Session = Depends(get_session),
+) -> dict[str, str]:
+    try:
+        job = get_download_job(job_id, session)
+    except DownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+    if job.status != "completed" or not job.output_path:
+        raise HTTPException(status_code=400, detail="Download not completed yet")
+
+    file_path = Path(job.output_path)
+    if file_path.exists():
+        try:
+            file_path.unlink()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail="Could not delete file") from exc
+
+    return {"detail": "File deleted successfully"}

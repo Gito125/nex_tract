@@ -67,10 +67,9 @@ class PlatformAdapter:
         media_type: MediaType = "video",
     ) -> list[str]:
         import sys
-        args = [
-            sys.executable,
-            "-m",
-            "yt_dlp",
+        args = [sys.executable, "-m", "yt_dlp"]
+            
+        args.extend([
             "--no-warnings",
             "--no-simulate",
             "--no-overwrites",
@@ -85,7 +84,7 @@ class PlatformAdapter:
             "after_move:filepath",
             "--extractor-args",
             "youtube:player_client=android",
-        ]
+        ])
         
         proxy = os.environ.get("YOUTUBE_PROXY")
         if proxy and media_type in ["video", "audio"]:
